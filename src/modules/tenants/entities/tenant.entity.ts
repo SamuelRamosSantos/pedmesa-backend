@@ -14,6 +14,9 @@ export class Tenant {
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
 
+  @Column({ name: "quantidade_comandas", type: "int", default: 20 })
+  quantidadeComandas!: number;
+
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;
 }

@@ -1,0 +1,60 @@
+import { FindOptionsWhere } from "typeorm";
+import { AppDataSource } from "../../../config/data-source";
+import { AppError } from "../../../shared/errors/app-error";
+import { Category } from "../../categorias/entities/category.entity";
+import { CreateProductDto } from "../dtos/create-product.dto";
+import { ListProductsFilters } from "../dtos/list-products.dto";
+import { Product } from "../entities/product.entity";
+
+export class ProductService {
+  static async create(tenantId: string, dto: CreateProductDto): Promise<Product> {
+    const categoryRepository = AppDataSource.getRepository(Category);
+    const category = await categoryRepository.findOne({
+      where: { id: dto.categoriaId, tenantId },
+    });
+
+    if (!category) {
+      throw new AppError("Categoria não encontrada.", 404);
+    }
+
+    const productRepository = AppDataSource.getRepository(Product);
+    const product = productRepository.create({
+      tenantId,
+      categoriaId: dto.categoriaId,
+      nome: dto.nome,
+      preco: dto.preco,
+      descricao: dto.descricao,
+      disponivel: dto.disponivel,
+    });
+
+    return productRepository.save(product);
+  }
+
+  static async list(tenantId: string, filters: ListProductsFilters): Promise<Product[]> {
+    const repository = AppDataSource.getRepository(Product);
+    const where: FindOptionsWhere<Product> = { tenantId };
+
+    if (filters.categoriaId) {
+      where.categoriaId = filters.categoriaId;
+    }
+
+    if (filters.disponivel !== undefined) {
+      where.disponivel = filters.disponivel;
+    }
+
+    return repository.find({ where, order: { nome: "ASC" } });
+  }
+
+  static async updateDisponibilidade(tenantId: string, productId: string, disponivel: boolean): Promise<Product> {
+    const repository = AppDataSource.getRepository(Product);
+    const product = await repository.findOne({ where: { id: productId, tenantId } });
+
+    if (!product) {
+      throw new AppError("Produto não encontrado.", 404);
+    }
+
+    product.disponivel = disponivel;
+
+    return repository.save(product);
+  }
+}

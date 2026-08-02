@@ -2,6 +2,9 @@ import "reflect-metadata";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
 import authRoutes from "./modules/auth/routes/auth.routes";
+import categoryRoutes from "./modules/categorias/routes/category.routes";
+import productRoutes from "./modules/produtos/routes/product.routes";
+import tenantRoutes from "./modules/tenants/routes/tenant.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
 
 const app = express();
@@ -15,6 +18,9 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/categorias", categoryRoutes);
+app.use("/api/v1/produtos", productRoutes);
+app.use("/api/v1/tenants", tenantRoutes);
 
 app.use(errorHandlerMiddleware);
 
