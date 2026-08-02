@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { avaliarFechamento } from "./fechamento-calculator";
+import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
 
 describe("avaliarFechamento", () => {
   it("considera suficiente quando o pagamento é exatamente igual ao total da comanda", () => {
@@ -67,5 +67,20 @@ describe("avaliarFechamento", () => {
 
     expect(resultado.suficiente).toBe(true);
     expect(resultado.saldoCents).toBe(0);
+  });
+});
+
+describe("podeCancelarComandaZerada", () => {
+  it("permite cancelamento direto quando o valor total da comanda é zero", () => {
+    expect(podeCancelarComandaZerada(0)).toBe(true);
+  });
+
+  it("permite cancelamento direto quando o valor total é 0.00 (float)", () => {
+    expect(podeCancelarComandaZerada(0.0)).toBe(true);
+  });
+
+  it("não permite cancelamento direto quando há valor pendente", () => {
+    expect(podeCancelarComandaZerada(0.01)).toBe(false);
+    expect(podeCancelarComandaZerada(25.5)).toBe(false);
   });
 });

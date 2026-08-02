@@ -12,7 +12,7 @@ import { ListComandasFilters } from "../dtos/list-comandas.dto";
 import { Comanda, ComandaStatus } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
-import { avaliarFechamento } from "./fechamento-calculator";
+import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
 
 export class ComandaService {
   static async create(tenantId: string, dto: CreateComandaDto): Promise<Comanda> {
@@ -185,6 +185,34 @@ export class ComandaService {
         `Valor pago (R$ ${fromCents(avaliacao.totalPagoCents).toFixed(2)}) é insuficiente para quitar a comanda (total: R$ ${fromCents(
           avaliacao.totalComandaCents
         ).toFixed(2)}).`,
+        400
+      );
+    }
+
+    return AppDataSource.transaction(async (manager) => {
+      const comandaTravada = await manager.findOne(Comanda, { where: { id: comanda.id, tenantId } });
+
+      if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
+        throw new AppError("Esta comanda já está fechada.", 400);
+      }
+
+      comandaTravada.status = ComandaStatus.FECHADA;
+      comandaTravada.fechadaEm = new Date();
+
+      return manager.save(comandaTravada);
+    });
+  }
+
+  static async cancelarZerada(tenantId: string, comandaId: string): Promise<Comanda> {
+    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Esta comanda já está fechada.", 400);
+    }
+
+    if (!podeCancelarComandaZerada(calculado.resumo_financeiro.valor_total_comanda)) {
+      throw new AppError(
+        "Esta comanda possui itens com valor pendente e não pode ser cancelada diretamente. Utilize o fechamento com pagamento.",
         400
       );
     }

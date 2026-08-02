@@ -26,3 +26,7 @@ export function avaliarFechamento(valorTotalComanda: number, pagamentos: Pagamen
     suficiente: totalPagoCents + TOLERANCIA_CENTS >= totalComandaCents,
   };
 }
+
+export function podeCancelarComandaZerada(valorTotalComanda: number): boolean {
+  return toCents(valorTotalComanda) === 0;
+}

@@ -8,6 +8,7 @@ import { assertValidFecharComandaDto } from "../dtos/fechar-comanda.dto";
 import { assertValidJoinComandasDto } from "../dtos/join-comandas.dto";
 import { parseListComandasFilters } from "../dtos/list-comandas.dto";
 import {
+  toCancelarComandaResponse,
   toComandaDetailResponse,
   toComandaListItemResponse,
   toFecharComandaResponse,
@@ -101,6 +102,23 @@ export async function fechar(req: Request, res: Response, next: NextFunction): P
     const comanda = await ComandaService.fechar(tenantId, id, dto);
 
     res.status(200).json(toFecharComandaResponse(comanda));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function cancelar(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de comanda inválido.", 400);
+    }
+
+    const comanda = await ComandaService.cancelarZerada(tenantId, id);
+
+    res.status(200).json(toCancelarComandaResponse(comanda));
   } catch (error) {
     next(error);
   }

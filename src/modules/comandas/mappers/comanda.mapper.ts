@@ -60,3 +60,15 @@ export function toFecharComandaResponse(comanda: Comanda): FecharComandaResponse
     mensagem: "Comanda quitada com sucesso e liberada para o salão.",
   };
 }
+
+export interface CancelarComandaResponse {
+  status: ComandaStatus;
+  mensagem: string;
+}
+
+export function toCancelarComandaResponse(comanda: Comanda): CancelarComandaResponse {
+  return {
+    status: comanda.status,
+    mensagem: "Comanda cancelada e mesa liberada com sucesso.",
+  };
+}
