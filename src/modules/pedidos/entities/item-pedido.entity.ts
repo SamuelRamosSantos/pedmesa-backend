@@ -8,6 +8,7 @@ export enum StatusItem {
   EM_PREPARO = "em_preparo",
   PRONTO = "pronto",
   ENTREGUE = "entregue",
+  CANCELADO = "cancelado",
 }
 
 @Entity("itens_pedido")

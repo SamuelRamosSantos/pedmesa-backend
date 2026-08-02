@@ -7,8 +7,10 @@ import { PrintQueue } from "../../impressao/queue/print-queue";
 import { Product } from "../../produtos/entities/product.entity";
 import { CreatePedidoDto } from "../dtos/create-pedido.dto";
 import { ListPedidosFilters } from "../dtos/list-pedidos.dto";
-import { ItemPedido } from "../entities/item-pedido.entity";
+import { ItemPedido, StatusItem } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
+import { assertTransicaoValida } from "./item-status-transition";
+import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 export class PedidoService {
   static async create(tenantId: string, usuarioId: string, comandaId: string, dto: CreatePedidoDto): Promise<Pedido> {
@@ -143,5 +145,37 @@ export class PedidoService {
     pedido.statusPreparo = status;
 
     return repository.save(pedido);
+  }
+
+  static async updateItemStatus(
+    tenantId: string,
+    itemId: string,
+    novoStatus: StatusItem
+  ): Promise<{ item: ItemPedido; pedido: Pedido }> {
+    return AppDataSource.transaction(async (manager) => {
+      const item = await manager
+        .createQueryBuilder(ItemPedido, "item")
+        .innerJoin("item.pedido", "pedido")
+        .innerJoin("pedido.comanda", "comanda")
+        .where("item.id = :itemId", { itemId })
+        .andWhere("comanda.tenantId = :tenantId", { tenantId })
+        .getOne();
+
+      if (!item) {
+        throw new AppError("Item de pedido não encontrado.", 404);
+      }
+
+      assertTransicaoValida(item.statusItem, novoStatus);
+
+      item.statusItem = novoStatus;
+      await manager.save(item);
+
+      const itensDoPedido = await manager.find(ItemPedido, { where: { pedidoId: item.pedidoId } });
+      const pedido = await manager.findOneOrFail(Pedido, { where: { id: item.pedidoId } });
+      pedido.statusPreparo = calcularStatusPreparoPedido(itensDoPedido.map((i) => i.statusItem));
+      await manager.save(pedido);
+
+      return { item, pedido };
+    });
   }
 }

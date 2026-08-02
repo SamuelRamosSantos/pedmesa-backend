@@ -1,3 +1,4 @@
+import { ItemPedido, StatusItem } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
 
 export interface PedidoCreatedResponse {
@@ -20,6 +21,7 @@ export interface PedidoItemResponse {
   quantidade: number;
   integrante_nome: string | null;
   observacao: string | null;
+  status_item: StatusItem;
 }
 
 export interface PedidoListItemResponse {
@@ -46,6 +48,7 @@ export function toPedidoListItemResponse(pedido: Pedido): PedidoListItemResponse
       quantidade: item.quantidade,
       integrante_nome: item.integrante?.nome ?? null,
       observacao: item.observacao,
+      status_item: item.statusItem,
     })),
   };
 }
@@ -59,5 +62,25 @@ export function toUpdatePedidoStatusResponse(pedido: Pedido): UpdatePedidoStatus
   return {
     id: pedido.id,
     status_preparo: pedido.statusPreparo,
+  };
+}
+
+export interface UpdateItemStatusResponse {
+  item_id: string;
+  status_item: StatusItem;
+  pedido: {
+    id: string;
+    status_preparo: StatusPreparo;
+  };
+}
+
+export function toUpdateItemStatusResponse(item: ItemPedido, pedido: Pedido): UpdateItemStatusResponse {
+  return {
+    item_id: item.id,
+    status_item: item.statusItem,
+    pedido: {
+      id: pedido.id,
+      status_preparo: pedido.statusPreparo,
+    },
   };
 }

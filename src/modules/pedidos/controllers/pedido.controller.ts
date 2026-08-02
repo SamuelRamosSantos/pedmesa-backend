@@ -4,9 +4,15 @@ import { getTenantId } from "../../../shared/utils/get-tenant-id";
 import { getUserId } from "../../../shared/utils/get-user-id";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreatePedidoDto } from "../dtos/create-pedido.dto";
+import { assertValidUpdateItemStatusDto } from "../dtos/update-item-status.dto";
 import { parseListPedidosFilters } from "../dtos/list-pedidos.dto";
 import { assertValidUpdatePedidoStatusDto } from "../dtos/update-pedido-status.dto";
-import { toPedidoCreatedResponse, toPedidoListItemResponse, toUpdatePedidoStatusResponse } from "../mappers/pedido.mapper";
+import {
+  toPedidoCreatedResponse,
+  toPedidoListItemResponse,
+  toUpdateItemStatusResponse,
+  toUpdatePedidoStatusResponse,
+} from "../mappers/pedido.mapper";
 import { PedidoService } from "../services/pedido.service";
 
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -53,6 +59,24 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
     const pedido = await PedidoService.updateStatus(tenantId, id, dto.statusPreparo);
 
     res.status(200).json(toUpdatePedidoStatusResponse(pedido));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateItemStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { itemId } = req.params;
+
+    if (!isUuid(itemId)) {
+      throw new AppError("ID de item de pedido inválido.", 400);
+    }
+
+    const dto = assertValidUpdateItemStatusDto(req.body);
+    const { item, pedido } = await PedidoService.updateItemStatus(tenantId, itemId, dto.status);
+
+    res.status(200).json(toUpdateItemStatusResponse(item, pedido));
   } catch (error) {
     next(error);
   }
