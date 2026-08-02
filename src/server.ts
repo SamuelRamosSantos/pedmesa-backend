@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import cors from "cors";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
 import authRoutes from "./modules/auth/routes/auth.routes";
@@ -9,6 +10,10 @@ import tenantRoutes from "./modules/tenants/routes/tenant.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
 
 const app = express();
+
+const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
+app.use(cors({ origin: corsOrigins }));
+
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
