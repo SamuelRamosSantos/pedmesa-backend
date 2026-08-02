@@ -36,3 +36,27 @@ export function toComandaListItemResponse(comanda: Comanda): ComandaListItemResp
     aberta_em: comanda.abertaEm,
   };
 }
+
+export interface JuntarComandasResponse {
+  mensagem: string;
+  comanda_principal_id: string;
+}
+
+export function toJuntarComandasResponse(comandaPrincipal: Comanda): JuntarComandasResponse {
+  return {
+    mensagem: "Comandas juntadas com sucesso.",
+    comanda_principal_id: comandaPrincipal.id,
+  };
+}
+
+export interface FecharComandaResponse {
+  status: ComandaStatus;
+  mensagem: string;
+}
+
+export function toFecharComandaResponse(comanda: Comanda): FecharComandaResponse {
+  return {
+    status: comanda.status,
+    mensagem: "Comanda quitada com sucesso e liberada para o salão.",
+  };
+}

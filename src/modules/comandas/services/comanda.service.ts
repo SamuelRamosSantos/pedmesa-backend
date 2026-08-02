@@ -1,13 +1,18 @@
+import { In } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
+import { fromCents } from "../../../shared/utils/money";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
 import { ItemPedido } from "../../pedidos/entities/item-pedido.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
+import { FecharComandaDto } from "../dtos/fechar-comanda.dto";
 import { CreateComandaDto } from "../dtos/create-comanda.dto";
+import { JoinComandasDto } from "../dtos/join-comandas.dto";
 import { ListComandasFilters } from "../dtos/list-comandas.dto";
 import { Comanda, ComandaStatus } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
+import { avaliarFechamento } from "./fechamento-calculator";
 
 export class ComandaService {
   static async create(tenantId: string, dto: CreateComandaDto): Promise<Comanda> {
@@ -118,5 +123,83 @@ export class ComandaService {
     });
 
     return { comanda, calculado };
+  }
+
+  static async juntar(tenantId: string, dto: JoinComandasDto): Promise<Comanda> {
+    const comandaRepository = AppDataSource.getRepository(Comanda);
+    const todosOsIds = [dto.comandaPrincipalId, ...dto.comandasSecundariasIds];
+
+    const comandasEncontradas = await comandaRepository.findBy({ id: In(todosOsIds), tenantId });
+    const comandasPorId = new Map(comandasEncontradas.map((comanda) => [comanda.id, comanda]));
+
+    const comandaPrincipal = comandasPorId.get(dto.comandaPrincipalId);
+
+    if (!comandaPrincipal) {
+      throw new AppError("Comanda principal não encontrada.", 404);
+    }
+
+    if (comandaPrincipal.status !== ComandaStatus.ABERTA) {
+      throw new AppError("A comanda principal precisa estar aberta para receber a junção.", 400);
+    }
+
+    dto.comandasSecundariasIds.forEach((id) => {
+      const comandaSecundaria = comandasPorId.get(id);
+
+      if (!comandaSecundaria) {
+        throw new AppError(`A comanda secundária ${id} não foi encontrada.`, 404);
+      }
+
+      if (comandaSecundaria.status !== ComandaStatus.ABERTA) {
+        throw new AppError(`A comanda secundária ${id} não está aberta.`, 400);
+      }
+    });
+
+    await AppDataSource.transaction(async (manager) => {
+      await manager.update(
+        IntegranteComanda,
+        { comandaId: In(dto.comandasSecundariasIds) },
+        { comandaId: comandaPrincipal.id }
+      );
+
+      await manager.update(
+        Comanda,
+        { id: In(dto.comandasSecundariasIds) },
+        { comandaPaiId: comandaPrincipal.id, status: ComandaStatus.FECHADA, fechadaEm: new Date() }
+      );
+    });
+
+    return comandaPrincipal;
+  }
+
+  static async fechar(tenantId: string, comandaId: string, dto: FecharComandaDto): Promise<Comanda> {
+    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Esta comanda já está fechada.", 400);
+    }
+
+    const avaliacao = avaliarFechamento(calculado.resumo_financeiro.valor_total_comanda, dto.pagamentos);
+
+    if (!avaliacao.suficiente) {
+      throw new AppError(
+        `Valor pago (R$ ${fromCents(avaliacao.totalPagoCents).toFixed(2)}) é insuficiente para quitar a comanda (total: R$ ${fromCents(
+          avaliacao.totalComandaCents
+        ).toFixed(2)}).`,
+        400
+      );
+    }
+
+    return AppDataSource.transaction(async (manager) => {
+      const comandaTravada = await manager.findOne(Comanda, { where: { id: comanda.id, tenantId } });
+
+      if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
+        throw new AppError("Esta comanda já está fechada.", 400);
+      }
+
+      comandaTravada.status = ComandaStatus.FECHADA;
+      comandaTravada.fechadaEm = new Date();
+
+      return manager.save(comandaTravada);
+    });
   }
 }

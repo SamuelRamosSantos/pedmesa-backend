@@ -4,8 +4,15 @@ import { getTenantId } from "../../../shared/utils/get-tenant-id";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidAddIntegranteDto } from "../dtos/add-integrante.dto";
 import { assertValidCreateComandaDto } from "../dtos/create-comanda.dto";
+import { assertValidFecharComandaDto } from "../dtos/fechar-comanda.dto";
+import { assertValidJoinComandasDto } from "../dtos/join-comandas.dto";
 import { parseListComandasFilters } from "../dtos/list-comandas.dto";
-import { toComandaDetailResponse, toComandaListItemResponse } from "../mappers/comanda.mapper";
+import {
+  toComandaDetailResponse,
+  toComandaListItemResponse,
+  toFecharComandaResponse,
+  toJuntarComandasResponse,
+} from "../mappers/comanda.mapper";
 import { toExtratoResponse } from "../mappers/extrato.mapper";
 import { toIntegranteResponse } from "../mappers/integrante.mapper";
 import { ComandaService } from "../services/comanda.service";
@@ -64,6 +71,36 @@ export async function getExtrato(req: Request, res: Response, next: NextFunction
     const { comanda, calculado } = await ComandaService.getExtrato(tenantId, id);
 
     res.status(200).json(toExtratoResponse(comanda, calculado));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function juntar(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const dto = assertValidJoinComandasDto(req.body);
+    const comandaPrincipal = await ComandaService.juntar(tenantId, dto);
+
+    res.status(200).json(toJuntarComandasResponse(comandaPrincipal));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function fechar(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de comanda inválido.", 400);
+    }
+
+    const dto = assertValidFecharComandaDto(req.body);
+    const comanda = await ComandaService.fechar(tenantId, id, dto);
+
+    res.status(200).json(toFecharComandaResponse(comanda));
   } catch (error) {
     next(error);
   }
