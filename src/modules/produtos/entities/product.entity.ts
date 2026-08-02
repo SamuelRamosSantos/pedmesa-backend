@@ -43,4 +43,7 @@ export class Product {
 
   @Column({ name: "precisa_preparo", type: "boolean", default: true })
   precisaPreparo!: boolean;
+
+  @Column({ type: "boolean", default: true })
+  ativo!: boolean;
 }

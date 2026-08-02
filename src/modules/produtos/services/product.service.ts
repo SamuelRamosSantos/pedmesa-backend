@@ -34,7 +34,7 @@ export class ProductService {
 
   static async list(tenantId: string, filters: ListProductsFilters): Promise<Product[]> {
     const repository = AppDataSource.getRepository(Product);
-    const where: FindOptionsWhere<Product> = { tenantId };
+    const where: FindOptionsWhere<Product> = { tenantId, ativo: true };
 
     if (filters.categoriaId) {
       where.categoriaId = filters.categoriaId;
@@ -100,5 +100,17 @@ export class ProductService {
     }
 
     return repository.save(product);
+  }
+
+  static async delete(tenantId: string, productId: string): Promise<void> {
+    const repository = AppDataSource.getRepository(Product);
+    const product = await repository.findOne({ where: { id: productId, tenantId } });
+
+    if (!product) {
+      throw new AppError("Produto não encontrado.", 404);
+    }
+
+    product.ativo = false;
+    await repository.save(product);
   }
 }
