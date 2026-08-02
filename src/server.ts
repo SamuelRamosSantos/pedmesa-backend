@@ -1,6 +1,8 @@
 import "reflect-metadata";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
+import authRoutes from "./modules/auth/routes/auth.routes";
+import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
 
 const app = express();
 app.use(express.json());
@@ -11,6 +13,10 @@ app.get("/health", (_req, res) => {
     database: AppDataSource.isInitialized ? "connected" : "disconnected",
   });
 });
+
+app.use("/api/v1/auth", authRoutes);
+
+app.use(errorHandlerMiddleware);
 
 const PORT = Number(process.env.PORT ?? 3000);
 
