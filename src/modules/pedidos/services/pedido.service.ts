@@ -3,6 +3,7 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
 import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
+import { PrintQueue } from "../../impressao/queue/print-queue";
 import { Product } from "../../produtos/entities/product.entity";
 import { CreatePedidoDto } from "../dtos/create-pedido.dto";
 import { ItemPedido } from "../entities/item-pedido.entity";
@@ -29,12 +30,12 @@ export class PedidoService {
     const integranteIds = [
       ...new Set(dto.itens.map((item) => item.integranteId).filter((id): id is string => id !== null)),
     ];
-    let integrantesValidosIds = new Set<string>();
+    const integrantesPorId = new Map<string, IntegranteComanda>();
 
     if (integranteIds.length > 0) {
       const integranteRepository = AppDataSource.getRepository(IntegranteComanda);
       const integrantes = await integranteRepository.findBy({ id: In(integranteIds), comandaId: comanda.id });
-      integrantesValidosIds = new Set(integrantes.map((integrante) => integrante.id));
+      integrantes.forEach((integrante) => integrantesPorId.set(integrante.id, integrante));
     }
 
     dto.itens.forEach((item, index) => {
@@ -48,13 +49,13 @@ export class PedidoService {
         throw new AppError(`O produto "${produto.nome}" está indisponível no momento.`, 400);
       }
 
-      if (item.integranteId !== null && !integrantesValidosIds.has(item.integranteId)) {
+      if (item.integranteId !== null && !integrantesPorId.has(item.integranteId)) {
         throw new AppError(`O integrante informado no item ${index} não pertence a esta comanda.`, 400);
       }
     });
 
-    return AppDataSource.transaction(async (manager) => {
-      const pedido = await manager.save(
+    const pedido = await AppDataSource.transaction(async (manager) => {
+      const pedidoCriado = await manager.save(
         manager.create(Pedido, {
           comandaId: comanda.id,
           usuarioId,
@@ -66,7 +67,7 @@ export class PedidoService {
         const produto = produtosPorId.get(item.produtoId) as Product;
 
         return manager.create(ItemPedido, {
-          pedidoId: pedido.id,
+          pedidoId: pedidoCriado.id,
           produtoId: item.produtoId,
           integranteId: item.integranteId,
           quantidade: item.quantidade,
@@ -75,9 +76,29 @@ export class PedidoService {
         });
       });
 
-      pedido.itens = await manager.save(itens);
+      pedidoCriado.itens = await manager.save(itens);
 
-      return pedido;
+      return pedidoCriado;
     });
+
+    PrintQueue.enqueue({
+      tenant_id: tenantId,
+      pedido_id: pedido.id,
+      numero_comanda: comanda.numeroComanda,
+      criado_em: pedido.criadoEm,
+      itens: dto.itens.map((item) => {
+        const produto = produtosPorId.get(item.produtoId) as Product;
+        const integrante = item.integranteId ? integrantesPorId.get(item.integranteId) ?? null : null;
+
+        return {
+          produto_nome: produto.nome,
+          quantidade: item.quantidade,
+          integrante_nome: integrante?.nome ?? null,
+          observacao: item.observacao,
+        };
+      }),
+    });
+
+    return pedido;
   }
 }
