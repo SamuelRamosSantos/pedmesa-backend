@@ -1,0 +1,30 @@
+{
+  "name": "pedmesa-backend",
+  "version": "1.0.0",
+  "description": "API do PedMesa - sistema multi-tenant de gestão de comandas, pedidos e divisão de conta.",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:create": "npm run typeorm -- migration:create",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/config/data-source.ts",
+    "migration:run": "npm run typeorm -- migration:run -d src/config/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.9",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pedmesa_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pedmesa_user
+      POSTGRES_PASSWORD: pedmesa_password
+      POSTGRES_DB: pedmesa_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pedmesa_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pedmesa_user -d pedmesa_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pedmesa_postgres_data:
+    name: pedmesa_postgres_data
