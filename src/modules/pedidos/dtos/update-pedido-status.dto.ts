@@ -2,6 +2,7 @@ import { AppError } from "../../../shared/errors/app-error";
 import { StatusPreparo } from "../entities/pedido.entity";
 
 const STATUS_PERMITIDOS_PARA_ATUALIZACAO: StatusPreparo[] = [
+  StatusPreparo.PENDENTE,
   StatusPreparo.EM_PREPARO,
   StatusPreparo.PRONTO,
   StatusPreparo.ENTREGUE,
