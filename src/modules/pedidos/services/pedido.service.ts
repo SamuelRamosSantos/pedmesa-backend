@@ -6,6 +6,7 @@ import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.en
 import { PrintQueue } from "../../impressao/queue/print-queue";
 import { Product } from "../../produtos/entities/product.entity";
 import { CreatePedidoDto } from "../dtos/create-pedido.dto";
+import { ListPedidosFilters } from "../dtos/list-pedidos.dto";
 import { ItemPedido } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
 
@@ -100,5 +101,47 @@ export class PedidoService {
     });
 
     return pedido;
+  }
+
+  static async list(tenantId: string, filters: ListPedidosFilters): Promise<Pedido[]> {
+    const repository = AppDataSource.getRepository(Pedido);
+
+    const query = repository
+      .createQueryBuilder("pedido")
+      .innerJoin("pedido.comanda", "comanda")
+      .innerJoin("pedido.usuario", "usuario")
+      .addSelect(["comanda.id", "comanda.numeroComanda", "usuario.id", "usuario.nome"])
+      .leftJoinAndSelect("pedido.itens", "item")
+      .leftJoinAndSelect("item.produto", "produto")
+      .leftJoinAndSelect("item.integrante", "integrante")
+      .where("comanda.tenantId = :tenantId", { tenantId })
+      .orderBy("pedido.criadoEm", "ASC");
+
+    if (filters.status) {
+      query.andWhere("pedido.statusPreparo = :status", { status: filters.status });
+    } else {
+      query.andWhere("pedido.statusPreparo != :entregue", { entregue: StatusPreparo.ENTREGUE });
+    }
+
+    return query.getMany();
+  }
+
+  static async updateStatus(tenantId: string, pedidoId: string, status: StatusPreparo): Promise<Pedido> {
+    const repository = AppDataSource.getRepository(Pedido);
+
+    const pedido = await repository
+      .createQueryBuilder("pedido")
+      .innerJoin("pedido.comanda", "comanda")
+      .where("pedido.id = :pedidoId", { pedidoId })
+      .andWhere("comanda.tenantId = :tenantId", { tenantId })
+      .getOne();
+
+    if (!pedido) {
+      throw new AppError("Pedido não encontrado.", 404);
+    }
+
+    pedido.statusPreparo = status;
+
+    return repository.save(pedido);
   }
 }

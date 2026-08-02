@@ -6,8 +6,14 @@ import { User, UserRole } from "../../modules/usuarios/entities/user.entity";
 
 const TENANT_NOME_FANTASIA = "Lanchonete Teste";
 const TENANT_CNPJ_CPF = "00000000000191";
-const ADMIN_EMAIL = "admin@pedmesa.com";
-const ADMIN_SENHA = "123456";
+const SENHA_PADRAO = "123456";
+
+const USUARIOS_SEED: { nome: string; email: string; role: UserRole }[] = [
+  { nome: "Administrador", email: "admin@pedmesa.com", role: UserRole.ADMIN },
+  { nome: "Garçom Teste", email: "garcom@pedmesa.com", role: UserRole.GARCOM },
+  { nome: "Cozinha Teste", email: "cozinha@pedmesa.com", role: UserRole.COZINHA },
+  { nome: "Caixa Teste", email: "caixa@pedmesa.com", role: UserRole.CAIXA },
+];
 
 async function run(): Promise<void> {
   await AppDataSource.initialize();
@@ -30,24 +36,26 @@ async function run(): Promise<void> {
     console.log(`ℹ️  Tenant "${TENANT_NOME_FANTASIA}" já existe (${tenant.id}).`);
   }
 
-  const existingAdmin = await userRepository.findOne({ where: { email: ADMIN_EMAIL } });
+  for (const usuarioSeed of USUARIOS_SEED) {
+    const existingUser = await userRepository.findOne({ where: { email: usuarioSeed.email } });
 
-  if (!existingAdmin) {
-    const senhaHash = await HashService.hash(ADMIN_SENHA);
+    if (!existingUser) {
+      const senhaHash = await HashService.hash(SENHA_PADRAO);
 
-    const admin = await userRepository.save(
-      userRepository.create({
-        tenantId: tenant.id,
-        nome: "Administrador",
-        email: ADMIN_EMAIL,
-        senhaHash,
-        role: UserRole.ADMIN,
-        ativo: true,
-      })
-    );
-    console.log(`✅ Usuário admin criado: ${admin.email} / senha: ${ADMIN_SENHA}`);
-  } else {
-    console.log(`ℹ️  Usuário admin "${ADMIN_EMAIL}" já existe.`);
+      const usuario = await userRepository.save(
+        userRepository.create({
+          tenantId: tenant.id,
+          nome: usuarioSeed.nome,
+          email: usuarioSeed.email,
+          senhaHash,
+          role: usuarioSeed.role,
+          ativo: true,
+        })
+      );
+      console.log(`✅ Usuário ${usuario.role} criado: ${usuario.email} / senha: ${SENHA_PADRAO}`);
+    } else {
+      console.log(`ℹ️  Usuário "${usuarioSeed.email}" já existe.`);
+    }
   }
 
   await AppDataSource.destroy();
