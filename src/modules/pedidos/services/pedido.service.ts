@@ -9,6 +9,7 @@ import { CreatePedidoDto } from "../dtos/create-pedido.dto";
 import { ListPedidosFilters } from "../dtos/list-pedidos.dto";
 import { ItemPedido, StatusItem } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
+import { resolveStatusItemInicial } from "./item-status-inicial";
 import { assertTransicaoValida } from "./item-status-transition";
 import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
@@ -76,10 +77,14 @@ export class PedidoService {
           quantidade: item.quantidade,
           precoUnitario: produto.preco,
           observacao: item.observacao,
+          statusItem: resolveStatusItemInicial(produto.precisaPreparo),
         });
       });
 
       pedidoCriado.itens = await manager.save(itens);
+
+      pedidoCriado.statusPreparo = calcularStatusPreparoPedido(pedidoCriado.itens.map((item) => item.statusItem));
+      await manager.save(pedidoCriado);
 
       return pedidoCriado;
     });

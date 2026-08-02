@@ -7,6 +7,7 @@ export interface ProductResponse {
   preco: number;
   descricao: string | null;
   disponivel: boolean;
+  precisa_preparo: boolean;
 }
 
 export function toProductResponse(product: Product): ProductResponse {
@@ -17,5 +18,6 @@ export function toProductResponse(product: Product): ProductResponse {
     preco: product.preco,
     descricao: product.descricao,
     disponivel: product.disponivel,
+    precisa_preparo: product.precisaPreparo,
   };
 }

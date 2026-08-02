@@ -5,6 +5,7 @@ import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreateProductDto } from "../dtos/create-product.dto";
 import { parseListProductsFilters } from "../dtos/list-products.dto";
 import { assertValidUpdateAvailabilityDto } from "../dtos/update-product-availability.dto";
+import { assertValidUpdateProductDto } from "../dtos/update-product.dto";
 import { toProductResponse } from "../mappers/product.mapper";
 import { ProductService } from "../services/product.service";
 
@@ -43,6 +44,24 @@ export async function updateDisponibilidade(req: Request, res: Response, next: N
 
     const dto = assertValidUpdateAvailabilityDto(req.body);
     const product = await ProductService.updateDisponibilidade(tenantId, id, dto.disponivel);
+
+    res.status(200).json(toProductResponse(product));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de produto inválido.", 400);
+    }
+
+    const dto = assertValidUpdateProductDto(req.body);
+    const product = await ProductService.update(tenantId, id, dto);
 
     res.status(200).json(toProductResponse(product));
   } catch (error) {

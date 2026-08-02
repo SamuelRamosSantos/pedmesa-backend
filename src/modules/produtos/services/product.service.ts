@@ -4,6 +4,7 @@ import { AppError } from "../../../shared/errors/app-error";
 import { Category } from "../../categorias/entities/category.entity";
 import { CreateProductDto } from "../dtos/create-product.dto";
 import { ListProductsFilters } from "../dtos/list-products.dto";
+import { UpdateProductDto } from "../dtos/update-product.dto";
 import { Product } from "../entities/product.entity";
 
 export class ProductService {
@@ -25,6 +26,7 @@ export class ProductService {
       preco: dto.preco,
       descricao: dto.descricao,
       disponivel: dto.disponivel,
+      precisaPreparo: dto.precisaPreparo,
     });
 
     return productRepository.save(product);
@@ -54,6 +56,48 @@ export class ProductService {
     }
 
     product.disponivel = disponivel;
+
+    return repository.save(product);
+  }
+
+  static async update(tenantId: string, productId: string, dto: UpdateProductDto): Promise<Product> {
+    const repository = AppDataSource.getRepository(Product);
+    const product = await repository.findOne({ where: { id: productId, tenantId } });
+
+    if (!product) {
+      throw new AppError("Produto não encontrado.", 404);
+    }
+
+    if (dto.categoriaId !== undefined) {
+      const categoryRepository = AppDataSource.getRepository(Category);
+      const category = await categoryRepository.findOne({ where: { id: dto.categoriaId, tenantId } });
+
+      if (!category) {
+        throw new AppError("Categoria não encontrada.", 404);
+      }
+
+      product.categoriaId = dto.categoriaId;
+    }
+
+    if (dto.nome !== undefined) {
+      product.nome = dto.nome;
+    }
+
+    if (dto.preco !== undefined) {
+      product.preco = dto.preco;
+    }
+
+    if (dto.descricao !== undefined) {
+      product.descricao = dto.descricao;
+    }
+
+    if (dto.disponivel !== undefined) {
+      product.disponivel = dto.disponivel;
+    }
+
+    if (dto.precisaPreparo !== undefined) {
+      product.precisaPreparo = dto.precisaPreparo;
+    }
 
     return repository.save(product);
   }

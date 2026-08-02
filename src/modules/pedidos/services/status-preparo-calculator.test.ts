@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { StatusItem } from "../entities/item-pedido.entity";
 import { StatusPreparo } from "../entities/pedido.entity";
+import { resolveStatusItemInicial } from "./item-status-inicial";
 import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 describe("calcularStatusPreparoPedido", () => {
@@ -39,5 +40,22 @@ describe("calcularStatusPreparoPedido", () => {
 
   it("retorna em_preparo para uma mescla geral (pendente + pronto)", () => {
     expect(calcularStatusPreparoPedido([StatusItem.PENDENTE, StatusItem.PRONTO])).toBe(StatusPreparo.EM_PREPARO);
+  });
+
+  describe("pedido recém-criado com produtos auto-pronto (precisa_preparo = false)", () => {
+    it("nasce pronto quando todos os itens são de produtos que não precisam de preparo", () => {
+      const statusDosItens = [false, false].map(resolveStatusItemInicial);
+      expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.PRONTO);
+    });
+
+    it("nasce pendente quando todos os itens são de produtos que precisam de preparo", () => {
+      const statusDosItens = [true, true].map(resolveStatusItemInicial);
+      expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.PENDENTE);
+    });
+
+    it("nasce em_preparo quando o pedido mistura item auto-pronto com item que precisa de preparo", () => {
+      const statusDosItens = [true, false].map(resolveStatusItemInicial);
+      expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.EM_PREPARO);
+    });
   });
 });

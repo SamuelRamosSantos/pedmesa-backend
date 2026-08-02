@@ -7,6 +7,7 @@ export interface CreateProductDto {
   preco: number;
   descricao: string | null;
   disponivel: boolean;
+  precisaPreparo: boolean;
 }
 
 export function assertValidCreateProductDto(body: unknown): CreateProductDto {
@@ -16,6 +17,7 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     preco,
     descricao,
     disponivel,
+    precisa_preparo: precisaPreparo,
   } = (body ?? {}) as Record<string, unknown>;
 
   if (!isUuid(categoriaId)) {
@@ -38,11 +40,16 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     throw new AppError("Campo disponivel deve ser booleano.", 400);
   }
 
+  if (precisaPreparo !== undefined && typeof precisaPreparo !== "boolean") {
+    throw new AppError("Campo precisa_preparo deve ser booleano.", 400);
+  }
+
   return {
     categoriaId,
     nome: nome.trim(),
     preco,
     descricao: typeof descricao === "string" ? descricao : null,
     disponivel: typeof disponivel === "boolean" ? disponivel : true,
+    precisaPreparo: typeof precisaPreparo === "boolean" ? precisaPreparo : true,
   };
 }
