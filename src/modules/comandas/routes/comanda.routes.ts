@@ -3,7 +3,7 @@ import pedidoRoutes from "../../pedidos/routes/pedido.routes";
 import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
 import { UserRole } from "../../usuarios/entities/user.entity";
-import { addIntegrante, create, list } from "../controllers/comanda.controller";
+import { addIntegrante, create, getExtrato, list } from "../controllers/comanda.controller";
 
 const comandaRoutes = Router();
 
@@ -14,6 +14,7 @@ const ALLOWED_ROLES = [UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA];
 comandaRoutes.post("/", rbacMiddleware(ALLOWED_ROLES), create);
 comandaRoutes.get("/", rbacMiddleware(ALLOWED_ROLES), list);
 comandaRoutes.post("/:id/integrantes", rbacMiddleware(ALLOWED_ROLES), addIntegrante);
+comandaRoutes.get("/:id/extrato", rbacMiddleware(ALLOWED_ROLES), getExtrato);
 comandaRoutes.use("/:comandaId/pedidos", pedidoRoutes);
 
 export default comandaRoutes;

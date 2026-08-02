@@ -6,6 +6,7 @@ import { assertValidAddIntegranteDto } from "../dtos/add-integrante.dto";
 import { assertValidCreateComandaDto } from "../dtos/create-comanda.dto";
 import { parseListComandasFilters } from "../dtos/list-comandas.dto";
 import { toComandaDetailResponse, toComandaListItemResponse } from "../mappers/comanda.mapper";
+import { toExtratoResponse } from "../mappers/extrato.mapper";
 import { toIntegranteResponse } from "../mappers/integrante.mapper";
 import { ComandaService } from "../services/comanda.service";
 
@@ -46,6 +47,23 @@ export async function addIntegrante(req: Request, res: Response, next: NextFunct
     const integrante = await ComandaService.addIntegrante(tenantId, id, dto.nome);
 
     res.status(201).json(toIntegranteResponse(integrante));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getExtrato(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de comanda inválido.", 400);
+    }
+
+    const { comanda, calculado } = await ComandaService.getExtrato(tenantId, id);
+
+    res.status(200).json(toExtratoResponse(comanda, calculado));
   } catch (error) {
     next(error);
   }

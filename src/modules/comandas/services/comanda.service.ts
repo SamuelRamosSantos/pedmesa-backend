@@ -1,11 +1,13 @@
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
+import { ItemPedido } from "../../pedidos/entities/item-pedido.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { CreateComandaDto } from "../dtos/create-comanda.dto";
 import { ListComandasFilters } from "../dtos/list-comandas.dto";
 import { Comanda, ComandaStatus } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
+import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
 
 export class ComandaService {
   static async create(tenantId: string, dto: CreateComandaDto): Promise<Comanda> {
@@ -84,5 +86,37 @@ export class ComandaService {
     const integrante = integranteRepository.create({ comandaId, nome });
 
     return integranteRepository.save(integrante);
+  }
+
+  static async getExtrato(tenantId: string, comandaId: string): Promise<{ comanda: Comanda; calculado: ExtratoCalculado }> {
+    const comandaRepository = AppDataSource.getRepository(Comanda);
+    const comanda = await comandaRepository.findOne({
+      where: { id: comandaId, tenantId },
+      relations: { integrantes: true },
+    });
+
+    if (!comanda) {
+      throw new AppError("Comanda não encontrada.", 404);
+    }
+
+    const itemRepository = AppDataSource.getRepository(ItemPedido);
+    const itens = await itemRepository
+      .createQueryBuilder("item")
+      .innerJoin("item.pedido", "pedido")
+      .leftJoinAndSelect("item.produto", "produto")
+      .where("pedido.comandaId = :comandaId", { comandaId: comanda.id })
+      .getMany();
+
+    const calculado = calcularExtrato({
+      itens: itens.map((item) => ({
+        produtoNome: item.produto.nome,
+        quantidade: item.quantidade,
+        precoUnitario: item.precoUnitario,
+        integranteId: item.integranteId,
+      })),
+      integrantes: comanda.integrantes.map((integrante) => ({ id: integrante.id, nome: integrante.nome })),
+    });
+
+    return { comanda, calculado };
   }
 }
