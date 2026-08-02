@@ -8,11 +8,12 @@ const pedidosRoutes = Router();
 
 pedidosRoutes.use(authMiddleware);
 
-const ALLOWED_ROLES = [UserRole.ADMIN, UserRole.COZINHA];
+const LIST_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.COZINHA, UserRole.GARCOM];
+const UPDATE_STATUS_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.COZINHA];
 const ITEM_STATUS_ALLOWED_ROLES = [UserRole.ADMIN, UserRole.GARCOM, UserRole.COZINHA];
 
-pedidosRoutes.get("/", rbacMiddleware(ALLOWED_ROLES), list);
-pedidosRoutes.patch("/:id/status", rbacMiddleware(ALLOWED_ROLES), updateStatus);
+pedidosRoutes.get("/", rbacMiddleware(LIST_ALLOWED_ROLES), list);
+pedidosRoutes.patch("/:id/status", rbacMiddleware(UPDATE_STATUS_ALLOWED_ROLES), updateStatus);
 pedidosRoutes.patch("/itens/:itemId/status", rbacMiddleware(ITEM_STATUS_ALLOWED_ROLES), updateItemStatus);
 
 export default pedidosRoutes;
