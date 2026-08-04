@@ -118,6 +118,7 @@ export class ComandaService {
         quantidade: item.quantidade,
         precoUnitario: item.precoUnitario,
         integranteId: item.integranteId,
+        statusItem: item.statusItem,
       })),
       integrantes: comanda.integrantes.map((integrante) => ({ id: integrante.id, nome: integrante.nome })),
     });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 import { calcularExtrato } from "./extrato-calculator";
 
 describe("calcularExtrato", () => {
@@ -9,9 +10,27 @@ describe("calcularExtrato", () => {
         { id: "mariana", nome: "Mariana" },
       ],
       itens: [
-        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas" },
-        { produtoNome: "Suco de Laranja", quantidade: 2, precoUnitario: 10.0, integranteId: "mariana" },
-        { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null },
+        {
+          produtoNome: "X-Salada",
+          quantidade: 1,
+          precoUnitario: 25.0,
+          integranteId: "lucas",
+          statusItem: StatusItem.ENTREGUE,
+        },
+        {
+          produtoNome: "Suco de Laranja",
+          quantidade: 2,
+          precoUnitario: 10.0,
+          integranteId: "mariana",
+          statusItem: StatusItem.ENTREGUE,
+        },
+        {
+          produtoNome: "Porção de Batatas",
+          quantidade: 1,
+          precoUnitario: 30.0,
+          integranteId: null,
+          statusItem: StatusItem.ENTREGUE,
+        },
       ],
     });
 
@@ -47,7 +66,15 @@ describe("calcularExtrato", () => {
   it("retorna cota compartilhada 0 quando a comanda não tem integrantes cadastrados", () => {
     const resultado = calcularExtrato({
       integrantes: [],
-      itens: [{ produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null }],
+      itens: [
+        {
+          produtoNome: "Porção de Batatas",
+          quantidade: 1,
+          precoUnitario: 30.0,
+          integranteId: null,
+          statusItem: StatusItem.ENTREGUE,
+        },
+      ],
     });
 
     expect(resultado.resumo_financeiro.quantidade_integrantes).toBe(0);
@@ -89,7 +116,15 @@ describe("calcularExtrato", () => {
         { id: "lucas", nome: "Lucas" },
         { id: "mariana", nome: "Mariana" },
       ],
-      itens: [{ produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null }],
+      itens: [
+        {
+          produtoNome: "Porção de Batatas",
+          quantidade: 1,
+          precoUnitario: 30.0,
+          integranteId: null,
+          statusItem: StatusItem.ENTREGUE,
+        },
+      ],
     });
 
     const mariana = resultado.divisao_por_integrante.find((i) => i.integrante_id === "mariana");
@@ -103,8 +138,8 @@ describe("calcularExtrato", () => {
     const resultado = calcularExtrato({
       integrantes: [{ id: "lucas", nome: "Lucas" }],
       itens: [
-        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas" },
-        { produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 6.5, integranteId: "lucas" },
+        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 6.5, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -117,7 +152,9 @@ describe("calcularExtrato", () => {
   it("arredonda a cota compartilhada sem erros de ponto flutuante quando a divisão não é exata", () => {
     const resultado = calcularExtrato({
       integrantes: [{ id: "a", nome: "A" }, { id: "b", nome: "B" }, { id: "c", nome: "C" }],
-      itens: [{ produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null }],
+      itens: [
+        { produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+      ],
     });
 
     // 10.00 / 3 = 3.333... -> arredonda para 3.33 (centavo restante não é redistribuído, por especificação)
@@ -130,9 +167,9 @@ describe("calcularExtrato", () => {
       integrantes: [{ id: "lucas", nome: "Lucas" }],
       // 0.1 + 0.2 !== 0.3 em JS puro; e 3 * 10.1 !== 30.3 em JS puro
       itens: [
-        { produtoNome: "Item A", quantidade: 1, precoUnitario: 0.1, integranteId: "lucas" },
-        { produtoNome: "Item B", quantidade: 1, precoUnitario: 0.2, integranteId: "lucas" },
-        { produtoNome: "Item C", quantidade: 3, precoUnitario: 10.1, integranteId: "lucas" },
+        { produtoNome: "Item A", quantidade: 1, precoUnitario: 0.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Item B", quantidade: 1, precoUnitario: 0.2, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Item C", quantidade: 3, precoUnitario: 10.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -148,11 +185,11 @@ describe("calcularExtrato", () => {
         { id: "carlos", nome: "Carlos" },
       ],
       itens: [
-        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas" },
-        { produtoNome: "X-Bacon", quantidade: 1, precoUnitario: 28.0, integranteId: "mariana" },
-        { produtoNome: "Suco", quantidade: 1, precoUnitario: 8.0, integranteId: "carlos", },
-        { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null },
-        { produtoNome: "Jarra de Suco", quantidade: 1, precoUnitario: 18.0, integranteId: null },
+        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "X-Bacon", quantidade: 1, precoUnitario: 28.0, integranteId: "mariana", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Suco", quantidade: 1, precoUnitario: 8.0, integranteId: "carlos", statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        { produtoNome: "Jarra de Suco", quantidade: 1, precoUnitario: 18.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -163,5 +200,66 @@ describe("calcularExtrato", () => {
 
     const somaTotalAPagar = resultado.divisao_por_integrante.reduce((soma, i) => soma + i.total_a_pagar, 0);
     expect(somaTotalAPagar).toBeCloseTo(109.0, 2);
+  });
+
+  describe("detecção de itens pendentes de entrega", () => {
+    it("retorna possui_itens_pendentes = false quando 100% dos itens estão entregues", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { produtoNome: "Refrigerante", quantidade: 1, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        ],
+      });
+
+      expect(resultado.possui_itens_pendentes).toBe(false);
+      expect(resultado.itens_pendentes_entrega).toBe(0);
+      expect(resultado.itens_pendentes).toEqual([]);
+    });
+
+    it("ignora itens cancelados: não contam como pendentes de entrega", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { produtoNome: "Suco de Uva", quantidade: 1, precoUnitario: 9.0, integranteId: "lucas", statusItem: StatusItem.CANCELADO },
+        ],
+      });
+
+      expect(resultado.possui_itens_pendentes).toBe(false);
+      expect(resultado.itens_pendentes_entrega).toBe(0);
+    });
+
+    it("retorna possui_itens_pendentes = true quando há itens ainda na cozinha/bar (pendente, em_preparo ou pronto)", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: null, statusItem: StatusItem.EM_PREPARO },
+          { produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.PENDENTE },
+          { produtoNome: "Suco de Laranja", quantidade: 1, precoUnitario: 8.0, integranteId: "lucas", statusItem: StatusItem.PRONTO },
+        ],
+      });
+
+      expect(resultado.possui_itens_pendentes).toBe(true);
+      expect(resultado.itens_pendentes_entrega).toBe(3);
+      expect(resultado.itens_pendentes).toEqual([
+        { produto_nome: "Batata Frita", quantidade: 1, status_item: StatusItem.EM_PREPARO },
+        { produto_nome: "Refrigerante", quantidade: 2, status_item: StatusItem.PENDENTE },
+        { produto_nome: "Suco de Laranja", quantidade: 1, status_item: StatusItem.PRONTO },
+      ]);
+    });
+
+    it("não altera os totais financeiros existentes ao adicionar a detecção de pendências", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          { produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: "lucas", statusItem: StatusItem.EM_PREPARO },
+        ],
+      });
+
+      expect(resultado.resumo_financeiro.valor_total_comanda).toBe(16.0);
+      expect(resultado.possui_itens_pendentes).toBe(true);
+    });
   });
 });

@@ -1,10 +1,20 @@
+import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 import { fromCents, toCents } from "../../../shared/utils/money";
+
+const STATUS_PENDENTES_ENTREGA: StatusItem[] = [StatusItem.PENDENTE, StatusItem.EM_PREPARO, StatusItem.PRONTO];
 
 export interface ExtratoItemInput {
   produtoNome: string;
   quantidade: number;
   precoUnitario: number;
   integranteId: string | null;
+  statusItem: StatusItem;
+}
+
+export interface ItemPendenteEntrega {
+  produto_nome: string;
+  quantidade: number;
+  status_item: StatusItem;
 }
 
 export interface ExtratoIntegranteInput {
@@ -44,6 +54,9 @@ export interface ResumoFinanceiro {
 export interface ExtratoCalculado {
   resumo_financeiro: ResumoFinanceiro;
   divisao_por_integrante: ExtratoIntegranteResultado[];
+  itens_pendentes_entrega: number;
+  possui_itens_pendentes: boolean;
+  itens_pendentes: ItemPendenteEntrega[];
 }
 
 export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado {
@@ -99,6 +112,14 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
 
   const valorTotalComandaCents = totalIndividualCents + totalCompartilhadoCents;
 
+  const itensPendentes: ItemPendenteEntrega[] = input.itens
+    .filter((item) => STATUS_PENDENTES_ENTREGA.includes(item.statusItem))
+    .map((item) => ({
+      produto_nome: item.produtoNome,
+      quantidade: item.quantidade,
+      status_item: item.statusItem,
+    }));
+
   return {
     resumo_financeiro: {
       total_itens_individuais: fromCents(totalIndividualCents),
@@ -108,5 +129,8 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
       valor_total_comanda: fromCents(valorTotalComandaCents),
     },
     divisao_por_integrante: divisaoPorIntegrante,
+    itens_pendentes_entrega: itensPendentes.length,
+    possui_itens_pendentes: itensPendentes.length > 0,
+    itens_pendentes: itensPendentes,
   };
 }
