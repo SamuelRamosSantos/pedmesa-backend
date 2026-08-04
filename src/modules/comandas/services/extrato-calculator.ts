@@ -34,6 +34,14 @@ export interface ExtratoItemLinha {
   subtotal: number;
 }
 
+export interface ExtratoItemCompartilhadoLinha {
+  produto: string;
+  qtd: number;
+  preco_unitario: number;
+  subtotal: number;
+  valor_por_pessoa: number;
+}
+
 export interface ExtratoIntegranteResultado {
   integrante_id: string;
   nome: string;
@@ -54,6 +62,7 @@ export interface ResumoFinanceiro {
 export interface ExtratoCalculado {
   resumo_financeiro: ResumoFinanceiro;
   divisao_por_integrante: ExtratoIntegranteResultado[];
+  itens_compartilhados: ExtratoItemCompartilhadoLinha[];
   itens_pendentes_entrega: number;
   possui_itens_pendentes: boolean;
   itens_pendentes: ItemPendenteEntrega[];
@@ -66,6 +75,7 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
   let totalCompartilhadoCents = 0;
 
   const linhasPorIntegrante = new Map<string, ExtratoItemLinha[]>();
+  const itensCompartilhados: ExtratoItemCompartilhadoLinha[] = [];
 
   for (const item of input.itens) {
     const precoUnitarioCents = toCents(item.precoUnitario);
@@ -80,6 +90,9 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
 
     if (item.integranteId === null) {
       totalCompartilhadoCents += subtotalCents;
+
+      const valorPorPessoaCents = quantidadeIntegrantes > 0 ? Math.round(subtotalCents / quantidadeIntegrantes) : 0;
+      itensCompartilhados.push({ ...linha, valor_por_pessoa: fromCents(valorPorPessoaCents) });
       continue;
     }
 
@@ -129,6 +142,7 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
       valor_total_comanda: fromCents(valorTotalComandaCents),
     },
     divisao_por_integrante: divisaoPorIntegrante,
+    itens_compartilhados: itensCompartilhados,
     itens_pendentes_entrega: itensPendentes.length,
     possui_itens_pendentes: itensPendentes.length > 0,
     itens_pendentes: itensPendentes,

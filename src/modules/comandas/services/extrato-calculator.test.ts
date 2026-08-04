@@ -202,6 +202,62 @@ describe("calcularExtrato", () => {
     expect(somaTotalAPagar).toBeCloseTo(109.0, 2);
   });
 
+  describe("itens_compartilhados", () => {
+    it("lista os itens compartilhados separadamente, com o valor rateado por pessoa calculado por item", () => {
+      const resultado = calcularExtrato({
+        integrantes: [
+          { id: "lucas", nome: "Lucas" },
+          { id: "mariana", nome: "Mariana" },
+        ],
+        itens: [
+          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+          { produtoNome: "Jarra de Suco", quantidade: 2, precoUnitario: 9.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        ],
+      });
+
+      expect(resultado.itens_compartilhados).toEqual([
+        { produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 15.0 },
+        { produto: "Jarra de Suco", qtd: 2, preco_unitario: 9.0, subtotal: 18.0, valor_por_pessoa: 9.0 },
+      ]);
+    });
+
+    it("não inclui itens individuais na lista de itens compartilhados", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        ],
+      });
+
+      expect(resultado.itens_compartilhados).toEqual([]);
+    });
+
+    it("retorna valor_por_pessoa 0 quando a comanda não tem integrantes cadastrados", () => {
+      const resultado = calcularExtrato({
+        integrantes: [],
+        itens: [
+          { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        ],
+      });
+
+      expect(resultado.itens_compartilhados).toEqual([
+        { produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 0 },
+      ]);
+    });
+
+    it("arredonda o valor por pessoa de cada item compartilhado sem erros de ponto flutuante", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "a", nome: "A" }, { id: "b", nome: "B" }, { id: "c", nome: "C" }],
+        itens: [
+          { produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        ],
+      });
+
+      expect(resultado.itens_compartilhados[0].valor_por_pessoa).toBe(3.33);
+    });
+  });
+
   describe("detecção de itens pendentes de entrega", () => {
     it("retorna possui_itens_pendentes = false quando 100% dos itens estão entregues", () => {
       const resultado = calcularExtrato({
