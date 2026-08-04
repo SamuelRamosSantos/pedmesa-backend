@@ -22,6 +22,7 @@ export interface PedidoItemResponse {
   integrante_nome: string | null;
   observacao: string | null;
   status_item: StatusItem;
+  precisa_preparo: boolean;
 }
 
 export interface PedidoListItemResponse {
@@ -49,19 +50,8 @@ export function toPedidoListItemResponse(pedido: Pedido): PedidoListItemResponse
       integrante_nome: item.integrante?.nome ?? null,
       observacao: item.observacao,
       status_item: item.statusItem,
+      precisa_preparo: item.produto.precisaPreparo,
     })),
-  };
-}
-
-export interface UpdatePedidoStatusResponse {
-  id: string;
-  status_preparo: StatusPreparo;
-}
-
-export function toUpdatePedidoStatusResponse(pedido: Pedido): UpdatePedidoStatusResponse {
-  return {
-    id: pedido.id,
-    status_preparo: pedido.statusPreparo,
   };
 }
 

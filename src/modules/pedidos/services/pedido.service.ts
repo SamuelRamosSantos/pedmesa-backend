@@ -122,6 +122,7 @@ export class PedidoService {
       .leftJoinAndSelect("item.produto", "produto")
       .leftJoinAndSelect("item.integrante", "integrante")
       .where("comanda.tenantId = :tenantId", { tenantId })
+      .andWhere("comanda.status = :comandaAberta", { comandaAberta: ComandaStatus.ABERTA })
       .orderBy("pedido.criadoEm", "ASC");
 
     if (filters.status) {
@@ -131,25 +132,6 @@ export class PedidoService {
     }
 
     return query.getMany();
-  }
-
-  static async updateStatus(tenantId: string, pedidoId: string, status: StatusPreparo): Promise<Pedido> {
-    const repository = AppDataSource.getRepository(Pedido);
-
-    const pedido = await repository
-      .createQueryBuilder("pedido")
-      .innerJoin("pedido.comanda", "comanda")
-      .where("pedido.id = :pedidoId", { pedidoId })
-      .andWhere("comanda.tenantId = :tenantId", { tenantId })
-      .getOne();
-
-    if (!pedido) {
-      throw new AppError("Pedido não encontrado.", 404);
-    }
-
-    pedido.statusPreparo = status;
-
-    return repository.save(pedido);
   }
 
   static async updateItemStatus(

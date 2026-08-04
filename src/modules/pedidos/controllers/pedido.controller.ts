@@ -6,13 +6,7 @@ import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreatePedidoDto } from "../dtos/create-pedido.dto";
 import { assertValidUpdateItemStatusDto } from "../dtos/update-item-status.dto";
 import { parseListPedidosFilters } from "../dtos/list-pedidos.dto";
-import { assertValidUpdatePedidoStatusDto } from "../dtos/update-pedido-status.dto";
-import {
-  toPedidoCreatedResponse,
-  toPedidoListItemResponse,
-  toUpdateItemStatusResponse,
-  toUpdatePedidoStatusResponse,
-} from "../mappers/pedido.mapper";
+import { toPedidoCreatedResponse, toPedidoListItemResponse, toUpdateItemStatusResponse } from "../mappers/pedido.mapper";
 import { PedidoService } from "../services/pedido.service";
 
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -41,24 +35,6 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
     const pedidos = await PedidoService.list(tenantId, filters);
 
     res.status(200).json(pedidos.map(toPedidoListItemResponse));
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const tenantId = getTenantId(req);
-    const { id } = req.params;
-
-    if (!isUuid(id)) {
-      throw new AppError("ID de pedido inválido.", 400);
-    }
-
-    const dto = assertValidUpdatePedidoStatusDto(req.body);
-    const pedido = await PedidoService.updateStatus(tenantId, id, dto.statusPreparo);
-
-    res.status(200).json(toUpdatePedidoStatusResponse(pedido));
   } catch (error) {
     next(error);
   }
