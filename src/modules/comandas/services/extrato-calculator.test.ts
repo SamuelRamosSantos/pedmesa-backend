@@ -11,6 +11,7 @@ describe("calcularExtrato", () => {
       ],
       itens: [
         {
+          id: "item-1",
           produtoNome: "X-Salada",
           quantidade: 1,
           precoUnitario: 25.0,
@@ -18,6 +19,7 @@ describe("calcularExtrato", () => {
           statusItem: StatusItem.ENTREGUE,
         },
         {
+          id: "item-2",
           produtoNome: "Suco de Laranja",
           quantidade: 2,
           precoUnitario: 10.0,
@@ -25,6 +27,7 @@ describe("calcularExtrato", () => {
           statusItem: StatusItem.ENTREGUE,
         },
         {
+          id: "item-3",
           produtoNome: "Porção de Batatas",
           quantidade: 1,
           precoUnitario: 30.0,
@@ -46,7 +49,7 @@ describe("calcularExtrato", () => {
     expect(lucas).toEqual({
       integrante_id: "lucas",
       nome: "Lucas",
-      itens_individuais: [{ produto: "X-Salada", qtd: 1, preco_unitario: 25.0, subtotal: 25.0 }],
+      itens_individuais: [{ id: "item-1", produto: "X-Salada", qtd: 1, preco_unitario: 25.0, subtotal: 25.0 }],
       total_individual: 25.0,
       cota_compartilhada: 15.0,
       total_a_pagar: 40.0,
@@ -56,7 +59,7 @@ describe("calcularExtrato", () => {
     expect(mariana).toEqual({
       integrante_id: "mariana",
       nome: "Mariana",
-      itens_individuais: [{ produto: "Suco de Laranja", qtd: 2, preco_unitario: 10.0, subtotal: 20.0 }],
+      itens_individuais: [{ id: "item-2", produto: "Suco de Laranja", qtd: 2, preco_unitario: 10.0, subtotal: 20.0 }],
       total_individual: 20.0,
       cota_compartilhada: 15.0,
       total_a_pagar: 35.0,
@@ -68,6 +71,7 @@ describe("calcularExtrato", () => {
       integrantes: [],
       itens: [
         {
+          id: "item-1",
           produtoNome: "Porção de Batatas",
           quantidade: 1,
           precoUnitario: 30.0,
@@ -118,6 +122,7 @@ describe("calcularExtrato", () => {
       ],
       itens: [
         {
+          id: "item-1",
           produtoNome: "Porção de Batatas",
           quantidade: 1,
           precoUnitario: 30.0,
@@ -138,8 +143,8 @@ describe("calcularExtrato", () => {
     const resultado = calcularExtrato({
       integrantes: [{ id: "lucas", nome: "Lucas" }],
       itens: [
-        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 6.5, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-2", produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 6.5, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -153,7 +158,7 @@ describe("calcularExtrato", () => {
     const resultado = calcularExtrato({
       integrantes: [{ id: "a", nome: "A" }, { id: "b", nome: "B" }, { id: "c", nome: "C" }],
       itens: [
-        { produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        { id: "item-1", produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -167,9 +172,9 @@ describe("calcularExtrato", () => {
       integrantes: [{ id: "lucas", nome: "Lucas" }],
       // 0.1 + 0.2 !== 0.3 em JS puro; e 3 * 10.1 !== 30.3 em JS puro
       itens: [
-        { produtoNome: "Item A", quantidade: 1, precoUnitario: 0.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Item B", quantidade: 1, precoUnitario: 0.2, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Item C", quantidade: 3, precoUnitario: 10.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-1", produtoNome: "Item A", quantidade: 1, precoUnitario: 0.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-2", produtoNome: "Item B", quantidade: 1, precoUnitario: 0.2, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-3", produtoNome: "Item C", quantidade: 3, precoUnitario: 10.1, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -185,11 +190,11 @@ describe("calcularExtrato", () => {
         { id: "carlos", nome: "Carlos" },
       ],
       itens: [
-        { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "X-Bacon", quantidade: 1, precoUnitario: 28.0, integranteId: "mariana", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Suco", quantidade: 1, precoUnitario: 8.0, integranteId: "carlos", statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
-        { produtoNome: "Jarra de Suco", quantidade: 1, precoUnitario: 18.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+        { id: "item-2", produtoNome: "X-Bacon", quantidade: 1, precoUnitario: 28.0, integranteId: "mariana", statusItem: StatusItem.ENTREGUE },
+        { id: "item-3", produtoNome: "Suco", quantidade: 1, precoUnitario: 8.0, integranteId: "carlos", statusItem: StatusItem.ENTREGUE },
+        { id: "item-4", produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+        { id: "item-5", produtoNome: "Jarra de Suco", quantidade: 1, precoUnitario: 18.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
       ],
     });
 
@@ -210,15 +215,15 @@ describe("calcularExtrato", () => {
           { id: "mariana", nome: "Mariana" },
         ],
         itens: [
-          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-          { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
-          { produtoNome: "Jarra de Suco", quantidade: 2, precoUnitario: 9.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+          { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-2", produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+          { id: "item-3", produtoNome: "Jarra de Suco", quantidade: 2, precoUnitario: 9.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
         ],
       });
 
       expect(resultado.itens_compartilhados).toEqual([
-        { produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 15.0 },
-        { produto: "Jarra de Suco", qtd: 2, preco_unitario: 9.0, subtotal: 18.0, valor_por_pessoa: 9.0 },
+        { id: "item-2", produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 15.0 },
+        { id: "item-3", produto: "Jarra de Suco", qtd: 2, preco_unitario: 9.0, subtotal: 18.0, valor_por_pessoa: 9.0 },
       ]);
     });
 
@@ -226,7 +231,7 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "lucas", nome: "Lucas" }],
         itens: [
-          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
         ],
       });
 
@@ -237,12 +242,12 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [],
         itens: [
-          { produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+          { id: "item-1", produtoNome: "Porção de Batatas", quantidade: 1, precoUnitario: 30.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
         ],
       });
 
       expect(resultado.itens_compartilhados).toEqual([
-        { produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 0 },
+        { id: "item-1", produto: "Porção de Batatas", qtd: 1, preco_unitario: 30.0, subtotal: 30.0, valor_por_pessoa: 0 },
       ]);
     });
 
@@ -250,7 +255,7 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "a", nome: "A" }, { id: "b", nome: "B" }, { id: "c", nome: "C" }],
         itens: [
-          { produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
+          { id: "item-1", produtoNome: "Rodízio", quantidade: 1, precoUnitario: 10.0, integranteId: null, statusItem: StatusItem.ENTREGUE },
         ],
       });
 
@@ -263,8 +268,8 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "lucas", nome: "Lucas" }],
         itens: [
-          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-          { produtoNome: "Refrigerante", quantidade: 1, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-2", produtoNome: "Refrigerante", quantidade: 1, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
         ],
       });
 
@@ -277,8 +282,8 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "lucas", nome: "Lucas" }],
         itens: [
-          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-          { produtoNome: "Suco de Uva", quantidade: 1, precoUnitario: 9.0, integranteId: "lucas", statusItem: StatusItem.CANCELADO },
+          { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-2", produtoNome: "Suco de Uva", quantidade: 1, precoUnitario: 9.0, integranteId: "lucas", statusItem: StatusItem.CANCELADO },
         ],
       });
 
@@ -290,10 +295,10 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "lucas", nome: "Lucas" }],
         itens: [
-          { produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
-          { produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: null, statusItem: StatusItem.EM_PREPARO },
-          { produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.PENDENTE },
-          { produtoNome: "Suco de Laranja", quantidade: 1, precoUnitario: 8.0, integranteId: "lucas", statusItem: StatusItem.PRONTO },
+          { id: "item-1", produtoNome: "X-Salada", quantidade: 1, precoUnitario: 25.0, integranteId: "lucas", statusItem: StatusItem.ENTREGUE },
+          { id: "item-2", produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: null, statusItem: StatusItem.EM_PREPARO },
+          { id: "item-3", produtoNome: "Refrigerante", quantidade: 2, precoUnitario: 5.0, integranteId: "lucas", statusItem: StatusItem.PENDENTE },
+          { id: "item-4", produtoNome: "Suco de Laranja", quantidade: 1, precoUnitario: 8.0, integranteId: "lucas", statusItem: StatusItem.PRONTO },
         ],
       });
 
@@ -310,7 +315,7 @@ describe("calcularExtrato", () => {
       const resultado = calcularExtrato({
         integrantes: [{ id: "lucas", nome: "Lucas" }],
         itens: [
-          { produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: "lucas", statusItem: StatusItem.EM_PREPARO },
+          { id: "item-1", produtoNome: "Batata Frita", quantidade: 1, precoUnitario: 16.0, integranteId: "lucas", statusItem: StatusItem.EM_PREPARO },
         ],
       });
 

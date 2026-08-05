@@ -114,6 +114,7 @@ export class ComandaService {
 
     const calculado = calcularExtrato({
       itens: itens.map((item) => ({
+        id: item.id,
         produtoNome: item.produto.nome,
         quantidade: item.quantidade,
         precoUnitario: item.precoUnitario,

@@ -29,6 +29,7 @@ export interface PedidoListItemResponse {
   id: string;
   comanda_id: string;
   numero_comanda: number;
+  usuario_id: string;
   garcom_nome: string;
   status_preparo: StatusPreparo;
   criado_em: Date;
@@ -40,6 +41,7 @@ export function toPedidoListItemResponse(pedido: Pedido): PedidoListItemResponse
     id: pedido.id,
     comanda_id: pedido.comandaId,
     numero_comanda: pedido.comanda.numeroComanda,
+    usuario_id: pedido.usuarioId,
     garcom_nome: pedido.usuario.nome,
     status_preparo: pedido.statusPreparo,
     criado_em: pedido.criadoEm,

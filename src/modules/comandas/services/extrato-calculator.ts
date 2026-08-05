@@ -4,6 +4,7 @@ import { fromCents, toCents } from "../../../shared/utils/money";
 const STATUS_PENDENTES_ENTREGA: StatusItem[] = [StatusItem.PENDENTE, StatusItem.EM_PREPARO, StatusItem.PRONTO];
 
 export interface ExtratoItemInput {
+  id: string;
   produtoNome: string;
   quantidade: number;
   precoUnitario: number;
@@ -28,6 +29,7 @@ export interface ExtratoCalculatorInput {
 }
 
 export interface ExtratoItemLinha {
+  id: string;
   produto: string;
   qtd: number;
   preco_unitario: number;
@@ -35,6 +37,7 @@ export interface ExtratoItemLinha {
 }
 
 export interface ExtratoItemCompartilhadoLinha {
+  id: string;
   produto: string;
   qtd: number;
   preco_unitario: number;
@@ -82,6 +85,7 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
     const subtotalCents = item.quantidade * precoUnitarioCents;
 
     const linha: ExtratoItemLinha = {
+      id: item.id,
       produto: item.produtoNome,
       qtd: item.quantidade,
       preco_unitario: fromCents(precoUnitarioCents),

@@ -57,3 +57,40 @@ export async function updateItemStatus(req: Request, res: Response, next: NextFu
     next(error);
   }
 }
+
+export async function deleteItem(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const usuarioId = getUserId(req);
+    const { itemId } = req.params;
+
+    if (!isUuid(itemId)) {
+      throw new AppError("ID de item de pedido inválido.", 400);
+    }
+
+    await PedidoService.deleteItem(tenantId, itemId, usuarioId);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteOwnPedido(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const usuarioId = getUserId(req);
+    const roles = req.user?.roles ?? [];
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de pedido inválido.", 400);
+    }
+
+    await PedidoService.deleteOwnPedido(tenantId, id, usuarioId, roles);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}
