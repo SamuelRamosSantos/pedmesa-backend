@@ -8,11 +8,11 @@ const TENANT_NOME_FANTASIA = "Lanchonete Teste";
 const TENANT_CNPJ_CPF = "00000000000191";
 const SENHA_PADRAO = "123456";
 
-const USUARIOS_SEED: { nome: string; email: string; role: UserRole }[] = [
-  { nome: "Administrador", email: "admin@pedmesa.com", role: UserRole.ADMIN },
-  { nome: "Garçom Teste", email: "garcom@pedmesa.com", role: UserRole.GARCOM },
-  { nome: "Cozinha Teste", email: "cozinha@pedmesa.com", role: UserRole.COZINHA },
-  { nome: "Caixa Teste", email: "caixa@pedmesa.com", role: UserRole.CAIXA },
+const USUARIOS_SEED: { nome: string; email: string; roles: UserRole[] }[] = [
+  { nome: "Administrador", email: "admin@pedmesa.com", roles: [UserRole.ADMIN] },
+  { nome: "Garçom Teste", email: "garcom@pedmesa.com", roles: [UserRole.GARCOM] },
+  { nome: "Cozinha Teste", email: "cozinha@pedmesa.com", roles: [UserRole.COZINHA] },
+  { nome: "Caixa Teste", email: "caixa@pedmesa.com", roles: [UserRole.CAIXA] },
 ];
 
 async function run(): Promise<void> {
@@ -48,11 +48,11 @@ async function run(): Promise<void> {
           nome: usuarioSeed.nome,
           email: usuarioSeed.email,
           senhaHash,
-          role: usuarioSeed.role,
+          roles: usuarioSeed.roles,
           ativo: true,
         })
       );
-      console.log(`✅ Usuário ${usuario.role} criado: ${usuario.email} / senha: ${SENHA_PADRAO}`);
+      console.log(`✅ Usuário ${usuario.roles.join(", ")} criado: ${usuario.email} / senha: ${SENHA_PADRAO}`);
     } else {
       console.log(`ℹ️  Usuário "${usuarioSeed.email}" já existe.`);
     }

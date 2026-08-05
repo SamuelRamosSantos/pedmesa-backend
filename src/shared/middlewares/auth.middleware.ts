@@ -18,7 +18,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
     req.user = {
       id: payload.sub,
       tenantId: payload.tenant_id,
-      role: payload.role,
+      roles: payload.roles,
     };
     req.tenantId = payload.tenant_id;
 

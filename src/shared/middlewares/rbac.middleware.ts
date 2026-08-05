@@ -4,7 +4,7 @@ import { AppError } from "../errors/app-error";
 
 export function rbacMiddleware(rolesPermitidas: UserRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user || !rolesPermitidas.includes(req.user.role)) {
+    if (!req.user || !req.user.roles.some((role) => rolesPermitidas.includes(role))) {
       next(new AppError("Você não tem permissão para acessar este recurso.", 403));
       return;
     }

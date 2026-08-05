@@ -29,8 +29,11 @@ export class User {
   @Column({ name: "senha_hash", type: "varchar", length: 255 })
   senhaHash!: string;
 
-  @Column({ type: "enum", enum: UserRole, enumName: "usuarios_role_enum" })
-  role!: UserRole;
+  @Column({ type: "enum", enum: UserRole, enumName: "usuarios_role_enum", array: true })
+  roles!: UserRole[];
+
+  @Column({ name: "pode_excluir_item_fechamento", type: "boolean", default: false })
+  podeExcluirItemFechamento!: boolean;
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;

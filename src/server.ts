@@ -8,6 +8,7 @@ import comandaRoutes from "./modules/comandas/routes/comanda.routes";
 import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
 import productRoutes from "./modules/produtos/routes/product.routes";
 import tenantRoutes from "./modules/tenants/routes/tenant.routes";
+import userRoutes from "./modules/usuarios/routes/user.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/v1/comandas", comandaRoutes);
 app.use("/api/v1/pedidos", pedidosRoutes);
 app.use("/api/v1/produtos", productRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
+app.use("/api/v1/usuarios", userRoutes);
 
 app.use(errorHandlerMiddleware);
 

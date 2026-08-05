@@ -7,7 +7,7 @@ dotenv.config();
 export interface JwtPayload {
   sub: string;
   tenant_id: string;
-  role: UserRole;
+  roles: UserRole[];
 }
 
 function getJwtSecret(): string {
