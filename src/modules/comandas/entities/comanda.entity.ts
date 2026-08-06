@@ -7,6 +7,12 @@ export enum ComandaStatus {
   FECHADA = "fechada",
 }
 
+export enum DescontoTipo {
+  PERCENTUAL = "percentual",
+  VALOR_FIXO = "valor_fixo",
+  NENHUM = "nenhum",
+}
+
 @Entity("comandas")
 export class Comanda {
   @PrimaryGeneratedColumn("uuid")
@@ -37,6 +43,54 @@ export class Comanda {
 
   @Column({ name: "fechada_em", type: "timestamp", nullable: true })
   fechadaEm!: Date | null;
+
+  @Column({
+    name: "desconto_tipo",
+    type: "enum",
+    enum: DescontoTipo,
+    enumName: "comandas_desconto_tipo_enum",
+    default: DescontoTipo.NENHUM,
+  })
+  descontoTipo!: DescontoTipo;
+
+  @Column({
+    name: "desconto_valor",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number.parseFloat(value),
+    },
+  })
+  descontoValor!: number;
+
+  @Column({
+    name: "subtotal",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+    },
+  })
+  subtotal!: number | null;
+
+  @Column({
+    name: "total_final",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+    },
+  })
+  totalFinal!: number | null;
 
   @OneToMany(() => IntegranteComanda, (integrante) => integrante.comanda)
   integrantes!: IntegranteComanda[];

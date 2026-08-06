@@ -9,6 +9,7 @@ export interface JwtPayload {
   tenant_id: string;
   roles: UserRole[];
   pode_excluir_item_fechamento: boolean;
+  pode_conceder_desconto: boolean;
 }
 
 function getJwtSecret(): string {

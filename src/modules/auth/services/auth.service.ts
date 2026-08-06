@@ -13,6 +13,7 @@ export interface LoginResult {
     roles: UserRole[];
     tenant_id: string;
     pode_excluir_item_fechamento: boolean;
+    pode_conceder_desconto: boolean;
   };
 }
 
@@ -36,6 +37,7 @@ export class AuthService {
       tenant_id: user.tenantId,
       roles: user.roles,
       pode_excluir_item_fechamento: user.podeExcluirItemFechamento,
+      pode_conceder_desconto: user.podeConcederDesconto,
     });
 
     return {
@@ -46,6 +48,7 @@ export class AuthService {
         roles: user.roles,
         tenant_id: user.tenantId,
         pode_excluir_item_fechamento: user.podeExcluirItemFechamento,
+        pode_conceder_desconto: user.podeConcederDesconto,
       },
     };
   }

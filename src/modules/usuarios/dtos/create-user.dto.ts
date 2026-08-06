@@ -11,6 +11,7 @@ export interface CreateUserDto {
   senha: string;
   roles: UserRole[];
   podeExcluirItemFechamento: boolean;
+  podeConcederDesconto: boolean;
 }
 
 export function assertValidCreateUserDto(body: unknown): CreateUserDto {
@@ -20,6 +21,7 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     senha,
     roles,
     pode_excluir_item_fechamento: podeExcluirItemFechamento,
+    pode_conceder_desconto: podeConcederDesconto,
   } = (body ?? {}) as Record<string, unknown>;
 
   if (typeof nome !== "string" || nome.trim().length === 0) {
@@ -38,11 +40,16 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     throw new AppError("Campo pode_excluir_item_fechamento deve ser booleano.", 400);
   }
 
+  if (podeConcederDesconto !== undefined && typeof podeConcederDesconto !== "boolean") {
+    throw new AppError("Campo pode_conceder_desconto deve ser booleano.", 400);
+  }
+
   return {
     nome: nome.trim(),
     email: email.trim().toLowerCase(),
     senha,
     roles: assertValidRoles(roles),
     podeExcluirItemFechamento: typeof podeExcluirItemFechamento === "boolean" ? podeExcluirItemFechamento : false,
+    podeConcederDesconto: typeof podeConcederDesconto === "boolean" ? podeConcederDesconto : false,
   };
 }

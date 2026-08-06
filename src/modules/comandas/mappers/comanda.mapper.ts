@@ -1,4 +1,6 @@
-import { Comanda, ComandaStatus } from "../entities/comanda.entity";
+import { Comanda, ComandaStatus, DescontoTipo } from "../entities/comanda.entity";
+import { FechamentoResultado } from "../services/comanda.service";
+import { RateioIntegranteComDesconto } from "../services/desconto-calculator";
 import { IntegranteResponse, toIntegranteResponse } from "./integrante.mapper";
 
 export interface ComandaDetailResponse {
@@ -52,12 +54,36 @@ export function toJuntarComandasResponse(comandaPrincipal: Comanda): JuntarComan
 export interface FecharComandaResponse {
   status: ComandaStatus;
   mensagem: string;
+  subtotal: number;
+  desconto_tipo: DescontoTipo;
+  desconto_valor: number;
+  desconto_aplicado: number;
+  total_final: number;
+  divisao_por_integrante: RateioIntegranteComDesconto[];
 }
 
-export function toFecharComandaResponse(comanda: Comanda): FecharComandaResponse {
+export function toFecharComandaResponse(resultado: FechamentoResultado): FecharComandaResponse {
   return {
-    status: comanda.status,
+    status: resultado.comanda.status,
     mensagem: "Comanda quitada com sucesso e liberada para o salão.",
+    subtotal: resultado.subtotal,
+    desconto_tipo: resultado.descontoTipo,
+    desconto_valor: resultado.descontoValor,
+    desconto_aplicado: resultado.descontoAplicado,
+    total_final: resultado.totalFinal,
+    divisao_por_integrante: resultado.divisaoPorIntegrante,
+  };
+}
+
+export interface DescontoComandaResponse {
+  desconto_tipo: DescontoTipo;
+  desconto_valor: number;
+}
+
+export function toDescontoComandaResponse(comanda: Comanda): DescontoComandaResponse {
+  return {
+    desconto_tipo: comanda.descontoTipo,
+    desconto_valor: comanda.descontoValor,
   };
 }
 

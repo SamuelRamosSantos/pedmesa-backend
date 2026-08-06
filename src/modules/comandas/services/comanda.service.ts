@@ -5,14 +5,28 @@ import { fromCents } from "../../../shared/utils/money";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
 import { ItemPedido } from "../../pedidos/entities/item-pedido.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
+import { AddPagamentoComandaDto } from "../dtos/add-pagamento-comanda.dto";
 import { FecharComandaDto } from "../dtos/fechar-comanda.dto";
+import { UpdateDescontoComandaDto } from "../dtos/update-desconto-comanda.dto";
 import { CreateComandaDto } from "../dtos/create-comanda.dto";
 import { JoinComandasDto } from "../dtos/join-comandas.dto";
 import { ListComandasFilters } from "../dtos/list-comandas.dto";
-import { Comanda, ComandaStatus } from "../entities/comanda.entity";
+import { Comanda, ComandaStatus, DescontoTipo } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
+import { PagamentoComanda } from "../entities/pagamento-comanda.entity";
+import { calcularDesconto, ratearDescontoPorIntegrante, RateioIntegranteComDesconto } from "./desconto-calculator";
 import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
 import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
+
+export interface FechamentoResultado {
+  comanda: Comanda;
+  subtotal: number;
+  descontoTipo: DescontoTipo;
+  descontoValor: number;
+  descontoAplicado: number;
+  totalFinal: number;
+  divisaoPorIntegrante: RateioIntegranteComDesconto[];
+}
 
 export class ComandaService {
   static async create(tenantId: string, dto: CreateComandaDto): Promise<Comanda> {
@@ -93,7 +107,10 @@ export class ComandaService {
     return integranteRepository.save(integrante);
   }
 
-  static async getExtrato(tenantId: string, comandaId: string): Promise<{ comanda: Comanda; calculado: ExtratoCalculado }> {
+  static async getExtrato(
+    tenantId: string,
+    comandaId: string
+  ): Promise<{ comanda: Comanda; calculado: ExtratoCalculado; pagamentos: PagamentoComanda[] }> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
     const comanda = await comandaRepository.findOne({
       where: { id: comandaId, tenantId },
@@ -124,7 +141,89 @@ export class ComandaService {
       integrantes: comanda.integrantes.map((integrante) => ({ id: integrante.id, nome: integrante.nome })),
     });
 
-    return { comanda, calculado };
+    const pagamentoRepository = AppDataSource.getRepository(PagamentoComanda);
+    const pagamentos = await pagamentoRepository.find({
+      where: { comandaId: comanda.id },
+      order: { criadoEm: "ASC" },
+    });
+
+    return { comanda, calculado, pagamentos };
+  }
+
+  static async addPagamento(
+    tenantId: string,
+    comandaId: string,
+    usuarioId: string,
+    dto: AddPagamentoComandaDto
+  ): Promise<PagamentoComanda> {
+    const comandaRepository = AppDataSource.getRepository(Comanda);
+    const comanda = await comandaRepository.findOne({ where: { id: comandaId, tenantId } });
+
+    if (!comanda) {
+      throw new AppError("Comanda não encontrada.", 404);
+    }
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Não é possível registrar pagamentos em uma comanda já fechada.", 400);
+    }
+
+    const pagamentoRepository = AppDataSource.getRepository(PagamentoComanda);
+    const pagamento = pagamentoRepository.create({
+      comandaId: comanda.id,
+      forma: dto.forma,
+      valor: dto.valor,
+      usuarioId,
+    });
+
+    return pagamentoRepository.save(pagamento);
+  }
+
+  static async removePagamento(tenantId: string, comandaId: string, pagamentoId: string): Promise<void> {
+    const comandaRepository = AppDataSource.getRepository(Comanda);
+    const comanda = await comandaRepository.findOne({ where: { id: comandaId, tenantId } });
+
+    if (!comanda) {
+      throw new AppError("Comanda não encontrada.", 404);
+    }
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Não é possível remover pagamentos de uma comanda já fechada.", 400);
+    }
+
+    const pagamentoRepository = AppDataSource.getRepository(PagamentoComanda);
+    const resultado = await pagamentoRepository.delete({ id: pagamentoId, comandaId: comanda.id });
+
+    if (resultado.affected === 0) {
+      throw new AppError("Pagamento não encontrado.", 404);
+    }
+  }
+
+  static async atualizarDesconto(
+    tenantId: string,
+    comandaId: string,
+    dto: UpdateDescontoComandaDto,
+    actorPodeConcederDesconto: boolean
+  ): Promise<Comanda> {
+    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Não é possível alterar o desconto de uma comanda já fechada.", 400);
+    }
+
+    if (dto.descontoTipo !== DescontoTipo.NENHUM && !actorPodeConcederDesconto) {
+      throw new AppError("Você não tem permissão para conceder desconto.", 403);
+    }
+
+    calcularDesconto(calculado.resumo_financeiro.valor_total_comanda, {
+      tipo: dto.descontoTipo,
+      valor: dto.descontoValor,
+    });
+
+    comanda.descontoTipo = dto.descontoTipo;
+    comanda.descontoValor = dto.descontoValor;
+
+    const comandaRepository = AppDataSource.getRepository(Comanda);
+    return comandaRepository.save(comanda);
   }
 
   static async juntar(tenantId: string, dto: JoinComandasDto): Promise<Comanda> {
@@ -173,14 +272,35 @@ export class ComandaService {
     return comandaPrincipal;
   }
 
-  static async fechar(tenantId: string, comandaId: string, dto: FecharComandaDto): Promise<Comanda> {
-    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
+  static async fechar(
+    tenantId: string,
+    comandaId: string,
+    dto: FecharComandaDto,
+    actorPodeConcederDesconto: boolean
+  ): Promise<FechamentoResultado> {
+    const { comanda, calculado, pagamentos } = await this.getExtrato(tenantId, comandaId);
 
     if (comanda.status !== ComandaStatus.ABERTA) {
       throw new AppError("Esta comanda já está fechada.", 400);
     }
 
-    const avaliacao = avaliarFechamento(calculado.resumo_financeiro.valor_total_comanda, dto.pagamentos);
+    if (pagamentos.length === 0) {
+      throw new AppError("É necessário registrar ao menos um pagamento antes de fechar a comanda.", 400);
+    }
+
+    if (dto.descontoTipo !== DescontoTipo.NENHUM && !actorPodeConcederDesconto) {
+      throw new AppError("Você não tem permissão para conceder desconto.", 403);
+    }
+
+    const descontoCalculado = calcularDesconto(calculado.resumo_financeiro.valor_total_comanda, {
+      tipo: dto.descontoTipo,
+      valor: dto.descontoValor,
+    });
+
+    const avaliacao = avaliarFechamento(
+      descontoCalculado.total_final,
+      pagamentos.map((pagamento) => ({ valor: pagamento.valor }))
+    );
 
     if (!avaliacao.suficiente) {
       throw new AppError(
@@ -191,7 +311,16 @@ export class ComandaService {
       );
     }
 
-    return AppDataSource.transaction(async (manager) => {
+    const divisaoPorIntegrante = ratearDescontoPorIntegrante(
+      calculado.divisao_por_integrante.map((integrante) => ({
+        integranteId: integrante.integrante_id,
+        nome: integrante.nome,
+        totalAPagar: integrante.total_a_pagar,
+      })),
+      descontoCalculado.desconto_aplicado
+    );
+
+    const comandaFechada = await AppDataSource.transaction(async (manager) => {
       const comandaTravada = await manager.findOne(Comanda, { where: { id: comanda.id, tenantId } });
 
       if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
@@ -200,9 +329,23 @@ export class ComandaService {
 
       comandaTravada.status = ComandaStatus.FECHADA;
       comandaTravada.fechadaEm = new Date();
+      comandaTravada.descontoTipo = dto.descontoTipo;
+      comandaTravada.descontoValor = dto.descontoValor;
+      comandaTravada.subtotal = descontoCalculado.subtotal;
+      comandaTravada.totalFinal = descontoCalculado.total_final;
 
       return manager.save(comandaTravada);
     });
+
+    return {
+      comanda: comandaFechada,
+      subtotal: descontoCalculado.subtotal,
+      descontoTipo: dto.descontoTipo,
+      descontoValor: dto.descontoValor,
+      descontoAplicado: descontoCalculado.desconto_aplicado,
+      totalFinal: descontoCalculado.total_final,
+      divisaoPorIntegrante,
+    };
   }
 
   static async cancelarZerada(tenantId: string, comandaId: string): Promise<Comanda> {

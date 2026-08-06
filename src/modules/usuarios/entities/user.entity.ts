@@ -35,6 +35,9 @@ export class User {
   @Column({ name: "pode_excluir_item_fechamento", type: "boolean", default: false })
   podeExcluirItemFechamento!: boolean;
 
+  @Column({ name: "pode_conceder_desconto", type: "boolean", default: false })
+  podeConcederDesconto!: boolean;
+
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
 

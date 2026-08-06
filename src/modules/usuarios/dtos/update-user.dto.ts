@@ -9,6 +9,7 @@ export interface UpdateUserDto {
   email?: string;
   roles?: UserRole[];
   podeExcluirItemFechamento?: boolean;
+  podeConcederDesconto?: boolean;
   ativo?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
     email,
     roles,
     pode_excluir_item_fechamento: podeExcluirItemFechamento,
+    pode_conceder_desconto: podeConcederDesconto,
     ativo,
   } = (body ?? {}) as Record<string, unknown>;
 
@@ -46,6 +48,13 @@ export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
       throw new AppError("Campo pode_excluir_item_fechamento deve ser booleano.", 400);
     }
     dto.podeExcluirItemFechamento = podeExcluirItemFechamento;
+  }
+
+  if (podeConcederDesconto !== undefined) {
+    if (typeof podeConcederDesconto !== "boolean") {
+      throw new AppError("Campo pode_conceder_desconto deve ser booleano.", 400);
+    }
+    dto.podeConcederDesconto = podeConcederDesconto;
   }
 
   if (ativo !== undefined) {

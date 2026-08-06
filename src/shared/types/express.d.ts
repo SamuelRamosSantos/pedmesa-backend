@@ -8,6 +8,7 @@ declare global {
         tenantId: string;
         roles: UserRole[];
         podeExcluirItemFechamento: boolean;
+        podeConcederDesconto: boolean;
       };
       tenantId?: string;
     }

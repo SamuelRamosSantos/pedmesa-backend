@@ -20,6 +20,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
       tenantId: payload.tenant_id,
       roles: payload.roles,
       podeExcluirItemFechamento: payload.pode_excluir_item_fechamento,
+      podeConcederDesconto: payload.pode_conceder_desconto,
     };
     req.tenantId = payload.tenant_id;
 

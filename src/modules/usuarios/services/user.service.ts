@@ -21,6 +21,7 @@ export class UserService {
       senhaHash,
       roles: dto.roles,
       podeExcluirItemFechamento: dto.podeExcluirItemFechamento,
+      podeConcederDesconto: dto.podeConcederDesconto,
       ativo: true,
     });
 
@@ -68,6 +69,10 @@ export class UserService {
 
     if (dto.podeExcluirItemFechamento !== undefined) {
       user.podeExcluirItemFechamento = dto.podeExcluirItemFechamento;
+    }
+
+    if (dto.podeConcederDesconto !== undefined) {
+      user.podeConcederDesconto = dto.podeConcederDesconto;
     }
 
     if (dto.ativo !== undefined) {

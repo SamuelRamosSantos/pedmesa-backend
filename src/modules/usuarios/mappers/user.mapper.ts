@@ -6,6 +6,7 @@ export interface UserResponse {
   email: string;
   roles: UserRole[];
   pode_excluir_item_fechamento: boolean;
+  pode_conceder_desconto: boolean;
   ativo: boolean;
   criado_em: Date;
 }
@@ -17,6 +18,7 @@ export function toUserResponse(user: User): UserResponse {
     email: user.email,
     roles: user.roles,
     pode_excluir_item_fechamento: user.podeExcluirItemFechamento,
+    pode_conceder_desconto: user.podeConcederDesconto,
     ativo: user.ativo,
     criado_em: user.criadoEm,
   };
