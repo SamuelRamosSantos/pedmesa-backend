@@ -2,10 +2,22 @@ import { FindOptionsWhere } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Category } from "../../categorias/entities/category.entity";
+import { Tenant } from "../../tenants/entities/tenant.entity";
 import { CreateProductDto } from "../dtos/create-product.dto";
 import { ListProductsFilters } from "../dtos/list-products.dto";
 import { UpdateProductDto } from "../dtos/update-product.dto";
 import { Product } from "../entities/product.entity";
+
+async function isUsaModuloCozinha(tenantId: string): Promise<boolean> {
+  const tenantRepository = AppDataSource.getRepository(Tenant);
+  const tenant = await tenantRepository.findOne({ where: { id: tenantId } });
+
+  if (!tenant) {
+    throw new AppError("Tenant não encontrado.", 404);
+  }
+
+  return tenant.usaModuloCozinha;
+}
 
 export class ProductService {
   static async create(tenantId: string, dto: CreateProductDto): Promise<Product> {
@@ -18,6 +30,8 @@ export class ProductService {
       throw new AppError("Categoria não encontrada.", 404);
     }
 
+    const usaModuloCozinha = await isUsaModuloCozinha(tenantId);
+
     const productRepository = AppDataSource.getRepository(Product);
     const product = productRepository.create({
       tenantId,
@@ -26,7 +40,7 @@ export class ProductService {
       preco: dto.preco,
       descricao: dto.descricao,
       disponivel: dto.disponivel,
-      precisaPreparo: dto.precisaPreparo,
+      precisaPreparo: usaModuloCozinha ? dto.precisaPreparo : false,
     });
 
     return productRepository.save(product);
@@ -96,7 +110,8 @@ export class ProductService {
     }
 
     if (dto.precisaPreparo !== undefined) {
-      product.precisaPreparo = dto.precisaPreparo;
+      const usaModuloCozinha = await isUsaModuloCozinha(tenantId);
+      product.precisaPreparo = usaModuloCozinha ? dto.precisaPreparo : false;
     }
 
     return repository.save(product);

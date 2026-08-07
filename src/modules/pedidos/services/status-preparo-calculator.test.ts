@@ -44,17 +44,17 @@ describe("calcularStatusPreparoPedido", () => {
 
   describe("pedido recém-criado com produtos auto-pronto (precisa_preparo = false)", () => {
     it("nasce pronto quando todos os itens são de produtos que não precisam de preparo", () => {
-      const statusDosItens = [false, false].map(resolveStatusItemInicial);
+      const statusDosItens = [false, false].map((precisaPreparo) => resolveStatusItemInicial(precisaPreparo, true));
       expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.PRONTO);
     });
 
     it("nasce pendente quando todos os itens são de produtos que precisam de preparo", () => {
-      const statusDosItens = [true, true].map(resolveStatusItemInicial);
+      const statusDosItens = [true, true].map((precisaPreparo) => resolveStatusItemInicial(precisaPreparo, true));
       expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.PENDENTE);
     });
 
     it("nasce em_preparo quando o pedido mistura item auto-pronto com item que precisa de preparo", () => {
-      const statusDosItens = [true, false].map(resolveStatusItemInicial);
+      const statusDosItens = [true, false].map((precisaPreparo) => resolveStatusItemInicial(precisaPreparo, true));
       expect(calcularStatusPreparoPedido(statusDosItens)).toBe(StatusPreparo.EM_PREPARO);
     });
   });

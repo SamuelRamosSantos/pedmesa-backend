@@ -5,6 +5,7 @@ import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
 import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
 import { PrintQueue } from "../../impressao/queue/print-queue";
 import { Product } from "../../produtos/entities/product.entity";
+import { Tenant } from "../../tenants/entities/tenant.entity";
 import { UserRole } from "../../usuarios/entities/user.entity";
 import { CreatePedidoDto } from "../dtos/create-pedido.dto";
 import { ListPedidosFilters } from "../dtos/list-pedidos.dto";
@@ -18,6 +19,13 @@ import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 export class PedidoService {
   static async create(tenantId: string, usuarioId: string, comandaId: string, dto: CreatePedidoDto): Promise<Pedido> {
+    const tenantRepository = AppDataSource.getRepository(Tenant);
+    const tenant = await tenantRepository.findOne({ where: { id: tenantId } });
+
+    if (!tenant) {
+      throw new AppError("Tenant não encontrado.", 404);
+    }
+
     const comandaRepository = AppDataSource.getRepository(Comanda);
     const comanda = await comandaRepository.findOne({ where: { id: comandaId, tenantId } });
 
@@ -80,7 +88,7 @@ export class PedidoService {
           quantidade: item.quantidade,
           precoUnitario: produto.preco,
           observacao: item.observacao,
-          statusItem: resolveStatusItemInicial(produto.precisaPreparo),
+          statusItem: resolveStatusItemInicial(produto.precisaPreparo, tenant.usaModuloCozinha),
         });
       });
 

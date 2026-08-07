@@ -19,7 +19,7 @@ export async function updateConfiguracoes(req: Request, res: Response, next: Nex
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidUpdateTenantConfigDto(req.body);
-    const tenant = await TenantService.updateConfiguracoes(tenantId, dto.quantidadeComandas);
+    const tenant = await TenantService.updateConfiguracoes(tenantId, dto);
 
     res.status(200).json(toTenantResponse(tenant));
   } catch (error) {
