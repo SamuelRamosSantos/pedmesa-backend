@@ -20,6 +20,7 @@ export interface TenantResponse {
   cidade: string | null;
   estado: string | null;
   cep: string | null;
+  token_agente: string | null;
   criado_em: Date;
 }
 
@@ -44,6 +45,7 @@ export function toTenantResponse(tenant: Tenant): TenantResponse {
     cidade: tenant.cidade,
     estado: tenant.estado,
     cep: tenant.cep,
+    token_agente: tenant.tokenAgente,
     criado_em: tenant.criadoEm,
   };
 }

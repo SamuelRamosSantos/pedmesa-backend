@@ -59,6 +59,9 @@ export class Tenant {
   @Column({ name: "cep", type: "varchar", length: 9, nullable: true })
   cep!: string | null;
 
+  @Column({ name: "token_agente", type: "varchar", length: 64, nullable: true, unique: true })
+  tokenAgente!: string | null;
+
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;
 }

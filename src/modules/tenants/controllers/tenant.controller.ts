@@ -26,3 +26,14 @@ export async function updateConfiguracoes(req: Request, res: Response, next: Nex
     next(error);
   }
 }
+
+export async function regenerarTokenAgente(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const tenant = await TenantService.regenerarTokenAgente(tenantId);
+
+    res.status(200).json(toTenantResponse(tenant));
+  } catch (error) {
+    next(error);
+  }
+}

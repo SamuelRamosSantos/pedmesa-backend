@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { UpdateTenantConfigDto } from "../dtos/update-tenant-config.dto";
@@ -65,6 +66,14 @@ export class TenantService {
     if (dto.cep !== undefined) {
       tenant.cep = dto.cep;
     }
+
+    const repository = AppDataSource.getRepository(Tenant);
+    return repository.save(tenant);
+  }
+
+  static async regenerarTokenAgente(tenantId: string): Promise<Tenant> {
+    const tenant = await this.getMe(tenantId);
+    tenant.tokenAgente = randomBytes(32).toString("hex");
 
     const repository = AppDataSource.getRepository(Tenant);
     return repository.save(tenant);
