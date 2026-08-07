@@ -5,6 +5,7 @@ import { AppDataSource } from "./config/data-source";
 import authRoutes from "./modules/auth/routes/auth.routes";
 import categoryRoutes from "./modules/categorias/routes/category.routes";
 import comandaRoutes from "./modules/comandas/routes/comanda.routes";
+import dashboardRoutes from "./modules/dashboard/routes/dashboard.routes";
 import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
 import productRoutes from "./modules/produtos/routes/product.routes";
 import tenantRoutes from "./modules/tenants/routes/tenant.routes";
@@ -28,6 +29,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/categorias", categoryRoutes);
 app.use("/api/v1/comandas", comandaRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/pedidos", pedidosRoutes);
 app.use("/api/v1/produtos", productRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
