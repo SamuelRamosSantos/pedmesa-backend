@@ -100,7 +100,7 @@ export class PedidoService {
       return pedidoCriado;
     });
 
-    PrintQueue.enqueue({
+    await PrintQueue.enqueue({
       tenant_id: tenantId,
       pedido_id: pedido.id,
       numero_comanda: comanda.numeroComanda,
