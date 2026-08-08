@@ -1,5 +1,11 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+export enum TenantStatus {
+  ATIVO = "ativo",
+  SUSPENSO = "suspenso",
+  CANCELADO = "cancelado",
+}
+
 @Entity("tenants")
 export class Tenant {
   @PrimaryGeneratedColumn("uuid")
@@ -13,6 +19,17 @@ export class Tenant {
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
+
+  @Column({
+    type: "enum",
+    enum: TenantStatus,
+    enumName: "tenants_status_enum",
+    default: TenantStatus.ATIVO,
+  })
+  status!: TenantStatus;
+
+  @Column({ name: "plano_id", type: "uuid", nullable: true })
+  planoId!: string | null;
 
   @Column({ name: "quantidade_comandas", type: "int", default: 20 })
   quantidadeComandas!: number;

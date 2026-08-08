@@ -4,3 +4,4 @@ dist/
 *.log
 .DS_Store
 scripts/dev/mock-printer-received.bin
+.claude/

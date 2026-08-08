@@ -9,8 +9,12 @@ declare global {
         roles: UserRole[];
         podeExcluirItemFechamento: boolean;
         podeConcederDesconto: boolean;
+        impersonatedBy: string | null;
       };
       tenantId?: string;
+      superAdmin?: {
+        id: string;
+      };
     }
   }
 }

@@ -2,6 +2,7 @@ import "reflect-metadata";
 import cors from "cors";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
+import adminRoutes from "./modules/admin/routes/admin.routes";
 import authRoutes from "./modules/auth/routes/auth.routes";
 import categoryRoutes from "./modules/categorias/routes/category.routes";
 import comandaRoutes from "./modules/comandas/routes/comanda.routes";
@@ -27,6 +28,7 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/categorias", categoryRoutes);
 app.use("/api/v1/comandas", comandaRoutes);

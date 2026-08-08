@@ -13,6 +13,7 @@
     "migration:run": "npm run typeorm -- migration:run -d src/config/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts",
     "seed": "tsx src/database/seeds/initial-seed.ts",
+    "seed:super-admin": "tsx src/database/seeds/super-admin-seed.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
