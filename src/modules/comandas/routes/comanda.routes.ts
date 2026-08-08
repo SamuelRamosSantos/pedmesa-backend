@@ -11,6 +11,7 @@ import {
   create,
   fechar,
   getExtrato,
+  imprimirPreConta,
   juntar,
   list,
   removePagamento,
@@ -32,6 +33,7 @@ comandaRoutes.get("/:id/extrato", rbacMiddleware(ALLOWED_ROLES), getExtrato);
 comandaRoutes.post("/:id/pagamentos", rbacMiddleware(ALLOWED_ROLES_FECHAR), addPagamento);
 comandaRoutes.delete("/:id/pagamentos/:pagamentoId", rbacMiddleware(ALLOWED_ROLES_FECHAR), removePagamento);
 comandaRoutes.put("/:id/desconto", rbacMiddleware(ALLOWED_ROLES_FECHAR), atualizarDesconto);
+comandaRoutes.post("/:id/imprimir-preconta", rbacMiddleware(ALLOWED_ROLES_FECHAR), imprimirPreConta);
 comandaRoutes.post("/:id/fechar", rbacMiddleware(ALLOWED_ROLES_FECHAR), fechar);
 comandaRoutes.post("/:id/cancelar", rbacMiddleware(ALLOWED_ROLES_CANCELAR), cancelar);
 comandaRoutes.use("/:comandaId/pedidos", pedidoRoutes);

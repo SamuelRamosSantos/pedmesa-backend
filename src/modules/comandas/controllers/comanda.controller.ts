@@ -168,6 +168,23 @@ export async function fechar(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+export async function imprimirPreConta(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const tenantId = getTenantId(req);
+    const { id } = req.params;
+
+    if (!isUuid(id)) {
+      throw new AppError("ID de comanda inválido.", 400);
+    }
+
+    await ComandaService.imprimirPreConta(tenantId, id);
+
+    res.status(200).json({ mensagem: "Pré-conta enviada para impressão." });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function cancelar(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tenantId = getTenantId(req);

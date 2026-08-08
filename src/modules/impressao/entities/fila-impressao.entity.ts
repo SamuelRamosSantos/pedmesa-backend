@@ -8,6 +8,11 @@ export enum StatusFilaImpressao {
   FALHOU = "falhou",
 }
 
+export enum TipoFilaImpressao {
+  PEDIDO_COZINHA = "pedido_cozinha",
+  PRE_CONTA = "pre_conta",
+}
+
 @Entity("fila_impressao")
 export class FilaImpressao {
   @PrimaryGeneratedColumn("uuid")
@@ -20,14 +25,38 @@ export class FilaImpressao {
   @JoinColumn({ name: "tenant_id" })
   tenant!: Tenant;
 
-  @Column({ name: "pedido_id", type: "uuid" })
-  pedidoId!: string;
+  @Column({
+    type: "enum",
+    enum: TipoFilaImpressao,
+    enumName: "fila_impressao_tipo_enum",
+    default: TipoFilaImpressao.PEDIDO_COZINHA,
+  })
+  tipo!: TipoFilaImpressao;
+
+  @Column({ name: "comanda_id", type: "uuid", nullable: true })
+  comandaId!: string | null;
+
+  @Column({ name: "pedido_id", type: "uuid", nullable: true })
+  pedidoId!: string | null;
 
   @Column({ name: "numero_comanda", type: "int" })
   numeroComanda!: number;
 
   @Column({ type: "jsonb" })
   payload!: PrintJobItemPayload[];
+
+  @Column({
+    name: "valor_total",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+    },
+  })
+  valorTotal!: number | null;
 
   @Column({
     type: "enum",

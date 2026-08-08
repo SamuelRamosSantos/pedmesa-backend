@@ -3,6 +3,8 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { fromCents } from "../../../shared/utils/money";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
+import { PrintQueue } from "../../impressao/queue/print-queue";
+import { PrintJobItemPayload } from "../../impressao/types/print-job.types";
 import { ItemPedido } from "../../pedidos/entities/item-pedido.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { AddPagamentoComandaDto } from "../dtos/add-pagamento-comanda.dto";
@@ -270,6 +272,48 @@ export class ComandaService {
     });
 
     return comandaPrincipal;
+  }
+
+  static async imprimirPreConta(tenantId: string, comandaId: string): Promise<void> {
+    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
+
+    if (comanda.status !== ComandaStatus.ABERTA) {
+      throw new AppError("Não é possível imprimir a pré-conta de uma comanda já fechada.", 400);
+    }
+
+    const itens: PrintJobItemPayload[] = [
+      ...calculado.divisao_por_integrante.flatMap((integrante) =>
+        integrante.itens_individuais.map(
+          (item): PrintJobItemPayload => ({
+            produto_nome: item.produto,
+            quantidade: item.qtd,
+            preco_unitario: item.preco_unitario,
+            subtotal: item.subtotal,
+            integrante_nome: integrante.nome,
+            observacao: null,
+          })
+        )
+      ),
+      ...calculado.itens_compartilhados.map(
+        (item): PrintJobItemPayload => ({
+          produto_nome: item.produto,
+          quantidade: item.qtd,
+          preco_unitario: item.preco_unitario,
+          subtotal: item.subtotal,
+          integrante_nome: null,
+          observacao: null,
+        })
+      ),
+    ];
+
+    await PrintQueue.enqueuePreConta({
+      tenant_id: tenantId,
+      comanda_id: comanda.id,
+      numero_comanda: comanda.numeroComanda,
+      gerado_em: new Date(),
+      itens,
+      valor_total: calculado.resumo_financeiro.valor_total_comanda,
+    });
   }
 
   static async fechar(

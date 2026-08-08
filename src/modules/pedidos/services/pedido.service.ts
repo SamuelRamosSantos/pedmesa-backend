@@ -100,8 +100,9 @@ export class PedidoService {
       return pedidoCriado;
     });
 
-    await PrintQueue.enqueue({
+    await PrintQueue.enqueuePedidoCozinha({
       tenant_id: tenantId,
+      comanda_id: comanda.id,
       pedido_id: pedido.id,
       numero_comanda: comanda.numeroComanda,
       criado_em: pedido.criadoEm,
@@ -112,6 +113,8 @@ export class PedidoService {
         return {
           produto_nome: produto.nome,
           quantidade: item.quantidade,
+          preco_unitario: produto.preco,
+          subtotal: produto.preco * item.quantidade,
           integrante_nome: integrante?.nome ?? null,
           observacao: item.observacao,
         };

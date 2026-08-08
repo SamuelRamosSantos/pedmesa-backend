@@ -1,14 +1,38 @@
 import { AppDataSource } from "../../../config/data-source";
-import { FilaImpressao, StatusFilaImpressao } from "../entities/fila-impressao.entity";
+import { FilaImpressao, StatusFilaImpressao, TipoFilaImpressao } from "../entities/fila-impressao.entity";
 import { Impressora } from "../entities/impressora.entity";
+import { formatarPreConta } from "../formatters/preconta.formatter";
+import { formatarTicket } from "../formatters/ticket.formatter";
 import { ImpressaoService } from "../services/impressao.service";
-import { PrintJobPayload } from "../types/print-job.types";
+import { PreContaJobPayload, PrintJobPayload } from "../types/print-job.types";
 
 const MAX_TENTATIVAS = 3;
 const RETRY_DELAY_MS = 500;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function formatarTextoDoJob(job: FilaImpressao): string {
+  if (job.tipo === TipoFilaImpressao.PRE_CONTA) {
+    return formatarPreConta({
+      tenant_id: job.tenantId,
+      comanda_id: job.comandaId ?? "",
+      numero_comanda: job.numeroComanda,
+      gerado_em: job.criadoEm,
+      itens: job.payload,
+      valor_total: job.valorTotal ?? 0,
+    });
+  }
+
+  return formatarTicket({
+    tenant_id: job.tenantId,
+    comanda_id: job.comandaId ?? "",
+    pedido_id: job.pedidoId ?? "",
+    numero_comanda: job.numeroComanda,
+    criado_em: job.criadoEm,
+    itens: job.payload,
+  });
 }
 
 async function processar(filaImpressaoId: string): Promise<void> {
@@ -26,17 +50,12 @@ async function processar(filaImpressaoId: string): Promise<void> {
     return;
   }
 
-  const payload: PrintJobPayload = {
-    tenant_id: job.tenantId,
-    pedido_id: job.pedidoId,
-    numero_comanda: job.numeroComanda,
-    criado_em: job.criadoEm,
-    itens: job.payload,
-  };
+  const texto = formatarTextoDoJob(job);
+  const identificador = job.tipo === TipoFilaImpressao.PRE_CONTA ? `Pré-conta da mesa #${job.numeroComanda}` : `Pedido #${job.pedidoId}`;
 
   for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa += 1) {
     try {
-      await ImpressaoService.imprimir(payload, impressoras);
+      await ImpressaoService.imprimir(texto, impressoras);
 
       job.status = StatusFilaImpressao.ENVIADO;
       job.tentativas = tentativa;
@@ -47,7 +66,7 @@ async function processar(filaImpressaoId: string): Promise<void> {
       const mensagem = error instanceof Error ? error.message : String(error);
 
       if (tentativa === MAX_TENTATIVAS) {
-        console.error(`[PRINT WORKER] Pedido #${job.pedidoId} falhou após ${MAX_TENTATIVAS} tentativas: ${mensagem}`);
+        console.error(`[PRINT WORKER] ${identificador} falhou após ${MAX_TENTATIVAS} tentativas: ${mensagem}`);
 
         job.status = StatusFilaImpressao.FALHOU;
         job.tentativas = tentativa;
@@ -57,7 +76,7 @@ async function processar(filaImpressaoId: string): Promise<void> {
       }
 
       console.warn(
-        `[PRINT WORKER] Tentativa ${tentativa}/${MAX_TENTATIVAS} falhou para o Pedido #${job.pedidoId} (${mensagem}). Nova tentativa em ${RETRY_DELAY_MS}ms.`
+        `[PRINT WORKER] Tentativa ${tentativa}/${MAX_TENTATIVAS} falhou para ${identificador} (${mensagem}). Nova tentativa em ${RETRY_DELAY_MS}ms.`
       );
 
       await sleep(RETRY_DELAY_MS);
@@ -65,23 +84,47 @@ async function processar(filaImpressaoId: string): Promise<void> {
   }
 }
 
+function enfileirar(filaImpressao: FilaImpressao, identificador: string): void {
+  setImmediate(() => {
+    processar(filaImpressao.id).catch((error) => {
+      console.error(`[PRINT WORKER] Erro inesperado ao processar ${identificador}:`, error);
+    });
+  });
+}
+
 export class PrintQueue {
-  static async enqueue(job: PrintJobPayload): Promise<void> {
+  static async enqueuePedidoCozinha(job: PrintJobPayload): Promise<void> {
     const filaRepository = AppDataSource.getRepository(FilaImpressao);
 
     const filaImpressao = await filaRepository.save(
       filaRepository.create({
         tenantId: job.tenant_id,
+        tipo: TipoFilaImpressao.PEDIDO_COZINHA,
+        comandaId: job.comanda_id,
         pedidoId: job.pedido_id,
         numeroComanda: job.numero_comanda,
         payload: job.itens,
       })
     );
 
-    setImmediate(() => {
-      processar(filaImpressao.id).catch((error) => {
-        console.error(`[PRINT WORKER] Erro inesperado ao processar o Pedido #${job.pedido_id}:`, error);
-      });
-    });
+    enfileirar(filaImpressao, `Pedido #${job.pedido_id}`);
+  }
+
+  static async enqueuePreConta(job: PreContaJobPayload): Promise<void> {
+    const filaRepository = AppDataSource.getRepository(FilaImpressao);
+
+    const filaImpressao = await filaRepository.save(
+      filaRepository.create({
+        tenantId: job.tenant_id,
+        tipo: TipoFilaImpressao.PRE_CONTA,
+        comandaId: job.comanda_id,
+        pedidoId: null,
+        numeroComanda: job.numero_comanda,
+        payload: job.itens,
+        valorTotal: job.valor_total,
+      })
+    );
+
+    enfileirar(filaImpressao, `Pré-conta da mesa #${job.numero_comanda}`);
   }
 }
