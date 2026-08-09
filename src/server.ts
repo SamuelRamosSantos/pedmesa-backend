@@ -17,6 +17,10 @@ import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middl
 
 const app = express();
 
+// Não expor a stack tecnológica (Express) nas respostas — evita facilitar
+// ataques direcionados a CVEs conhecidas do framework/versão.
+app.disable("x-powered-by");
+
 const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
 app.use(cors({ origin: corsOrigins }));
 
