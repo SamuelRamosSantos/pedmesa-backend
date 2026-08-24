@@ -16,6 +16,7 @@ import tenantRoutes from "./modules/tenants/routes/tenant.routes";
 import uploadRoutes from "./modules/uploads/routes/upload.routes";
 import userRoutes from "./modules/usuarios/routes/user.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
+import { apiRateLimiter } from "./shared/middlewares/rate-limit.middleware";
 import { UPLOADS_DIR, UPLOADS_URL_PREFIX } from "./shared/storage/local-disk.storage";
 
 const app = express();
@@ -23,6 +24,14 @@ const app = express();
 // Não expor a stack tecnológica (Express) nas respostas — evita facilitar
 // ataques direcionados a CVEs conhecidas do framework/versão.
 app.disable("x-powered-by");
+
+// Em produção a API roda atrás do proxy reverso do Coolify (Traefik) — sem isso,
+// req.ip sempre resolveria pro IP interno do proxy, e o rate limit abaixo contaria
+// TODOS os usuários como um único cliente. "1" = confia só no primeiro hop
+// (o proxy imediatamente na frente da API), não numa cadeia arbitrária de proxies.
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
 const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
 // credentials: true é obrigatório pro navegador aceitar mandar/receber os cookies
@@ -44,6 +53,8 @@ app.get("/health", (_req, res) => {
     database: AppDataSource.isInitialized ? "connected" : "disconnected",
   });
 });
+
+app.use("/api/v1", apiRateLimiter);
 
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/auth", authRoutes);
