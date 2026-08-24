@@ -41,6 +41,9 @@ export class User {
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
 
+  @Column({ name: "foto_url", type: "varchar", length: 1024, nullable: true })
+  fotoUrl!: string | null;
+
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;
 }

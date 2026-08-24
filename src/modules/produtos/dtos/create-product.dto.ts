@@ -8,6 +8,7 @@ export interface CreateProductDto {
   descricao: string | null;
   disponivel: boolean;
   precisaPreparo: boolean;
+  imagemUrl: string | null;
 }
 
 export function assertValidCreateProductDto(body: unknown): CreateProductDto {
@@ -18,6 +19,7 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     descricao,
     disponivel,
     precisa_preparo: precisaPreparo,
+    imagem_url: imagemUrl,
   } = (body ?? {}) as Record<string, unknown>;
 
   if (!isUuid(categoriaId)) {
@@ -44,6 +46,10 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     throw new AppError("Campo precisa_preparo deve ser booleano.", 400);
   }
 
+  if (imagemUrl !== undefined && imagemUrl !== null && typeof imagemUrl !== "string") {
+    throw new AppError("Campo imagem_url inválido.", 400);
+  }
+
   return {
     categoriaId,
     nome: nome.trim(),
@@ -51,5 +57,6 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     descricao: typeof descricao === "string" ? descricao : null,
     disponivel: typeof disponivel === "boolean" ? disponivel : true,
     precisaPreparo: typeof precisaPreparo === "boolean" ? precisaPreparo : true,
+    imagemUrl: typeof imagemUrl === "string" ? imagemUrl : null,
   };
 }

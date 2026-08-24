@@ -12,6 +12,7 @@ export interface CreateUserDto {
   roles: UserRole[];
   podeExcluirItemFechamento: boolean;
   podeConcederDesconto: boolean;
+  fotoUrl: string | null;
 }
 
 export function assertValidCreateUserDto(body: unknown): CreateUserDto {
@@ -22,6 +23,7 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     roles,
     pode_excluir_item_fechamento: podeExcluirItemFechamento,
     pode_conceder_desconto: podeConcederDesconto,
+    foto_url: fotoUrl,
   } = (body ?? {}) as Record<string, unknown>;
 
   if (typeof nome !== "string" || nome.trim().length === 0) {
@@ -44,6 +46,10 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     throw new AppError("Campo pode_conceder_desconto deve ser booleano.", 400);
   }
 
+  if (fotoUrl !== undefined && fotoUrl !== null && typeof fotoUrl !== "string") {
+    throw new AppError("Campo foto_url inválido.", 400);
+  }
+
   return {
     nome: nome.trim(),
     email: email.trim().toLowerCase(),
@@ -51,5 +57,6 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     roles: assertValidRoles(roles),
     podeExcluirItemFechamento: typeof podeExcluirItemFechamento === "boolean" ? podeExcluirItemFechamento : false,
     podeConcederDesconto: typeof podeConcederDesconto === "boolean" ? podeConcederDesconto : false,
+    fotoUrl: typeof fotoUrl === "string" ? fotoUrl : null,
   };
 }

@@ -22,6 +22,7 @@ export class UserService {
       roles: dto.roles,
       podeExcluirItemFechamento: dto.podeExcluirItemFechamento,
       podeConcederDesconto: dto.podeConcederDesconto,
+      fotoUrl: dto.fotoUrl,
       ativo: true,
     });
 
@@ -77,6 +78,10 @@ export class UserService {
 
     if (dto.ativo !== undefined) {
       user.ativo = dto.ativo;
+    }
+
+    if (dto.fotoUrl !== undefined) {
+      user.fotoUrl = dto.fotoUrl;
     }
 
     try {
