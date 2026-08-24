@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
@@ -12,8 +13,10 @@ import leadRoutes from "./modules/leads/routes/lead.routes";
 import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
 import productRoutes from "./modules/produtos/routes/product.routes";
 import tenantRoutes from "./modules/tenants/routes/tenant.routes";
+import uploadRoutes from "./modules/uploads/routes/upload.routes";
 import userRoutes from "./modules/usuarios/routes/user.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
+import { UPLOADS_DIR, UPLOADS_URL_PREFIX } from "./shared/storage/local-disk.storage";
 
 const app = express();
 
@@ -22,9 +25,18 @@ const app = express();
 app.disable("x-powered-by");
 
 const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
-app.use(cors({ origin: corsOrigins }));
+// credentials: true é obrigatório pro navegador aceitar mandar/receber os cookies
+// de autenticação (PED-76) em requisições cross-origin do front — com credentials
+// habilitado, o pacote "cors" já reflete a origem específica da allowlist acima
+// em vez de "*", que é exigido pelo próprio spec de CORS quando credentials=true.
+app.use(cors({ origin: corsOrigins, credentials: true }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Só usado quando STORAGE_DRIVER=local (padrão em dev) — em produção com S3 as
+// imagens são servidas diretamente pelo bucket/CDN, não pela API.
+app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({
@@ -43,6 +55,7 @@ app.use("/api/v1/leads", leadRoutes);
 app.use("/api/v1/pedidos", pedidosRoutes);
 app.use("/api/v1/produtos", productRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
+app.use("/api/v1/uploads", uploadRoutes);
 app.use("/api/v1/usuarios", userRoutes);
 
 app.use(errorHandlerMiddleware);

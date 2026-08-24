@@ -13,7 +13,7 @@ import { UpdateTenantDto } from "../dtos/update-tenant.dto";
 // PED-41: sessão de impersonation usa expiração bem mais curta que o login
 // normal (padrão JWT_EXPIRES_IN=1d) — é um acesso privilegiado e temporário,
 // não uma sessão de trabalho normal do dia a dia.
-const IMPERSONATION_TOKEN_EXPIRES_IN = "30m";
+export const IMPERSONATION_TOKEN_EXPIRES_IN = "30m";
 
 export class SuperAdminService {
   static async criarTenant(dto: CreateTenantDto): Promise<Tenant> {
