@@ -5,17 +5,7 @@ export const NOME_CLIENTE_MAX = 120;
 export const OBSERVACOES_CLIENTE_MAX = 500;
 
 export function validarNomeCliente(nome: unknown): string {
-  if (typeof nome !== "string" || nome.trim().length === 0) {
-    throw new AppError("nome é obrigatório.", 400);
-  }
-
-  const nomeLimpo = nome.trim();
-
-  if (nomeLimpo.length > NOME_CLIENTE_MAX) {
-    throw new AppError(`nome deve ter no máximo ${NOME_CLIENTE_MAX} caracteres.`, 400);
-  }
-
-  return nomeLimpo;
+  return validarTextoObrigatorio(nome, "nome", NOME_CLIENTE_MAX);
 }
 
 export function validarTelefoneCliente(telefone: unknown): string {
@@ -28,21 +18,41 @@ export function validarTelefoneCliente(telefone: unknown): string {
   return telefoneNormalizado;
 }
 
-// Ausente, null ou só espaços viram null: "sem observação" tem uma única representação.
 export function validarObservacoesCliente(observacoes: unknown): string | null {
-  if (observacoes === undefined || observacoes === null) {
+  return validarTextoOpcional(observacoes, "observacoes", OBSERVACOES_CLIENTE_MAX);
+}
+
+// Texto obrigatório: aparado, não vazio e dentro do limite do banco.
+export function validarTextoObrigatorio(valor: unknown, campo: string, maximo: number): string {
+  if (typeof valor !== "string" || valor.trim().length === 0) {
+    throw new AppError(`${campo} é obrigatório.`, 400);
+  }
+
+  const valorLimpo = valor.trim();
+
+  if (valorLimpo.length > maximo) {
+    throw new AppError(`${campo} deve ter no máximo ${maximo} caracteres.`, 400);
+  }
+
+  return valorLimpo;
+}
+
+// Texto opcional: ausente, null ou só espaços viram null, para "sem valor" ter uma
+// única representação no banco.
+export function validarTextoOpcional(valor: unknown, campo: string, maximo: number): string | null {
+  if (valor === undefined || valor === null) {
     return null;
   }
 
-  if (typeof observacoes !== "string") {
-    throw new AppError("observacoes deve ser um texto.", 400);
+  if (typeof valor !== "string") {
+    throw new AppError(`${campo} deve ser um texto.`, 400);
   }
 
-  const observacoesLimpas = observacoes.trim();
+  const valorLimpo = valor.trim();
 
-  if (observacoesLimpas.length > OBSERVACOES_CLIENTE_MAX) {
-    throw new AppError(`observacoes deve ter no máximo ${OBSERVACOES_CLIENTE_MAX} caracteres.`, 400);
+  if (valorLimpo.length > maximo) {
+    throw new AppError(`${campo} deve ter no máximo ${maximo} caracteres.`, 400);
   }
 
-  return observacoesLimpas.length > 0 ? observacoesLimpas : null;
+  return valorLimpo.length > 0 ? valorLimpo : null;
 }
