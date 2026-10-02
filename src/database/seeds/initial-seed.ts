@@ -3,6 +3,7 @@ import { AppDataSource } from "../../config/data-source";
 import { HashService } from "../../modules/auth/services/hash.service";
 import { Tenant } from "../../modules/tenants/entities/tenant.entity";
 import { User, UserRole } from "../../modules/usuarios/entities/user.entity";
+import { seedDelivery } from "./delivery-seed";
 
 const TENANT_NOME_FANTASIA = "Lanchonete Teste";
 const TENANT_CNPJ_CPF = "00000000000191";
@@ -57,6 +58,8 @@ async function run(): Promise<void> {
       console.log(`ℹ️  Usuário "${usuarioSeed.email}" já existe.`);
     }
   }
+
+  await seedDelivery(tenant);
 
   await AppDataSource.destroy();
 }
