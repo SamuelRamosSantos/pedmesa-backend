@@ -76,6 +76,36 @@ export class Tenant {
   @Column({ name: "cep", type: "varchar", length: 9, nullable: true })
   cep!: string | null;
 
+  @Column({ name: "delivery_ativo", type: "boolean", default: false })
+  deliveryAtivo!: boolean;
+
+  // NULL significa que bairro fora da tabela taxas_entrega não é atendido.
+  @Column({
+    name: "taxa_entrega_padrao",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+    },
+  })
+  taxaEntregaPadrao!: number | null;
+
+  @Column({
+    name: "pedido_minimo_delivery",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number.parseFloat(value),
+    },
+  })
+  pedidoMinimoDelivery!: number;
+
   @Column({ name: "token_agente", type: "varchar", length: 64, nullable: true, unique: true })
   tokenAgente!: string | null;
 
