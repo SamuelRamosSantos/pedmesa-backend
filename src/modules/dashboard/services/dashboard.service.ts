@@ -20,7 +20,8 @@ export interface ProdutoMaisPedido {
 export interface HistoricoComandaLinha {
   comandaId: string;
   fechadaEm: Date;
-  mesa: number;
+  // NULL em comandas de delivery; o PED-103 troca por tipo_atendimento + identificador.
+  mesa: number | null;
   valor: number;
   formasPagamento: FormaPagamento[];
 }

@@ -7,6 +7,11 @@ export enum ComandaStatus {
   FECHADA = "fechada",
 }
 
+export enum TipoAtendimento {
+  MESA = "mesa",
+  DELIVERY = "delivery",
+}
+
 export enum DescontoTipo {
   PERCENTUAL = "percentual",
   VALOR_FIXO = "valor_fixo",
@@ -25,8 +30,19 @@ export class Comanda {
   @JoinColumn({ name: "tenant_id" })
   tenant!: Tenant;
 
-  @Column({ name: "numero_comanda", type: "int" })
-  numeroComanda!: number;
+  @Column({
+    name: "tipo_atendimento",
+    type: "enum",
+    enum: TipoAtendimento,
+    enumName: "comandas_tipo_atendimento_enum",
+    default: TipoAtendimento.MESA,
+  })
+  tipoAtendimento!: TipoAtendimento;
+
+  // NULL só em comandas de delivery (garantido pelo CHECK
+  // ck_comandas_numero_obrigatorio_para_mesa). Delivery usa entregas.numero_entrega.
+  @Column({ name: "numero_comanda", type: "int", nullable: true })
+  numeroComanda!: number | null;
 
   @Column({ type: "enum", enum: ComandaStatus, enumName: "comandas_status_enum", default: ComandaStatus.ABERTA })
   status!: ComandaStatus;
