@@ -5,7 +5,7 @@ import { IntegranteResponse, toIntegranteResponse } from "./integrante.mapper";
 
 export interface ComandaDetailResponse {
   id: string;
-  numero_comanda: number;
+  numero_comanda: number | null;
   status: ComandaStatus;
   aberta_em: Date;
   integrantes: IntegranteResponse[];
@@ -13,7 +13,7 @@ export interface ComandaDetailResponse {
 
 export interface ComandaListItemResponse {
   id: string;
-  numero_comanda: number;
+  numero_comanda: number | null;
   status: ComandaStatus;
   total_integrantes: number;
   aberta_em: Date;

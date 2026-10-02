@@ -28,7 +28,7 @@ export interface PedidoItemResponse {
 export interface PedidoListItemResponse {
   id: string;
   comanda_id: string;
-  numero_comanda: number;
+  numero_comanda: number | null;
   usuario_id: string;
   garcom_nome: string;
   status_preparo: StatusPreparo;

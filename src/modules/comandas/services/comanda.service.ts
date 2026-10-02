@@ -13,12 +13,13 @@ import { UpdateDescontoComandaDto } from "../dtos/update-desconto-comanda.dto";
 import { CreateComandaDto } from "../dtos/create-comanda.dto";
 import { JoinComandasDto } from "../dtos/join-comandas.dto";
 import { ListComandasFilters } from "../dtos/list-comandas.dto";
-import { Comanda, ComandaStatus, DescontoTipo } from "../entities/comanda.entity";
+import { Comanda, ComandaStatus, DescontoTipo, TipoAtendimento } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { PagamentoComanda } from "../entities/pagamento-comanda.entity";
 import { calcularDesconto, ratearDescontoPorIntegrante, RateioIntegranteComDesconto } from "./desconto-calculator";
 import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
 import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
+import { exigirNumeroDaMesa } from "./numero-comanda";
 
 export interface FechamentoResultado {
   comanda: Comanda;
@@ -59,6 +60,7 @@ export class ComandaService {
         const comanda = await manager.save(
           manager.create(Comanda, {
             tenantId,
+            tipoAtendimento: TipoAtendimento.MESA,
             numeroComanda: dto.numeroComanda,
             status: ComandaStatus.ABERTA,
           })
@@ -309,7 +311,7 @@ export class ComandaService {
     await PrintQueue.enqueuePreConta({
       tenant_id: tenantId,
       comanda_id: comanda.id,
-      numero_comanda: comanda.numeroComanda,
+      numero_comanda: exigirNumeroDaMesa(comanda.numeroComanda),
       gerado_em: new Date(),
       itens,
       valor_total: calculado.resumo_financeiro.valor_total_comanda,

@@ -5,7 +5,7 @@ import { PagamentoComandaResponse, toPagamentoComandaResponse } from "./pagament
 
 export interface ExtratoResponse extends ExtratoCalculado {
   comanda_id: string;
-  numero_comanda: number;
+  numero_comanda: number | null;
   status: ComandaStatus;
   desconto_tipo: DescontoTipo;
   desconto_valor: number;

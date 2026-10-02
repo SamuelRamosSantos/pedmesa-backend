@@ -3,6 +3,7 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
 import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
+import { exigirNumeroDaMesa } from "../../comandas/services/numero-comanda";
 import { PrintQueue } from "../../impressao/queue/print-queue";
 import { Product } from "../../produtos/entities/product.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
@@ -36,6 +37,10 @@ export class PedidoService {
     if (comanda.status !== ComandaStatus.ABERTA) {
       throw new AppError("Não é possível lançar itens em uma comanda fechada.", 400);
     }
+
+    // Validado antes da transação: o ticket da cozinha só é enfileirado depois do
+    // commit, então recusar ali deixaria o pedido gravado com resposta de erro.
+    const numeroMesa = exigirNumeroDaMesa(comanda.numeroComanda);
 
     const produtoIds = [...new Set(dto.itens.map((item) => item.produtoId))];
     const productRepository = AppDataSource.getRepository(Product);
@@ -104,7 +109,7 @@ export class PedidoService {
       tenant_id: tenantId,
       comanda_id: comanda.id,
       pedido_id: pedido.id,
-      numero_comanda: comanda.numeroComanda,
+      numero_comanda: numeroMesa,
       criado_em: pedido.criadoEm,
       itens: dto.itens.map((item) => {
         const produto = produtosPorId.get(item.produtoId) as Product;
@@ -203,7 +208,7 @@ export class PedidoService {
         manager.create(LogExclusaoItem, {
           tenantId,
           comandaId: item.pedido.comandaId,
-          numeroComanda: item.pedido.comanda.numeroComanda,
+          numeroComanda: exigirNumeroDaMesa(item.pedido.comanda.numeroComanda),
           pedidoId: item.pedidoId,
           produtoNome: item.produto.nome,
           quantidade: item.quantidade,

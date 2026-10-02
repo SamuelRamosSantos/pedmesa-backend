@@ -10,7 +10,7 @@ export interface ProdutoMaisPedidoResponse {
 export interface HistoricoComandaResponse {
   comanda_id: string;
   fechada_em: Date;
-  mesa: number;
+  mesa: number | null;
   valor: number;
   formas_pagamento: FormaPagamento[];
 }
