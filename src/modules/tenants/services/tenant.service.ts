@@ -67,6 +67,18 @@ export class TenantService {
       tenant.cep = dto.cep;
     }
 
+    if (dto.deliveryAtivo !== undefined) {
+      tenant.deliveryAtivo = dto.deliveryAtivo;
+    }
+
+    if (dto.taxaEntregaPadrao !== undefined) {
+      tenant.taxaEntregaPadrao = dto.taxaEntregaPadrao;
+    }
+
+    if (dto.pedidoMinimoDelivery !== undefined) {
+      tenant.pedidoMinimoDelivery = dto.pedidoMinimoDelivery;
+    }
+
     const repository = AppDataSource.getRepository(Tenant);
     return repository.save(tenant);
   }
