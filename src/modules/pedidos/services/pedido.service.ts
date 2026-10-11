@@ -1,3 +1,4 @@
+import { EntityManager } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
@@ -13,6 +14,7 @@ import { Pedido, StatusPreparo } from "../entities/pedido.entity";
 import { assertTransicaoValida } from "./item-status-transition";
 import { lancarItensNaComanda } from "./lancamento-itens";
 import { assertPodeExcluirPedido } from "./pedido-delete-guard";
+import { executarAcoesPosCommit, notificarPreparoAtualizado } from "./preparo-atualizado.port";
 import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 export class PedidoService {
@@ -49,6 +51,7 @@ export class PedidoService {
       comanda_id: comanda.id,
       pedido_id: pedido.id,
       numero_comanda: numeroMesa,
+      numero_entrega: null,
       criado_em: pedido.criadoEm,
       itens: itensImpressao,
     });
@@ -63,7 +66,17 @@ export class PedidoService {
       .createQueryBuilder("pedido")
       .innerJoin("pedido.comanda", "comanda")
       .innerJoin("pedido.usuario", "usuario")
-      .addSelect(["comanda.id", "comanda.numeroComanda", "usuario.id", "usuario.nome"])
+      // Badge do KDS (PED-103): mesa pelo número da comanda, delivery pelo número da entrega.
+      .leftJoin("comanda.entrega", "entrega")
+      .addSelect([
+        "comanda.id",
+        "comanda.numeroComanda",
+        "comanda.tipoAtendimento",
+        "entrega.id",
+        "entrega.numeroEntrega",
+        "usuario.id",
+        "usuario.nome",
+      ])
       .leftJoinAndSelect("pedido.itens", "item")
       .leftJoinAndSelect("item.produto", "produto")
       .leftJoinAndSelect("item.integrante", "integrante")
@@ -85,11 +98,14 @@ export class PedidoService {
     itemId: string,
     novoStatus: StatusItem
   ): Promise<{ item: ItemPedido; pedido: Pedido }> {
-    return AppDataSource.transaction(async (manager) => {
+    const { item, pedido, acoesPosCommit } = await AppDataSource.transaction(async (manager) => {
+      // O tipo de atendimento vem no mesmo join que já garante o tenant: para mesa, o
+      // handler do delivery sai sem nova consulta.
       const item = await manager
         .createQueryBuilder(ItemPedido, "item")
         .innerJoin("item.pedido", "pedido")
         .innerJoin("pedido.comanda", "comanda")
+        .addSelect(["pedido.id", "pedido.comandaId", "comanda.id", "comanda.tipoAtendimento"])
         .where("item.id = :itemId", { itemId })
         .andWhere("comanda.tenantId = :tenantId", { tenantId })
         .getOne();
@@ -100,20 +116,26 @@ export class PedidoService {
 
       assertTransicaoValida(item.statusItem, novoStatus);
 
+      await manager.update(ItemPedido, { id: item.id }, { statusItem: novoStatus });
       item.statusItem = novoStatus;
-      await manager.save(item);
 
-      const itensDoPedido = await manager.find(ItemPedido, { where: { pedidoId: item.pedidoId } });
-      const pedido = await manager.findOneOrFail(Pedido, { where: { id: item.pedidoId } });
-      pedido.statusPreparo = calcularStatusPreparoPedido(itensDoPedido.map((i) => i.statusItem));
-      await manager.save(pedido);
+      const pedido = await recalcularStatusPreparo(manager, item.pedidoId);
+      const acoesPosCommit = await notificarPreparoAtualizado(manager, {
+        tenantId,
+        comandaId: item.pedido.comandaId,
+        tipoAtendimento: item.pedido.comanda.tipoAtendimento,
+      });
 
-      return { item, pedido };
+      return { item, pedido, acoesPosCommit };
     });
+
+    await executarAcoesPosCommit(acoesPosCommit);
+
+    return { item, pedido };
   }
 
   static async deleteItem(tenantId: string, itemId: string, excluidoPorUsuarioId: string): Promise<void> {
-    await AppDataSource.transaction(async (manager) => {
+    const acoesPosCommit = await AppDataSource.transaction(async (manager) => {
       const item = await manager
         .createQueryBuilder(ItemPedido, "item")
         .innerJoinAndSelect("item.produto", "produto")
@@ -135,7 +157,7 @@ export class PedidoService {
         manager.create(LogExclusaoItem, {
           tenantId,
           comandaId: item.pedido.comandaId,
-          numeroComanda: exigirNumeroDaMesa(item.pedido.comanda.numeroComanda),
+          numeroComanda: item.pedido.comanda.numeroComanda,
           pedidoId: item.pedidoId,
           produtoNome: item.produto.nome,
           quantidade: item.quantidade,
@@ -144,14 +166,17 @@ export class PedidoService {
         })
       );
 
-      const pedidoId = item.pedidoId;
       await manager.delete(ItemPedido, { id: itemId });
+      await recalcularStatusPreparo(manager, item.pedidoId);
 
-      const itensRestantes = await manager.find(ItemPedido, { where: { pedidoId } });
-      const pedido = await manager.findOneOrFail(Pedido, { where: { id: pedidoId } });
-      pedido.statusPreparo = calcularStatusPreparoPedido(itensRestantes.map((i) => i.statusItem));
-      await manager.save(pedido);
+      return notificarPreparoAtualizado(manager, {
+        tenantId,
+        comandaId: item.pedido.comandaId,
+        tipoAtendimento: item.pedido.comanda.tipoAtendimento,
+      });
     });
+
+    await executarAcoesPosCommit(acoesPosCommit);
   }
 
   static async deleteOwnPedido(
@@ -189,6 +214,27 @@ export class PedidoService {
       actingUserRoles,
     });
 
-    await repository.remove(pedido);
+    // Excluir um pedido inteiro também muda o preparo da comanda (ex.: só restam pedidos
+    // prontos), então avisa a porta na mesma transação.
+    const acoesPosCommit = await AppDataSource.transaction(async (manager) => {
+      await manager.remove(pedido);
+
+      return notificarPreparoAtualizado(manager, {
+        tenantId,
+        comandaId: pedido.comandaId,
+        tipoAtendimento: pedido.comanda.tipoAtendimento,
+      });
+    });
+
+    await executarAcoesPosCommit(acoesPosCommit);
   }
+}
+
+// Recalcula e grava o status de preparo do pedido a partir dos itens que restaram.
+async function recalcularStatusPreparo(manager: EntityManager, pedidoId: string): Promise<Pedido> {
+  const itens = await manager.find(ItemPedido, { where: { pedidoId } });
+  const pedido = await manager.findOneOrFail(Pedido, { where: { id: pedidoId } });
+  pedido.statusPreparo = calcularStatusPreparoPedido(itens.map((item) => item.statusItem));
+
+  return manager.save(pedido);
 }

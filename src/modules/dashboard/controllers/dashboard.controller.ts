@@ -12,9 +12,9 @@ export async function getResumo(req: Request, res: Response, next: NextFunction)
     const intervalo = resolverIntervaloPeriodo(dto);
 
     const [resumo, produtos, historico] = await Promise.all([
-      DashboardService.getResumo(tenantId, intervalo),
-      DashboardService.getProdutosMaisPedidos(tenantId, intervalo),
-      DashboardService.getHistoricoComandas(tenantId, intervalo),
+      DashboardService.getResumo(tenantId, intervalo, dto.tipo),
+      DashboardService.getProdutosMaisPedidos(tenantId, intervalo, dto.tipo),
+      DashboardService.getHistoricoComandas(tenantId, intervalo, dto.tipo),
     ]);
 
     res.status(200).json(toDashboardResponse(dto.periodo, resumo, produtos, historico));

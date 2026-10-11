@@ -1,13 +1,17 @@
-import { In } from "typeorm";
+import { In, ObjectLiteral, SelectQueryBuilder } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { fromCents, toCents } from "../../../shared/utils/money";
-import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
+import { Comanda, ComandaStatus, TipoAtendimento } from "../../comandas/entities/comanda.entity";
 import { FormaPagamento, PagamentoComanda } from "../../comandas/entities/pagamento-comanda.entity";
 import { ItemPedido, StatusItem } from "../../pedidos/entities/item-pedido.entity";
+import { identificadorDoAtendimento } from "./identificador-atendimento";
 import { IntervaloData } from "./periodo-resolver";
 
 export interface ResumoDashboard {
+  // Inclui delivery: o total_final da comanda delivery já soma a taxa de entrega.
   faturamento: number;
+  // Parte do faturamento que veio de taxas de entrega (PED-103).
+  taxasEntrega: number;
   comandasFechadas: number;
   ticketMedio: number;
 }
@@ -20,27 +24,49 @@ export interface ProdutoMaisPedido {
 export interface HistoricoComandaLinha {
   comandaId: string;
   fechadaEm: Date;
-  // NULL em comandas de delivery; o PED-103 troca por tipo_atendimento + identificador.
-  mesa: number | null;
+  tipoAtendimento: TipoAtendimento;
+  // "Mesa 12" ou "Delivery #7" (PED-103).
+  identificador: string;
   valor: number;
   formasPagamento: FormaPagamento[];
 }
 
 const LIMITE_PRODUTOS_MAIS_PEDIDOS = 5;
 
+// Filtro opcional ?tipo= do dashboard; sem ele, mesa e delivery entram juntos.
+function filtrarPorTipo<T extends ObjectLiteral>(
+  consulta: SelectQueryBuilder<T>,
+  tipo: TipoAtendimento | undefined
+): SelectQueryBuilder<T> {
+  return tipo === undefined ? consulta : consulta.andWhere("comanda.tipoAtendimento = :tipo", { tipo });
+}
+
 export class DashboardService {
-  static async getResumo(tenantId: string, intervalo: IntervaloData): Promise<ResumoDashboard> {
+  static async getResumo(
+    tenantId: string,
+    intervalo: IntervaloData,
+    tipo: TipoAtendimento | undefined
+  ): Promise<ResumoDashboard> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
-    const bruto = await comandaRepository
+    // Comanda × entrega é 1:1: o LEFT JOIN não duplica linhas na soma do faturamento.
+    // Entrega cancelada fecha a comanda sem total_final, então a taxa dela não entra.
+    const consulta = comandaRepository
       .createQueryBuilder("comanda")
+      .leftJoin("comanda.entrega", "entrega")
       .select("COALESCE(SUM(comanda.totalFinal), 0)", "faturamento")
+      .addSelect("COALESCE(SUM(entrega.taxaEntrega), 0)", "taxasEntrega")
       .addSelect("COUNT(*)", "quantidade")
       .where("comanda.tenantId = :tenantId", { tenantId })
       .andWhere("comanda.status = :status", { status: ComandaStatus.FECHADA })
       .andWhere("comanda.totalFinal IS NOT NULL")
-      .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo)
-      .getRawOne<{ faturamento: string; quantidade: string }>();
+      .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo);
+
+    const bruto = await filtrarPorTipo(consulta, tipo).getRawOne<{
+      faturamento: string;
+      taxasEntrega: string;
+      quantidade: string;
+    }>();
 
     const faturamentoCents = toCents(Number(bruto?.faturamento ?? 0));
     const comandasFechadas = Number(bruto?.quantidade ?? 0);
@@ -48,15 +74,20 @@ export class DashboardService {
 
     return {
       faturamento: fromCents(faturamentoCents),
+      taxasEntrega: fromCents(toCents(Number(bruto?.taxasEntrega ?? 0))),
       comandasFechadas,
       ticketMedio: fromCents(ticketMedioCents),
     };
   }
 
-  static async getProdutosMaisPedidos(tenantId: string, intervalo: IntervaloData): Promise<ProdutoMaisPedido[]> {
+  static async getProdutosMaisPedidos(
+    tenantId: string,
+    intervalo: IntervaloData,
+    tipo: TipoAtendimento | undefined
+  ): Promise<ProdutoMaisPedido[]> {
     const itemRepository = AppDataSource.getRepository(ItemPedido);
 
-    const linhas = await itemRepository
+    const consulta = itemRepository
       .createQueryBuilder("item")
       .innerJoin("item.pedido", "pedido")
       .innerJoin("pedido.comanda", "comanda")
@@ -66,7 +97,9 @@ export class DashboardService {
       .where("comanda.tenantId = :tenantId", { tenantId })
       .andWhere("comanda.status = :status", { status: ComandaStatus.FECHADA })
       .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo)
-      .andWhere("item.statusItem != :cancelado", { cancelado: StatusItem.CANCELADO })
+      .andWhere("item.statusItem != :cancelado", { cancelado: StatusItem.CANCELADO });
+
+    const linhas = await filtrarPorTipo(consulta, tipo)
       .groupBy("produto.id")
       .addGroupBy("produto.nome")
       .orderBy("quantidade", "DESC")
@@ -79,17 +112,23 @@ export class DashboardService {
     }));
   }
 
-  static async getHistoricoComandas(tenantId: string, intervalo: IntervaloData): Promise<HistoricoComandaLinha[]> {
+  static async getHistoricoComandas(
+    tenantId: string,
+    intervalo: IntervaloData,
+    tipo: TipoAtendimento | undefined
+  ): Promise<HistoricoComandaLinha[]> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
-    const comandas = await comandaRepository
+    const consulta = comandaRepository
       .createQueryBuilder("comanda")
+      .leftJoin("comanda.entrega", "entrega")
+      .addSelect(["entrega.id", "entrega.numeroEntrega"])
       .where("comanda.tenantId = :tenantId", { tenantId })
       .andWhere("comanda.status = :status", { status: ComandaStatus.FECHADA })
       .andWhere("comanda.totalFinal IS NOT NULL")
-      .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo)
-      .orderBy("comanda.fechadaEm", "DESC")
-      .getMany();
+      .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo);
+
+    const comandas = await filtrarPorTipo(consulta, tipo).orderBy("comanda.fechadaEm", "DESC").getMany();
 
     if (comandas.length === 0) {
       return [];
@@ -110,7 +149,12 @@ export class DashboardService {
     return comandas.map((comanda) => ({
       comandaId: comanda.id,
       fechadaEm: comanda.fechadaEm as Date,
-      mesa: comanda.numeroComanda,
+      tipoAtendimento: comanda.tipoAtendimento,
+      identificador: identificadorDoAtendimento(
+        comanda.tipoAtendimento,
+        comanda.numeroComanda,
+        comanda.entrega?.numeroEntrega ?? null
+      ),
       valor: comanda.totalFinal as number,
       formasPagamento: Array.from(formasPorComandaId.get(comanda.id) ?? []),
     }));

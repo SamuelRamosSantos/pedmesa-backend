@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
+  Relation,
   VersionColumn,
 } from "typeorm";
 import { Cliente } from "../../clientes/entities/cliente.entity";
@@ -50,9 +51,9 @@ export class Entrega {
   @Column({ name: "comanda_id", type: "uuid" })
   comandaId!: string;
 
-  @OneToOne(() => Comanda, { onDelete: "CASCADE" })
+  @OneToOne(() => Comanda, (comanda) => comanda.entrega, { onDelete: "CASCADE" })
   @JoinColumn({ name: "comanda_id" })
-  comanda!: Comanda;
+  comanda!: Relation<Comanda>;
 
   @Column({ name: "cliente_id", type: "uuid" })
   clienteId!: string;

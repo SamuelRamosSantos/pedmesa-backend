@@ -68,10 +68,19 @@ export interface ResumoFinanceiro {
   valor_total_com_entrega: number;
 }
 
+// Item cancelado: aparece no extrato para conferência, mas não é cobrado.
+export interface ExtratoItemCanceladoLinha {
+  id: string;
+  produto: string;
+  qtd: number;
+  integrante_id: string | null;
+}
+
 export interface ExtratoCalculado {
   resumo_financeiro: ResumoFinanceiro;
   divisao_por_integrante: ExtratoIntegranteResultado[];
   itens_compartilhados: ExtratoItemCompartilhadoLinha[];
+  itens_cancelados: ExtratoItemCanceladoLinha[];
   itens_pendentes_entrega: number;
   possui_itens_pendentes: boolean;
   itens_pendentes: ItemPendenteEntrega[];
@@ -85,8 +94,15 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
 
   const linhasPorIntegrante = new Map<string, ExtratoItemLinha[]>();
   const itensCompartilhados: ExtratoItemCompartilhadoLinha[] = [];
+  const itensCancelados: ExtratoItemCanceladoLinha[] = [];
 
   for (const item of input.itens) {
+    // Cancelado não é cobrado: fica fora do total, da divisão e da cota compartilhada.
+    if (item.statusItem === StatusItem.CANCELADO) {
+      itensCancelados.push({ id: item.id, produto: item.produtoNome, qtd: item.quantidade, integrante_id: item.integranteId });
+      continue;
+    }
+
     const precoUnitarioCents = toCents(item.precoUnitario);
     const subtotalCents = item.quantidade * precoUnitarioCents;
 
@@ -156,6 +172,7 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
     },
     divisao_por_integrante: divisaoPorIntegrante,
     itens_compartilhados: itensCompartilhados,
+    itens_cancelados: itensCancelados,
     itens_pendentes_entrega: itensPendentes.length,
     possui_itens_pendentes: itensPendentes.length > 0,
     itens_pendentes: itensPendentes,

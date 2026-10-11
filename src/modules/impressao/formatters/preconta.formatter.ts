@@ -1,11 +1,8 @@
 import { PreContaJobPayload, PrintJobItemPayload } from "../types/print-job.types";
+import { formatarMoeda } from "./formatacao";
 
 const LARGURA_CUPOM = "================================";
 const SEPARADOR_ITEM = "--------------------------------";
-
-function formatarMoeda(valor: number): string {
-  return `R$ ${valor.toFixed(2).replace(".", ",")}`;
-}
 
 function formatarCabecalho(job: PreContaJobPayload): string {
   const horario = job.gerado_em.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });

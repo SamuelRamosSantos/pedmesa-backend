@@ -3,7 +3,7 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
 import { PrintQueue } from "../../impressao/queue/print-queue";
-import { PrintJobItemPayload } from "../../impressao/types/print-job.types";
+import { itensDoExtratoParaImpressao } from "../../impressao/formatters/itens-do-extrato";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { AddPagamentoComandaDto } from "../dtos/add-pagamento-comanda.dto";
 import { FecharComandaDto } from "../dtos/fechar-comanda.dto";
@@ -16,8 +16,9 @@ import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { PagamentoComanda } from "../entities/pagamento-comanda.entity";
 import { calcularDesconto } from "./desconto-calculator";
 import { carregarExtrato, ExtratoCarregado } from "./extrato-loader";
-import { podeCancelarComandaZerada } from "./fechamento-calculator";
+import { cancelarComandaZeradaNaTransacao } from "./cancelamento-comanda";
 import { fecharComandaNaTransacao, FechamentoResultado } from "./fechamento-comanda";
+import { assertComandasPodemSerJuntadas } from "./juncao-comanda";
 import { exigirNumeroDaMesa } from "./numero-comanda";
 
 export type { FechamentoResultado } from "./fechamento-comanda";
@@ -78,9 +79,10 @@ export class ComandaService {
     const repository = AppDataSource.getRepository(Comanda);
 
     return repository.find({
-      where: { tenantId, status: filters.status },
+      where: { tenantId, status: filters.status, tipoAtendimento: filters.tipoAtendimento },
       relations: { integrantes: true },
-      order: { numeroComanda: "ASC" },
+      // Delivery não tem número de mesa: ordena pela abertura.
+      order: { numeroComanda: "ASC", abertaEm: "ASC" },
     });
   }
 
@@ -187,6 +189,7 @@ export class ComandaService {
     const todosOsIds = [dto.comandaPrincipalId, ...dto.comandasSecundariasIds];
 
     const comandasEncontradas = await comandaRepository.findBy({ id: In(todosOsIds), tenantId });
+    assertComandasPodemSerJuntadas(comandasEncontradas);
     const comandasPorId = new Map(comandasEncontradas.map((comanda) => [comanda.id, comanda]));
 
     const comandaPrincipal = comandasPorId.get(dto.comandaPrincipalId);
@@ -235,37 +238,12 @@ export class ComandaService {
       throw new AppError("Não é possível imprimir a pré-conta de uma comanda já fechada.", 400);
     }
 
-    const itens: PrintJobItemPayload[] = [
-      ...calculado.divisao_por_integrante.flatMap((integrante) =>
-        integrante.itens_individuais.map(
-          (item): PrintJobItemPayload => ({
-            produto_nome: item.produto,
-            quantidade: item.qtd,
-            preco_unitario: item.preco_unitario,
-            subtotal: item.subtotal,
-            integrante_nome: integrante.nome,
-            observacao: null,
-          })
-        )
-      ),
-      ...calculado.itens_compartilhados.map(
-        (item): PrintJobItemPayload => ({
-          produto_nome: item.produto,
-          quantidade: item.qtd,
-          preco_unitario: item.preco_unitario,
-          subtotal: item.subtotal,
-          integrante_nome: null,
-          observacao: null,
-        })
-      ),
-    ];
-
     await PrintQueue.enqueuePreConta({
       tenant_id: tenantId,
       comanda_id: comanda.id,
       numero_comanda: exigirNumeroDaMesa(comanda.numeroComanda),
       gerado_em: new Date(),
-      itens,
+      itens: itensDoExtratoParaImpressao(calculado),
       valor_total: calculado.resumo_financeiro.valor_total_comanda,
     });
   }
@@ -282,30 +260,6 @@ export class ComandaService {
   }
 
   static async cancelarZerada(tenantId: string, comandaId: string): Promise<Comanda> {
-    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
-
-    if (comanda.status !== ComandaStatus.ABERTA) {
-      throw new AppError("Esta comanda já está fechada.", 400);
-    }
-
-    if (!podeCancelarComandaZerada(calculado.resumo_financeiro.valor_total_comanda)) {
-      throw new AppError(
-        "Esta comanda possui itens com valor pendente e não pode ser cancelada diretamente. Utilize o fechamento com pagamento.",
-        400
-      );
-    }
-
-    return AppDataSource.transaction(async (manager) => {
-      const comandaTravada = await manager.findOne(Comanda, { where: { id: comanda.id, tenantId } });
-
-      if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
-        throw new AppError("Esta comanda já está fechada.", 400);
-      }
-
-      comandaTravada.status = ComandaStatus.FECHADA;
-      comandaTravada.fechadaEm = new Date();
-
-      return manager.save(comandaTravada);
-    });
+    return AppDataSource.transaction((manager) => cancelarComandaZeradaNaTransacao(manager, tenantId, comandaId));
   }
 }

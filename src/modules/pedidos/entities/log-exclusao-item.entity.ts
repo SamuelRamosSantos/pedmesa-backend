@@ -12,8 +12,9 @@ export class LogExclusaoItem {
   @Column({ name: "comanda_id", type: "uuid" })
   comandaId!: string;
 
-  @Column({ name: "numero_comanda", type: "int" })
-  numeroComanda!: number;
+  // NULL em comandas de delivery (não têm mesa). Ver migration 1700000000032.
+  @Column({ name: "numero_comanda", type: "int", nullable: true })
+  numeroComanda!: number | null;
 
   @Column({ name: "pedido_id", type: "uuid" })
   pedidoId!: string;
