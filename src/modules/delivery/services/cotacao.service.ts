@@ -32,7 +32,8 @@ export async function cotarPedidoDelivery(
   }
 
   const produtoIds = [...new Set(dto.itens.map((item) => item.produtoId))];
-  const produtos = await manager.findBy(Product, { id: In(produtoIds), tenantId });
+  // Cotação só do frete (sem itens, PED-108): nada a buscar.
+  const produtos = produtoIds.length === 0 ? [] : await manager.findBy(Product, { id: In(produtoIds), tenantId });
   const produtosDosItens = resolverProdutosDosItens(dto.itens, new Map(produtos.map((produto) => [produto.id, produto])));
 
   const subtotalCents = somarSubtotalCents(

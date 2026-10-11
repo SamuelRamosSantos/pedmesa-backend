@@ -13,6 +13,17 @@ export interface CotacaoDeliveryDto {
   trocoParaCents: number | null;
 }
 
+// Itens são opcionais na cotação (PED-108): o atendente vê a taxa e se o bairro é atendido
+// assim que informa o endereço, antes de montar o carrinho. Sem itens, o subtotal é 0.
+// Criar o pedido continua exigindo itens.
+function validarItensDaCotacao(itens: unknown): CreatePedidoItemInput[] {
+  if (itens === undefined || (Array.isArray(itens) && itens.length === 0)) {
+    return [];
+  }
+
+  return assertValidCreatePedidoDto({ itens }).itens;
+}
+
 // POST /delivery/cotacao. Recebe só a intenção do cliente: endereço, itens, forma de
 // pagamento e "troco para". Preço, taxa e total são calculados no servidor; um
 // taxa_entrega ou total enviado no corpo é ignorado.
@@ -27,7 +38,7 @@ export function assertValidCotacaoDeliveryDto(body: unknown): CotacaoDeliveryDto
 
   return {
     endereco: { cidade: validarCidade(cidade), bairro: validarBairro(bairro) },
-    itens: assertValidCreatePedidoDto({ itens }).itens,
+    itens: validarItensDaCotacao(itens),
     formaPagamento: validarFormaPagamento(formaPagamento, "forma_pagamento"),
     trocoParaCents: trocoPara === undefined || trocoPara === null ? null : toCents(validarValorReais(trocoPara, "troco_para")),
   };

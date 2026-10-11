@@ -33,9 +33,16 @@ describe("assertValidCotacaoDeliveryDto", () => {
   });
 
   it.each([
+    ["ausentes", { itens: undefined }],
+    ["vazios", { itens: [] }],
+  ])("itens %s: cota só o frete (lista vazia)", (_caso, alteracao) => {
+    expect(assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }).itens).toEqual([]);
+  });
+
+  it.each([
     ["sem endereço", { endereco: undefined }],
     ["endereço sem bairro", { endereco: { cidade: "São Paulo" } }],
-    ["sem itens", { itens: [] }],
+    ["itens que não são lista", { itens: "x" }],
     ["item com produto_id inválido", { itens: [{ produto_id: "x", quantidade: 1 }] }],
     ["quantidade zero", { itens: [{ produto_id: PRODUTO, quantidade: 0 }] }],
     ["forma de pagamento inválida", { forma_pagamento: "boleto" }],
