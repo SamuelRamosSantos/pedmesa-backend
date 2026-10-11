@@ -1,3 +1,4 @@
+import { TipoAtendimento } from "../../comandas/entities/comanda.entity";
 import { ItemPedido, StatusItem } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
 
@@ -28,7 +29,10 @@ export interface PedidoItemResponse {
 export interface PedidoListItemResponse {
   id: string;
   comanda_id: string;
+  tipo_atendimento: TipoAtendimento;
+  // Mesa: numero_comanda. Delivery: numero_entrega (o outro vem null).
   numero_comanda: number | null;
+  numero_entrega: number | null;
   usuario_id: string;
   garcom_nome: string;
   status_preparo: StatusPreparo;
@@ -40,7 +44,9 @@ export function toPedidoListItemResponse(pedido: Pedido): PedidoListItemResponse
   return {
     id: pedido.id,
     comanda_id: pedido.comandaId,
+    tipo_atendimento: pedido.comanda.tipoAtendimento,
     numero_comanda: pedido.comanda.numeroComanda,
+    numero_entrega: pedido.comanda.entrega?.numeroEntrega ?? null,
     usuario_id: pedido.usuarioId,
     garcom_nome: pedido.usuario.nome,
     status_preparo: pedido.statusPreparo,

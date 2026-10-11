@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../../../shared/errors/app-error";
+import { TipoAtendimento } from "../../comandas/entities/comanda.entity";
 import { assertValidDashboardFiltroDto } from "./dashboard-filtro.dto";
 
 describe("assertValidDashboardFiltroDto", () => {
@@ -45,6 +46,18 @@ describe("assertValidDashboardFiltroDto", () => {
     expect(() =>
       assertValidDashboardFiltroDto({ periodo: "customizado", data_inicio: "01/08/2026", data_fim: "2026-08-10" })
     ).toThrow(AppError);
+  });
+
+  it("aceita filtro por tipo de atendimento", () => {
+    expect(assertValidDashboardFiltroDto({ periodo: "7_dias", tipo: "delivery" })).toEqual({
+      periodo: "7_dias",
+      tipo: TipoAtendimento.DELIVERY,
+    });
+    expect(assertValidDashboardFiltroDto({ tipo: "" })).toEqual({ periodo: "hoje" });
+  });
+
+  it.each([["inexistente", "balcao"], ["repetido na query", ["mesa", "delivery"]]])("rejeita tipo %s", (_caso, tipo) => {
+    expect(() => assertValidDashboardFiltroDto({ tipo })).toThrow(AppError);
   });
 
   it("rejeita 'customizado' quando data_inicio é depois de data_fim", () => {

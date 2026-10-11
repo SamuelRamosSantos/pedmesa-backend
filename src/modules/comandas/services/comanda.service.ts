@@ -18,6 +18,7 @@ import { calcularDesconto } from "./desconto-calculator";
 import { carregarExtrato, ExtratoCarregado } from "./extrato-loader";
 import { cancelarComandaZeradaNaTransacao } from "./cancelamento-comanda";
 import { fecharComandaNaTransacao, FechamentoResultado } from "./fechamento-comanda";
+import { assertComandasPodemSerJuntadas } from "./juncao-comanda";
 import { exigirNumeroDaMesa } from "./numero-comanda";
 
 export type { FechamentoResultado } from "./fechamento-comanda";
@@ -78,9 +79,10 @@ export class ComandaService {
     const repository = AppDataSource.getRepository(Comanda);
 
     return repository.find({
-      where: { tenantId, status: filters.status },
+      where: { tenantId, status: filters.status, tipoAtendimento: filters.tipoAtendimento },
       relations: { integrantes: true },
-      order: { numeroComanda: "ASC" },
+      // Delivery não tem número de mesa: ordena pela abertura.
+      order: { numeroComanda: "ASC", abertaEm: "ASC" },
     });
   }
 
@@ -187,6 +189,7 @@ export class ComandaService {
     const todosOsIds = [dto.comandaPrincipalId, ...dto.comandasSecundariasIds];
 
     const comandasEncontradas = await comandaRepository.findBy({ id: In(todosOsIds), tenantId });
+    assertComandasPodemSerJuntadas(comandasEncontradas);
     const comandasPorId = new Map(comandasEncontradas.map((comanda) => [comanda.id, comanda]));
 
     const comandaPrincipal = comandasPorId.get(dto.comandaPrincipalId);

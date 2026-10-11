@@ -66,7 +66,17 @@ export class PedidoService {
       .createQueryBuilder("pedido")
       .innerJoin("pedido.comanda", "comanda")
       .innerJoin("pedido.usuario", "usuario")
-      .addSelect(["comanda.id", "comanda.numeroComanda", "usuario.id", "usuario.nome"])
+      // Badge do KDS (PED-103): mesa pelo número da comanda, delivery pelo número da entrega.
+      .leftJoin("comanda.entrega", "entrega")
+      .addSelect([
+        "comanda.id",
+        "comanda.numeroComanda",
+        "comanda.tipoAtendimento",
+        "entrega.id",
+        "entrega.numeroEntrega",
+        "usuario.id",
+        "usuario.nome",
+      ])
       .leftJoinAndSelect("pedido.itens", "item")
       .leftJoinAndSelect("item.produto", "produto")
       .leftJoinAndSelect("item.integrante", "integrante")
@@ -147,7 +157,7 @@ export class PedidoService {
         manager.create(LogExclusaoItem, {
           tenantId,
           comandaId: item.pedido.comandaId,
-          numeroComanda: exigirNumeroDaMesa(item.pedido.comanda.numeroComanda),
+          numeroComanda: item.pedido.comanda.numeroComanda,
           pedidoId: item.pedidoId,
           produtoNome: item.produto.nome,
           quantidade: item.quantidade,
