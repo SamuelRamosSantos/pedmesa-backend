@@ -43,6 +43,9 @@ describe("calcularExtrato", () => {
       quantidade_integrantes: 2,
       valor_compartilhado_por_pessoa: 15.0,
       valor_total_comanda: 75.0,
+      // PED-94: campos novos; para mesa a taxa é 0 e o total com entrega é igual ao dos itens.
+      taxa_entrega: 0,
+      valor_total_com_entrega: 75.0,
     });
 
     const lucas = resultado.divisao_por_integrante.find((i) => i.integrante_id === "lucas");
@@ -100,6 +103,9 @@ describe("calcularExtrato", () => {
       quantidade_integrantes: 1,
       valor_compartilhado_por_pessoa: 0,
       valor_total_comanda: 0,
+      // PED-94: campos novos; para mesa a taxa é 0 e o total com entrega é igual ao dos itens.
+      taxa_entrega: 0,
+      valor_total_com_entrega: 0,
     });
 
     expect(resultado.divisao_por_integrante).toEqual([

@@ -26,6 +26,8 @@ export interface ExtratoIntegranteInput {
 export interface ExtratoCalculatorInput {
   itens: ExtratoItemInput[];
   integrantes: ExtratoIntegranteInput[];
+  // Taxa de entrega do delivery (snapshot em entregas.taxa_entrega). Ausente ou 0 para mesa.
+  taxaEntrega?: number;
 }
 
 export interface ExtratoItemLinha {
@@ -59,7 +61,11 @@ export interface ResumoFinanceiro {
   total_itens_compartilhados: number;
   quantidade_integrantes: number;
   valor_compartilhado_por_pessoa: number;
+  // Só os itens: é a base do desconto (ADR-001, decisão 2 do PO: a taxa nunca é descontada).
   valor_total_comanda: number;
+  taxa_entrega: number;
+  // Itens + taxa de entrega, antes do desconto. Igual a valor_total_comanda para mesa.
+  valor_total_com_entrega: number;
 }
 
 export interface ExtratoCalculado {
@@ -128,6 +134,7 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
   });
 
   const valorTotalComandaCents = totalIndividualCents + totalCompartilhadoCents;
+  const taxaEntregaCents = toCents(input.taxaEntrega ?? 0);
 
   const itensPendentes: ItemPendenteEntrega[] = input.itens
     .filter((item) => STATUS_PENDENTES_ENTREGA.includes(item.statusItem))
@@ -144,6 +151,8 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
       quantidade_integrantes: quantidadeIntegrantes,
       valor_compartilhado_por_pessoa: fromCents(valorCompartilhadoPorPessoaCents),
       valor_total_comanda: fromCents(valorTotalComandaCents),
+      taxa_entrega: fromCents(taxaEntregaCents),
+      valor_total_com_entrega: fromCents(valorTotalComandaCents + taxaEntregaCents),
     },
     divisao_por_integrante: divisaoPorIntegrante,
     itens_compartilhados: itensCompartilhados,

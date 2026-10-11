@@ -16,10 +16,12 @@ import { ListComandasFilters } from "../dtos/list-comandas.dto";
 import { Comanda, ComandaStatus, DescontoTipo, TipoAtendimento } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { PagamentoComanda } from "../entities/pagamento-comanda.entity";
+import { Entrega } from "../../delivery/entities/entrega.entity";
 import { calcularDesconto, ratearDescontoPorIntegrante, RateioIntegranteComDesconto } from "./desconto-calculator";
 import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
 import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
 import { exigirNumeroDaMesa } from "./numero-comanda";
+import { calcularTotalComEntrega, somarTaxaEntregaAoRateio } from "./total-com-entrega-calculator";
 
 export interface FechamentoResultado {
   comanda: Comanda;
@@ -27,8 +29,29 @@ export interface FechamentoResultado {
   descontoTipo: DescontoTipo;
   descontoValor: number;
   descontoAplicado: number;
+  taxaEntrega: number;
   totalFinal: number;
   divisaoPorIntegrante: RateioIntegranteComDesconto[];
+}
+
+// Taxa de entrega da comanda: 0 para mesa; para delivery, o snapshot gravado na entrega.
+async function buscarTaxaEntrega(comanda: Comanda): Promise<number> {
+  if (comanda.tipoAtendimento !== TipoAtendimento.DELIVERY) {
+    return 0;
+  }
+
+  const entrega = await AppDataSource.getRepository(Entrega).findOne({
+    select: { id: true, taxaEntrega: true },
+    where: { comandaId: comanda.id, tenantId: comanda.tenantId },
+  });
+
+  if (!entrega) {
+    // Comanda delivery e entrega são criadas na mesma transação (PED-96): sem entrega, o
+    // estado está inconsistente. Falhar alto é melhor que cobrar sem a taxa.
+    throw new Error(`Comanda delivery ${comanda.id} sem registro em entregas.`);
+  }
+
+  return entrega.taxaEntrega;
 }
 
 export class ComandaService {
@@ -143,6 +166,7 @@ export class ComandaService {
         statusItem: item.statusItem,
       })),
       integrantes: comanda.integrantes.map((integrante) => ({ id: integrante.id, nome: integrante.nome })),
+      taxaEntrega: await buscarTaxaEntrega(comanda),
     });
 
     const pagamentoRepository = AppDataSource.getRepository(PagamentoComanda);
@@ -338,10 +362,12 @@ export class ComandaService {
       throw new AppError("Você não tem permissão para conceder desconto.", 403);
     }
 
-    const descontoCalculado = calcularDesconto(calculado.resumo_financeiro.valor_total_comanda, {
-      tipo: dto.descontoTipo,
-      valor: dto.descontoValor,
-    });
+    // Desconto só sobre os itens; a taxa de entrega (0 para mesa) entra depois, inteira.
+    const descontoCalculado = calcularTotalComEntrega(
+      calculado.resumo_financeiro.valor_total_comanda,
+      { tipo: dto.descontoTipo, valor: dto.descontoValor },
+      calculado.resumo_financeiro.taxa_entrega
+    );
 
     const avaliacao = avaliarFechamento(
       descontoCalculado.total_final,
@@ -357,13 +383,16 @@ export class ComandaService {
       );
     }
 
-    const divisaoPorIntegrante = ratearDescontoPorIntegrante(
-      calculado.divisao_por_integrante.map((integrante) => ({
-        integranteId: integrante.integrante_id,
-        nome: integrante.nome,
-        totalAPagar: integrante.total_a_pagar,
-      })),
-      descontoCalculado.desconto_aplicado
+    const divisaoPorIntegrante = somarTaxaEntregaAoRateio(
+      ratearDescontoPorIntegrante(
+        calculado.divisao_por_integrante.map((integrante) => ({
+          integranteId: integrante.integrante_id,
+          nome: integrante.nome,
+          totalAPagar: integrante.total_a_pagar,
+        })),
+        descontoCalculado.desconto_aplicado
+      ),
+      descontoCalculado.taxa_entrega
     );
 
     const comandaFechada = await AppDataSource.transaction(async (manager) => {
@@ -389,6 +418,7 @@ export class ComandaService {
       descontoTipo: dto.descontoTipo,
       descontoValor: dto.descontoValor,
       descontoAplicado: descontoCalculado.desconto_aplicado,
+      taxaEntrega: descontoCalculado.taxa_entrega,
       totalFinal: descontoCalculado.total_final,
       divisaoPorIntegrante,
     };
