@@ -3,7 +3,7 @@ import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
 import { UserRole } from "../../usuarios/entities/user.entity";
 import { cotar } from "../controllers/cotacao.controller";
-import { criar, reimprimirTicket, transicionarStatus } from "../controllers/pedido-delivery.controller";
+import { criar, listarPainel, reimprimirTicket, transicionarStatus } from "../controllers/pedido-delivery.controller";
 import { createTaxa, listTaxas, removeTaxa, updateTaxa } from "../controllers/taxa-entrega.controller";
 
 const deliveryRoutes = Router();
@@ -19,6 +19,7 @@ const ATENDER_DELIVERY_ROLES = [UserRole.ADMIN, UserRole.EXPEDICAO];
 
 deliveryRoutes.post("/cotacao", rbacMiddleware(ATENDER_DELIVERY_ROLES), cotar);
 deliveryRoutes.post("/pedidos", rbacMiddleware(ATENDER_DELIVERY_ROLES), criar);
+deliveryRoutes.get("/entregas", rbacMiddleware(ATENDER_DELIVERY_ROLES), listarPainel);
 deliveryRoutes.patch("/entregas/:id/status", rbacMiddleware(ATENDER_DELIVERY_ROLES), transicionarStatus);
 deliveryRoutes.post("/entregas/:id/reimprimir-ticket", rbacMiddleware(ATENDER_DELIVERY_ROLES), reimprimirTicket);
 
