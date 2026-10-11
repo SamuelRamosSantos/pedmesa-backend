@@ -3,6 +3,7 @@ import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
 import { UserRole } from "../../usuarios/entities/user.entity";
 import { cotar } from "../controllers/cotacao.controller";
+import { criar, reimprimirTicket } from "../controllers/pedido-delivery.controller";
 import { createTaxa, listTaxas, removeTaxa, updateTaxa } from "../controllers/taxa-entrega.controller";
 
 const deliveryRoutes = Router();
@@ -17,6 +18,8 @@ const GERENCIAR_TAXAS_ROLES = [UserRole.ADMIN];
 const ATENDER_DELIVERY_ROLES = [UserRole.ADMIN, UserRole.EXPEDICAO];
 
 deliveryRoutes.post("/cotacao", rbacMiddleware(ATENDER_DELIVERY_ROLES), cotar);
+deliveryRoutes.post("/pedidos", rbacMiddleware(ATENDER_DELIVERY_ROLES), criar);
+deliveryRoutes.post("/entregas/:id/reimprimir-ticket", rbacMiddleware(ATENDER_DELIVERY_ROLES), reimprimirTicket);
 
 deliveryRoutes.get("/taxas", rbacMiddleware(GERENCIAR_TAXAS_ROLES), listTaxas);
 deliveryRoutes.post("/taxas", rbacMiddleware(GERENCIAR_TAXAS_ROLES), createTaxa);

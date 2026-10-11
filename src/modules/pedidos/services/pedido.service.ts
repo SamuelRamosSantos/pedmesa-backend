@@ -49,6 +49,7 @@ export class PedidoService {
       comanda_id: comanda.id,
       pedido_id: pedido.id,
       numero_comanda: numeroMesa,
+      numero_entrega: null,
       criado_em: pedido.criadoEm,
       itens: itensImpressao,
     });

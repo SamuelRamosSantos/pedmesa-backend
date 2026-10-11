@@ -62,6 +62,32 @@ async function marcarComoPrincipal(manager: EntityManager, cliente: Cliente, end
   endereco.principal = true;
 }
 
+// Cria um endereço dentro da transação do chamador (usada pela criação do pedido
+// delivery, PED-96). O primeiro endereço do cliente vira o principal.
+export async function criarEnderecoNaTransacao(
+  manager: EntityManager,
+  tenantId: string,
+  clienteId: string,
+  dto: CreateEnderecoClienteDto
+): Promise<EnderecoCliente> {
+  const cliente = await travarCliente(manager, tenantId, clienteId);
+  const quantidadeExistente = await manager.countBy(EnderecoCliente, { clienteId: cliente.id, tenantId });
+  const principal = deveSerPrincipal(dto.principal, quantidadeExistente);
+
+  if (principal) {
+    await desmarcarPrincipalAtual(manager, cliente);
+  }
+
+  return manager.save(
+    manager.create(EnderecoCliente, {
+      ...dto,
+      principal,
+      clienteId: cliente.id,
+      tenantId: cliente.tenantId,
+    })
+  );
+}
+
 export class EnderecoClienteService {
   // Principal primeiro, depois do mais recente para o mais antigo: a ordem em que o
   // formulário do delivery mostra as opções.
@@ -73,24 +99,7 @@ export class EnderecoClienteService {
   }
 
   static async criar(tenantId: string, clienteId: string, dto: CreateEnderecoClienteDto): Promise<EnderecoCliente> {
-    return AppDataSource.transaction(async (manager) => {
-      const cliente = await travarCliente(manager, tenantId, clienteId);
-      const quantidadeExistente = await manager.countBy(EnderecoCliente, { clienteId: cliente.id, tenantId });
-      const principal = deveSerPrincipal(dto.principal, quantidadeExistente);
-
-      if (principal) {
-        await desmarcarPrincipalAtual(manager, cliente);
-      }
-
-      return manager.save(
-        manager.create(EnderecoCliente, {
-          ...dto,
-          principal,
-          clienteId: cliente.id,
-          tenantId: cliente.tenantId,
-        })
-      );
-    });
+    return AppDataSource.transaction((manager) => criarEnderecoNaTransacao(manager, tenantId, clienteId, dto));
   }
 
   static async definirPrincipal(tenantId: string, clienteId: string, enderecoId: string): Promise<EnderecoCliente> {

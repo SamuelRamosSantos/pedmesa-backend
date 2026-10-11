@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Tenant } from "../../tenants/entities/tenant.entity";
-import { PrintJobItemPayload } from "../types/print-job.types";
+import { DadosEntregaTicket, PrintJobItemPayload } from "../types/print-job.types";
 
 export enum StatusFilaImpressao {
   PENDENTE = "pendente",
@@ -11,6 +11,8 @@ export enum StatusFilaImpressao {
 export enum TipoFilaImpressao {
   PEDIDO_COZINHA = "pedido_cozinha",
   PRE_CONTA = "pre_conta",
+  // Cupom do motoboy (PED-102).
+  ENTREGA = "entrega",
 }
 
 @Entity("fila_impressao")
@@ -39,11 +41,20 @@ export class FilaImpressao {
   @Column({ name: "pedido_id", type: "uuid", nullable: true })
   pedidoId!: string | null;
 
-  @Column({ name: "numero_comanda", type: "int" })
-  numeroComanda!: number;
+  // Mesa: numero_comanda. Delivery: numero_entrega. O CHECK ck_fila_impressao_identificacao
+  // exige pelo menos um dos dois.
+  @Column({ name: "numero_comanda", type: "int", nullable: true })
+  numeroComanda!: number | null;
+
+  @Column({ name: "numero_entrega", type: "int", nullable: true })
+  numeroEntrega!: number | null;
 
   @Column({ type: "jsonb" })
   payload!: PrintJobItemPayload[];
+
+  // Cliente, endereço e valores do cupom do motoboy; só em jobs do tipo entrega.
+  @Column({ name: "dados_entrega", type: "jsonb", nullable: true })
+  dadosEntrega!: DadosEntregaTicket | null;
 
   @Column({
     name: "valor_total",

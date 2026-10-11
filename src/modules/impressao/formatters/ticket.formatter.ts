@@ -1,4 +1,5 @@
 import { PrintJobItemPayload, PrintJobPayload } from "../types/print-job.types";
+import { identificacaoDoPedido } from "./formatacao";
 
 const LARGURA_CUPOM = "================================";
 const SEPARADOR_ITEM = "--------------------------------";
@@ -11,7 +12,7 @@ function formatarCabecalho(job: PrintJobPayload): string {
     LARGURA_CUPOM,
     "        COZINHA - PEDIDO       ",
     LARGURA_CUPOM,
-    `Comanda/Mesa: #${job.numero_comanda}`,
+    identificacaoDoPedido(job.numero_comanda, job.numero_entrega),
     `Horário do Pedido: ${horario}`,
     `Pedido: #${job.pedido_id}`,
     SEPARADOR_ITEM,

@@ -3,7 +3,7 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
 import { PrintQueue } from "../../impressao/queue/print-queue";
-import { PrintJobItemPayload } from "../../impressao/types/print-job.types";
+import { itensDoExtratoParaImpressao } from "../../impressao/formatters/itens-do-extrato";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { AddPagamentoComandaDto } from "../dtos/add-pagamento-comanda.dto";
 import { FecharComandaDto } from "../dtos/fechar-comanda.dto";
@@ -235,37 +235,12 @@ export class ComandaService {
       throw new AppError("Não é possível imprimir a pré-conta de uma comanda já fechada.", 400);
     }
 
-    const itens: PrintJobItemPayload[] = [
-      ...calculado.divisao_por_integrante.flatMap((integrante) =>
-        integrante.itens_individuais.map(
-          (item): PrintJobItemPayload => ({
-            produto_nome: item.produto,
-            quantidade: item.qtd,
-            preco_unitario: item.preco_unitario,
-            subtotal: item.subtotal,
-            integrante_nome: integrante.nome,
-            observacao: null,
-          })
-        )
-      ),
-      ...calculado.itens_compartilhados.map(
-        (item): PrintJobItemPayload => ({
-          produto_nome: item.produto,
-          quantidade: item.qtd,
-          preco_unitario: item.preco_unitario,
-          subtotal: item.subtotal,
-          integrante_nome: null,
-          observacao: null,
-        })
-      ),
-    ];
-
     await PrintQueue.enqueuePreConta({
       tenant_id: tenantId,
       comanda_id: comanda.id,
       numero_comanda: exigirNumeroDaMesa(comanda.numeroComanda),
       gerado_em: new Date(),
-      itens,
+      itens: itensDoExtratoParaImpressao(calculado),
       valor_total: calculado.resumo_financeiro.valor_total_comanda,
     });
   }

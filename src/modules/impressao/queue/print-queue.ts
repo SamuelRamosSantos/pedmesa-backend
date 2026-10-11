@@ -1,10 +1,12 @@
 import { AppDataSource } from "../../../config/data-source";
 import { FilaImpressao, StatusFilaImpressao, TipoFilaImpressao } from "../entities/fila-impressao.entity";
 import { Impressora } from "../entities/impressora.entity";
+import { formatarEntrega } from "../formatters/entrega.formatter";
+import { identificacaoDoPedido } from "../formatters/formatacao";
 import { formatarPreConta } from "../formatters/preconta.formatter";
 import { formatarTicket } from "../formatters/ticket.formatter";
 import { ImpressaoService } from "../services/impressao.service";
-import { PreContaJobPayload, PrintJobPayload } from "../types/print-job.types";
+import { EntregaJobPayload, PreContaJobPayload, PrintJobPayload } from "../types/print-job.types";
 
 const MAX_TENTATIVAS = 3;
 const RETRY_DELAY_MS = 500;
@@ -13,26 +15,62 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Escolhe o formatter pelo tipo do job. O pedmesa-print-agent tem a mesma escolha no
+// poller.js (formatarTextoDoJob): um tipo novo precisa entrar nos dois lugares.
 function formatarTextoDoJob(job: FilaImpressao): string {
-  if (job.tipo === TipoFilaImpressao.PRE_CONTA) {
-    return formatarPreConta({
-      tenant_id: job.tenantId,
-      comanda_id: job.comandaId ?? "",
-      numero_comanda: job.numeroComanda,
-      gerado_em: job.criadoEm,
-      itens: job.payload,
-      valor_total: job.valorTotal ?? 0,
-    });
-  }
+  switch (job.tipo) {
+    case TipoFilaImpressao.PRE_CONTA:
+      if (job.numeroComanda === null) {
+        throw new Error(`Job de pré-conta ${job.id} sem número de mesa.`);
+      }
 
-  return formatarTicket({
-    tenant_id: job.tenantId,
-    comanda_id: job.comandaId ?? "",
-    pedido_id: job.pedidoId ?? "",
-    numero_comanda: job.numeroComanda,
-    criado_em: job.criadoEm,
-    itens: job.payload,
-  });
+      return formatarPreConta({
+        tenant_id: job.tenantId,
+        comanda_id: job.comandaId ?? "",
+        numero_comanda: job.numeroComanda,
+        gerado_em: job.criadoEm,
+        itens: job.payload,
+        valor_total: job.valorTotal ?? 0,
+      });
+
+    case TipoFilaImpressao.ENTREGA:
+      if (job.numeroEntrega === null || job.dadosEntrega === null) {
+        throw new Error(`Job de entrega ${job.id} sem número ou sem dados da entrega.`);
+      }
+
+      return formatarEntrega({
+        tenant_id: job.tenantId,
+        comanda_id: job.comandaId ?? "",
+        numero_entrega: job.numeroEntrega,
+        gerado_em: job.criadoEm,
+        itens: job.payload,
+        dados: job.dadosEntrega,
+      });
+
+    case TipoFilaImpressao.PEDIDO_COZINHA:
+      return formatarTicket({
+        tenant_id: job.tenantId,
+        comanda_id: job.comandaId ?? "",
+        pedido_id: job.pedidoId ?? "",
+        numero_comanda: job.numeroComanda,
+        numero_entrega: job.numeroEntrega,
+        criado_em: job.criadoEm,
+        itens: job.payload,
+      });
+  }
+}
+
+function identificarJob(job: FilaImpressao): string {
+  const pedido = identificacaoDoPedido(job.numeroComanda, job.numeroEntrega);
+
+  switch (job.tipo) {
+    case TipoFilaImpressao.PRE_CONTA:
+      return `Pré-conta (${pedido})`;
+    case TipoFilaImpressao.ENTREGA:
+      return `Cupom de entrega (${pedido})`;
+    case TipoFilaImpressao.PEDIDO_COZINHA:
+      return `Pedido #${job.pedidoId} (${pedido})`;
+  }
 }
 
 async function processar(filaImpressaoId: string): Promise<void> {
@@ -51,7 +89,7 @@ async function processar(filaImpressaoId: string): Promise<void> {
   }
 
   const texto = formatarTextoDoJob(job);
-  const identificador = job.tipo === TipoFilaImpressao.PRE_CONTA ? `Pré-conta da mesa #${job.numeroComanda}` : `Pedido #${job.pedidoId}`;
+  const identificador = identificarJob(job);
 
   for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa += 1) {
     try {
@@ -103,11 +141,33 @@ export class PrintQueue {
         comandaId: job.comanda_id,
         pedidoId: job.pedido_id,
         numeroComanda: job.numero_comanda,
+        numeroEntrega: job.numero_entrega,
         payload: job.itens,
       })
     );
 
-    enfileirar(filaImpressao, `Pedido #${job.pedido_id}`);
+    enfileirar(filaImpressao, identificarJob(filaImpressao));
+  }
+
+  // Cupom do motoboy (PED-102).
+  static async enqueueEntrega(job: EntregaJobPayload): Promise<void> {
+    const filaRepository = AppDataSource.getRepository(FilaImpressao);
+
+    const filaImpressao = await filaRepository.save(
+      filaRepository.create({
+        tenantId: job.tenant_id,
+        tipo: TipoFilaImpressao.ENTREGA,
+        comandaId: job.comanda_id,
+        pedidoId: null,
+        numeroComanda: null,
+        numeroEntrega: job.numero_entrega,
+        payload: job.itens,
+        valorTotal: job.dados.total,
+        dadosEntrega: job.dados,
+      })
+    );
+
+    enfileirar(filaImpressao, identificarJob(filaImpressao));
   }
 
   static async enqueuePreConta(job: PreContaJobPayload): Promise<void> {
@@ -125,6 +185,6 @@ export class PrintQueue {
       })
     );
 
-    enfileirar(filaImpressao, `Pré-conta da mesa #${job.numero_comanda}`);
+    enfileirar(filaImpressao, identificarJob(filaImpressao));
   }
 }
