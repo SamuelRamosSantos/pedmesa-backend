@@ -1,4 +1,5 @@
 import { AppError } from "../../../shared/errors/app-error";
+import { validarValorReais } from "../../../shared/utils/validar-valor-reais";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ESTADO_REGEX = /^[A-Za-z]{2}$/;
@@ -16,6 +17,9 @@ export interface UpdateTenantConfigDto {
   cidade?: string | null;
   estado?: string | null;
   cep?: string | null;
+  deliveryAtivo?: boolean;
+  taxaEntregaPadrao?: number | null;
+  pedidoMinimoDelivery?: number;
 }
 
 function assertValidStringOpcional(valor: unknown, campo: string): string | null | undefined {
@@ -64,6 +68,9 @@ export function assertValidUpdateTenantConfigDto(body: unknown): UpdateTenantCon
     cidade,
     estado,
     cep,
+    delivery_ativo: deliveryAtivo,
+    taxa_entrega_padrao: taxaEntregaPadrao,
+    pedido_minimo_delivery: pedidoMinimoDelivery,
   } = (body ?? {}) as Record<string, unknown>;
 
   const dto: UpdateTenantConfigDto = {};
@@ -142,6 +149,22 @@ export function assertValidUpdateTenantConfigDto(body: unknown): UpdateTenantCon
   const cepValidado = assertValidStringOpcional(cep, "cep");
   if (cepValidado !== undefined) {
     dto.cep = cepValidado;
+  }
+
+  if (deliveryAtivo !== undefined) {
+    if (typeof deliveryAtivo !== "boolean") {
+      throw new AppError("delivery_ativo deve ser booleano.", 400);
+    }
+    dto.deliveryAtivo = deliveryAtivo;
+  }
+
+  // null: bairros fora da tabela de taxas não são atendidos.
+  if (taxaEntregaPadrao !== undefined) {
+    dto.taxaEntregaPadrao = taxaEntregaPadrao === null ? null : validarValorReais(taxaEntregaPadrao, "taxa_entrega_padrao");
+  }
+
+  if (pedidoMinimoDelivery !== undefined) {
+    dto.pedidoMinimoDelivery = validarValorReais(pedidoMinimoDelivery, "pedido_minimo_delivery");
   }
 
   if (Object.keys(dto).length === 0) {

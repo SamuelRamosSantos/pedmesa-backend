@@ -11,7 +11,8 @@ productRoutes.use(authMiddleware);
 productRoutes.post("/", rbacMiddleware([UserRole.ADMIN]), create);
 productRoutes.get(
   "/",
-  rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.COZINHA, UserRole.CAIXA]),
+  // EXPEDICAO só lê o cardápio, para montar pedidos delivery (PED-113).
+  rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.COZINHA, UserRole.CAIXA, UserRole.EXPEDICAO]),
   list
 );
 productRoutes.patch(

@@ -101,4 +101,34 @@ describe("assertValidUpdateTenantConfigDto", () => {
     expect(() => assertValidUpdateTenantConfigDto({ estado: "P" })).toThrow(AppError);
     expect(() => assertValidUpdateTenantConfigDto({ estado: 123 })).toThrow(AppError);
   });
+
+  describe("configuração de delivery (PED-91)", () => {
+    it("aceita os três campos de delivery", () => {
+      expect(
+        assertValidUpdateTenantConfigDto({ delivery_ativo: true, taxa_entrega_padrao: 8.5, pedido_minimo_delivery: 30 })
+      ).toEqual({ deliveryAtivo: true, taxaEntregaPadrao: 8.5, pedidoMinimoDelivery: 30 });
+    });
+
+    it("taxa_entrega_padrao: null significa não atender bairros fora da lista", () => {
+      expect(assertValidUpdateTenantConfigDto({ taxa_entrega_padrao: null })).toEqual({ taxaEntregaPadrao: null });
+    });
+
+    it("aceita zero (frete grátis e sem pedido mínimo)", () => {
+      expect(assertValidUpdateTenantConfigDto({ taxa_entrega_padrao: 0, pedido_minimo_delivery: 0 })).toEqual({
+        taxaEntregaPadrao: 0,
+        pedidoMinimoDelivery: 0,
+      });
+    });
+
+    it.each([
+      ["delivery_ativo como texto", { delivery_ativo: "true" }],
+      ["taxa padrão negativa", { taxa_entrega_padrao: -1 }],
+      ["taxa padrão com 3 casas decimais", { taxa_entrega_padrao: 5.555 }],
+      ["pedido mínimo null", { pedido_minimo_delivery: null }],
+      ["pedido mínimo negativo", { pedido_minimo_delivery: -10 }],
+      ["pedido mínimo como texto", { pedido_minimo_delivery: "30" }],
+    ])("rejeita %s", (_caso, body) => {
+      expect(() => assertValidUpdateTenantConfigDto(body)).toThrow(AppError);
+    });
+  });
 });

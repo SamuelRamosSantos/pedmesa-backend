@@ -9,6 +9,7 @@ const categoryRoutes = Router();
 categoryRoutes.use(authMiddleware);
 
 categoryRoutes.post("/", rbacMiddleware([UserRole.ADMIN]), create);
-categoryRoutes.get("/", rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA]), list);
+// EXPEDICAO só lê o cardápio, para montar pedidos delivery (PED-113).
+categoryRoutes.get("/", rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA, UserRole.EXPEDICAO]), list);
 
 export default categoryRoutes;

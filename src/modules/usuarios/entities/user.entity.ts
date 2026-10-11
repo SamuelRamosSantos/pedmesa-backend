@@ -6,6 +6,8 @@ export enum UserRole {
   GARCOM = "garcom",
   COZINHA = "cozinha",
   CAIXA = "caixa",
+  // Cria pedidos delivery e opera o painel de expedição (ADR-001, PED-113).
+  EXPEDICAO = "expedicao",
 }
 
 @Entity("usuarios")
