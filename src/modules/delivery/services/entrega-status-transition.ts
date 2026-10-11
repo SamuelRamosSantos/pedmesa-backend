@@ -30,12 +30,17 @@ export function transicaoExigeMotivo(statusAtual: StatusEntrega, statusNovo: Sta
   );
 }
 
+// Todos os pedidos prontos (ou já entregues). Lista vazia não conta como concluída.
+export function preparoConcluido(statusPreparoDosPedidos: readonly StatusPreparo[]): boolean {
+  return statusPreparoDosPedidos.length > 0 && statusPreparoDosPedidos.every((status) => PREPARO_CONCLUIDO.includes(status));
+}
+
 function assertPreparoConcluido(statusPreparoDosPedidos: StatusPreparo[]): void {
   if (statusPreparoDosPedidos.length === 0) {
     throw new AppError("A entrega não tem pedidos para enviar.", 400);
   }
 
-  if (!statusPreparoDosPedidos.every((status) => PREPARO_CONCLUIDO.includes(status))) {
+  if (!preparoConcluido(statusPreparoDosPedidos)) {
     throw new AppError("A entrega só pode ficar pronta para envio quando todos os pedidos estiverem prontos.", 400);
   }
 }

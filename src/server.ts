@@ -9,6 +9,7 @@ import clienteRoutes from "./modules/clientes/routes/cliente.routes";
 import comandaRoutes from "./modules/comandas/routes/comanda.routes";
 import dashboardRoutes from "./modules/dashboard/routes/dashboard.routes";
 import deliveryRoutes from "./modules/delivery/routes/delivery.routes";
+import { registrarSincronizacaoPreparoDelivery } from "./modules/delivery/services/sincronizacao-preparo.handler";
 import impressaoRoutes from "./modules/impressao/routes/impressao.routes";
 import leadRoutes from "./modules/leads/routes/lead.routes";
 import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
@@ -50,6 +51,9 @@ app.use("/api/v1/tenants", tenantRoutes);
 app.use("/api/v1/usuarios", userRoutes);
 
 app.use(errorHandlerMiddleware);
+
+// Composição: o delivery escuta mudanças de preparo publicadas pelo módulo de pedidos (PED-98).
+registrarSincronizacaoPreparoDelivery();
 
 const PORT = Number(process.env.PORT ?? 3000);
 
