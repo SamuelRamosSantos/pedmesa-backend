@@ -9,6 +9,7 @@ import { CreatePedidoDto } from "../dtos/create-pedido.dto";
 import { ItemPedido } from "../entities/item-pedido.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
 import { resolveStatusItemInicial } from "./item-status-inicial";
+import { resolverProdutosDosItens } from "./produtos-dos-itens";
 import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 export interface LancamentoItensResultado {
@@ -47,16 +48,10 @@ export async function lancarItensNaComanda(
     integrantes.forEach((integrante) => integrantesPorId.set(integrante.id, integrante));
   }
 
+  const produtosDosItens = resolverProdutosDosItens(dto.itens, produtosPorId);
+
   const itensValidados = dto.itens.map((item, index) => {
-    const produto = produtosPorId.get(item.produtoId);
-
-    if (!produto) {
-      throw new AppError(`O produto informado no item ${index} não foi encontrado.`, 400);
-    }
-
-    if (!produto.disponivel) {
-      throw new AppError(`O produto "${produto.nome}" está indisponível no momento.`, 400);
-    }
+    const produto = produtosDosItens[index];
 
     if (item.integranteId !== null && !integrantesPorId.has(item.integranteId)) {
       throw new AppError(`O integrante informado no item ${index} não pertence a esta comanda.`, 400);
