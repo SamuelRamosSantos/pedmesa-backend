@@ -114,7 +114,14 @@ export class PedidoService {
         throw new AppError("Item de pedido não encontrado.", 404);
       }
 
-      assertTransicaoValida(item.statusItem, novoStatus);
+      // Depois da trava, relê o status: outra requisição pode tê-lo mudado enquanto esperávamos.
+      await travarPedido(manager, item.pedidoId);
+      const { statusItem: statusAtual } = await manager.findOneOrFail(ItemPedido, {
+        select: { id: true, statusItem: true },
+        where: { id: item.id },
+      });
+
+      assertTransicaoValida(statusAtual, novoStatus);
 
       await manager.update(ItemPedido, { id: item.id }, { statusItem: novoStatus });
       item.statusItem = novoStatus;
@@ -151,6 +158,12 @@ export class PedidoService {
 
       if (item.pedido.comanda.status !== ComandaStatus.ABERTA) {
         throw new AppError("Não é possível excluir itens de uma comanda já fechada.", 400);
+      }
+
+      await travarPedido(manager, item.pedidoId);
+
+      if (!(await manager.existsBy(ItemPedido, { id: itemId }))) {
+        throw new AppError("Item de pedido não encontrado.", 404);
       }
 
       await manager.save(
@@ -228,6 +241,18 @@ export class PedidoService {
 
     await executarAcoesPosCommit(acoesPosCommit);
   }
+}
+
+// Serializa as mudanças nos itens de um mesmo pedido. Sem isso, duas requisições simultâneas
+// (o KDS avança os itens de um grupo em paralelo) recalculam o status do pedido sem enxergar
+// o item que a outra ainda não commitou, e o pedido fica "em preparo" com todos os itens
+// prontos, o que também trava a entrega do delivery.
+async function travarPedido(manager: EntityManager, pedidoId: string): Promise<void> {
+  await manager
+    .createQueryBuilder(Pedido, "pedido")
+    .setLock("pessimistic_write")
+    .where("pedido.id = :pedidoId", { pedidoId })
+    .getOne();
 }
 
 // Recalcula e grava o status de preparo do pedido a partir dos itens que restaram.
