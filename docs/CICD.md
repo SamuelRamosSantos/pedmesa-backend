@@ -2,13 +2,15 @@
 
 ## 1. Visão geral
 
-| Arquivo                             | Quando roda                                                                        | O que faz                                                                                                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `.github/workflows/ci.yml`          | Pull Request para `main` ou `prod`, chamado pelo deploy (`workflow_call`) e manual | Jobs **Qualidade**, **Testes** e **Commits**                                                                 |
-| `.github/workflows/deploy.yml`      | push em `main` (homologação) ou `prod` (produção), e manual                        | CI → imagem no GHCR → deploy no Coolify → `/ready` → verificação de segurança                                |
-| `.github/dependabot.yml`            | agenda do Dependabot                                                               | npm (semanal, minor e patch agrupados), GitHub Actions (mensal) e imagem Docker (semanal, sem major do Node) |
-| `Dockerfile` + `entrypoint.sh`      | build da imagem                                                                    | Node 26, usuário `node`, `HEALTHCHECK` em `/health`, migrations antes de subir a API                         |
-| `scripts/check-security-headers.sh` | job **Segurança** do deploy, ou manual                                             | confere os cabeçalhos de segurança, compressão e IP privado (PED-120)                                        |
+| Arquivo                             | Quando roda                                                                        | O que faz                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`          | Pull Request para `main` ou `prod`, chamado pelo deploy (`workflow_call`) e manual | Jobs **Qualidade**, **Testes** e **Commits**                                                                   |
+| `.github/workflows/deploy.yml`      | push em `main` (homologação) ou `prod` (produção), e manual                        | CI → imagem no GHCR → deploy no Coolify → **verificação no ar** → verificação de segurança                     |
+| `.github/dependabot.yml`            | agenda do Dependabot                                                               | npm (semanal, minor e patch agrupados), GitHub Actions (mensal) e imagem Docker (semanal, sem major do Node)   |
+| `Dockerfile` + `entrypoint.sh`      | build da imagem                                                                    | Node 26, usuário `node`, `HEALTHCHECK` em `/health`, migrations antes de subir a API                           |
+| `scripts/coolify-deploy.sh`         | job **Entregar**                                                                   | pede o deploy (`POST /api/v1/deploy`), espera terminar e, se falhar, explica a causa e mostra o log do Coolify |
+| `scripts/verificar-no-ar.sh`        | job **Verificar no ar**                                                            | confere se a API responde e se a versão no ar é o commit publicado                                             |
+| `scripts/check-security-headers.sh` | job **Segurança** do deploy, ou manual                                             | confere os cabeçalhos de segurança, compressão e IP privado (PED-120)                                          |
 
 ### Jobs do `ci.yml`
 
@@ -25,12 +27,15 @@ Os nomes **Qualidade**, **Testes** e **Commits** são os checks exigidos na prot
 ```mermaid
 flowchart LR
     A["Ambiente<br/>(main = homologacao, prod = producao)"] --> E
-    C["CI (ci.yml)"] --> E["Entregar<br/>build e push no GHCR<br/>deploy no Coolify<br/>espera o deploy<br/>confere /ready"]
-    E --> S["Segurança<br/>check-security-headers.sh"]
+    C["CI (ci.yml)"] --> E["Entregar<br/>build e push no GHCR<br/>deploy no Coolify<br/>espera o deploy"]
+    E --> V["Verificar no ar<br/>/health com a versão certa<br/>e /ready"]
+    V --> S["Segurança<br/>check-security-headers.sh"]
 ```
 
 - A imagem vai para `ghcr.io/samuelramossantos/pedmesa-backend` com as tags `<ambiente>` (`homologacao` ou `producao`), `sha-<commit>` e, em produção, `latest`.
-- O Coolify puxa a tag do ambiente; o job espera o deploy chegar a `finished` (falha se o Coolify reportar `failed`) e confere o `/ready` por até 2,5 minutos.
+- O Coolify puxa a tag do ambiente. O job espera o deploy chegar a `finished`; se o Coolify reportar `failed`, o job mostra a causa provável e as últimas linhas do log do deploy (no log do job e no resumo do run).
+- **Verificar no ar** é a última etapa e roda mesmo se a entrega falhar: confere que `/health` responde com `versao` igual ao commit publicado (o commit entra na imagem pelo build arg `GIT_SHA`) e que `/ready` responde 200. Se a versão no ar for outra, o deploy não trocou o container e o pipeline falha dizendo isso.
+- Os erros aparecem como anotações no topo do run e no resumo de cada job, com a explicação e o que corrigir.
 - O job **Segurança** roda em modo `report` (só lista os problemas no resumo do job) até a PED-59, a PED-64 e a PED-69 estarem concluídas. Depois, crie a variável de repositório `CHECK_MODE=enforce` para o pipeline falhar em qualquer regressão.
 
 ## 2. Ambientes
@@ -86,10 +91,10 @@ Com o `.env` de desenvolvimento, o container aplica as migrations no banco de de
 
 ## 5. `/health` e `/ready`
 
-| Rota          | Responde                                                  | Uso                                             |
-| ------------- | --------------------------------------------------------- | ----------------------------------------------- |
-| `GET /health` | 200 enquanto o processo está de pé; não consulta o banco  | liveness (`HEALTHCHECK` da imagem e do Coolify) |
-| `GET /ready`  | 200 com `SELECT 1` no banco; 503 se o banco não responder | readiness (fim do deploy)                       |
+| Rota          | Responde                                                                                  | Uso                                        |
+| ------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `GET /health` | 200 enquanto o processo está de pé, com `versao` (commit da imagem); não consulta o banco | liveness e conferência da versão no deploy |
+| `GET /ready`  | 200 com `SELECT 1` no banco; 503 se o banco não responder                                 | readiness (fim do deploy)                  |
 
 ## 6. Rollback
 
@@ -110,5 +115,8 @@ Os domínios passam pelo proxy da Cloudflare (`Server: cloudflare`): cabeçalhos
 - **Vitest falha com `Cannot read properties of undefined (reading 'config')` no Windows:** o terminal está num caminho com a letra do drive minúscula (`d:/...`, comum no Git Bash). Rode pelo PowerShell ou a partir de `D:\...`.
 - **Job Commits falha:** alguma mensagem do PR está fora de `tipo(escopo): [PED-<ID>] descrição` ou passa de 100 caracteres.
 - **Deploy publica a imagem mas avisa que nada foi implantado:** faltam `COOLIFY_URL`, `COOLIFY_APP_UUID` ou `COOLIFY_TOKEN` no environment.
+- **`Método não aceito (405)`:** o Coolify só aceita `POST` em `/api/v1/deploy` (é o que o script usa); se aparecer, o `COOLIFY_URL` não aponta para o painel do Coolify.
+- **`COOLIFY_URL deve ser só o endereço do painel`:** cadastre só `https://seu-coolify`, sem `/api/v1` nem parâmetros.
+- **`a versão no ar é X, esperada Y`:** o Coolify terminou, mas o container antigo continua rodando; confira se a aplicação está como _Docker Image_ com a tag do ambiente.
 - **Coolify não consegue puxar a imagem (`unauthorized`):** falta o `docker login ghcr.io` no servidor, ou o token não tem `read:packages`.
 - **Container reinicia em loop logo depois do deploy:** veja o log no Coolify. Causas comuns: variável `R2_*` faltando (a API recusa subir) ou migration falhando no `entrypoint.sh`.

@@ -24,6 +24,11 @@ FROM node:26.13.1-alpine3.24 AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
+# Commit da imagem, informado pelo pipeline. Aparece em GET /health ("versao") e
+# é o que a verificação final do deploy compara com o commit publicado.
+ARG GIT_SHA=desenvolvimento
+ENV APP_VERSION=$GIT_SHA
+
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
