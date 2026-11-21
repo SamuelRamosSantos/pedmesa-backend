@@ -1,0 +1,22 @@
+# Só o necessário entra no contexto do build (package*.json, tsconfig.json, src e entrypoint.sh)
+node_modules
+dist
+coverage
+uploads
+.env
+.env.*
+!.env.example
+.git
+.github
+.husky
+.agents
+.claude
+docs
+tests
+scripts
+**/*.test.ts
+vitest.config.mts
+tsconfig.test.json
+docker-compose*.yml
+biome.jsonc
+*.log

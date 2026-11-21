@@ -187,7 +187,6 @@ As regras completas (camadas, funções puras, transações, tenant, dinheiro, m
 - Uma imagem apagada do bucket pode continuar acessível pela URL antiga no domínio `cdn`/`cdn-dev` até sair do cache da Cloudflare (o objeto sobe com `immutable`). Ninguém mais referencia essa URL; se for preciso tirar do ar na hora (ex.: foto de usuário), será necessário purgar o cache pela API da Cloudflare (card próprio).
 - Fuso horário entre Node e Postgres ainda não padronizado (PED-114).
 - Status de preparo do pedido pode ficar desatualizado quando o KDS avança itens em paralelo (PED-115; correção na branch PED-82).
-- O backend não tem Dockerfile próprio nem pipeline de deploy (PED-117 e PED-119).
 
 ## 11. Setup local e fluxo de trabalho
 

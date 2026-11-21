@@ -32,7 +32,7 @@ Node.js, TypeScript (`strict`), Express 4, TypeORM 0.3 e PostgreSQL 16; `cookie-
 | Homologação           | `main`   | `https://api-dev.pedmesa.com.br` |
 | Produção              | `prod`   | `https://api.pedmesa.com.br`     |
 
-O deploy é feito pelo Coolify. A publicação automatizada por pipeline está planejada na PED-119 (ver `docs/CICD.md`).
+O deploy é automático: o push na `main` publica em homologação e o push na `prod`, em produção (GitHub Actions → GHCR → Coolify). Ver `docs/CICD.md`.
 
 ## Como executar
 
@@ -90,11 +90,24 @@ Para um teste autenticado, use `autenticar(usuario)` de `tests/helpers/factories
 
 ## Docker
 
-O `docker-compose.yml` sobe um PostgreSQL local para desenvolvimento e o `docker-compose.test.yml`, o banco de testes. O Dockerfile da API está planejado na PED-117.
+- `Dockerfile`: imagem de produção da API com Node 26 em dois estágios, rodando como o usuário `node`, com `HEALTHCHECK` em `/health`. O `entrypoint.sh` aplica as migrations pendentes e depois sobe a API.
+- `docker-compose.yml`: PostgreSQL local para desenvolvimento.
+- `docker-compose.test.yml`: banco descartável dos testes (porta 5433).
+
+```bash
+docker build -t pedmesa-api:local .
+docker run --rm -p 3000:3000 --env-file .env pedmesa-api:local
+```
+
+Com o `.env` de desenvolvimento, o container aplica as migrations no banco de dev da VPS antes de subir.
 
 ## CI/CD
 
-O workflow `.github/workflows/ci.yml` roda em todo Pull Request para `main` e `prod` com três jobs: **Qualidade** (`npm run check` e `npm run build`), **Testes** (com PostgreSQL de serviço) e **Commits** (Commitlint). O Dependabot abre PRs semanais de npm e mensais de GitHub Actions. Detalhes em `docs/CICD.md`.
+- `ci.yml`: em todo Pull Request para `main` e `prod`, jobs **Qualidade** (`npm run check` e `npm run build`), **Testes** (com PostgreSQL de serviço) e **Commits** (Commitlint).
+- `deploy.yml`: no push em `main` (homologação) ou `prod` (produção), roda o CI, publica a imagem no GHCR, pede o deploy ao Coolify, espera terminar, confere o `/ready` e roda a verificação de segurança (`scripts/check-security-headers.sh`).
+- Dependabot: npm (semanal), GitHub Actions (mensal) e imagem Docker (semanal).
+
+Configuração do Coolify e dos GitHub Environments em `docs/CICD.md`.
 
 ## Estrutura do projeto
 
