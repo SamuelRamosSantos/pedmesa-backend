@@ -52,10 +52,15 @@ app.use(cookieParser());
 // As imagens não passam pela API: ficam no Cloudflare R2 e são servidas pelo
 // domínio do bucket (cdn.pedmesa.com.br / cdn-dev.pedmesa.com.br). Ver PED-45.
 
+// Commit gravado na imagem pelo pipeline (build arg GIT_SHA). A verificação final
+// do deploy compara este valor com o commit publicado.
+const VERSAO = process.env.APP_VERSION || "desenvolvimento";
+
 // Liveness: o processo está de pé. Não consulta o banco.
 app.get("/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
+    versao: VERSAO,
     database: AppDataSource.isInitialized ? "connected" : "disconnected",
   });
 });

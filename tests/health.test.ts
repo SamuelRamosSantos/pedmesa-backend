@@ -6,6 +6,8 @@ describe("saúde da API", () => {
     const resposta = await criarCliente().get("/health").expect(200);
 
     expect(resposta.body.status).toBe("ok");
+    // Fora da imagem do pipeline não há APP_VERSION
+    expect(resposta.body.versao).toBe("desenvolvimento");
   });
 
   it("GET /ready responde 200 quando o banco responde", async () => {

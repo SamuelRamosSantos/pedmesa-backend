@@ -1,9 +1,9 @@
 name: Deploy
 
 # Entrega contínua (PED-119): roda o CI, publica a imagem no GHCR, pede o deploy
-# ao Coolify, espera o deploy terminar, confere o /ready e roda a verificação de
-# segurança (PED-120). main = homologação, prod = produção. Detalhes e a
-# configuração manual (Coolify e GitHub Environments) em docs/CICD.md.
+# ao Coolify e espera ele terminar. A última etapa confere se a versão nova está
+# mesmo no ar e, depois, roda a verificação de segurança (PED-120).
+# main = homologação, prod = produção. Configuração manual em docs/CICD.md.
 on:
   push:
     branches: [main, prod]
@@ -83,6 +83,9 @@ jobs:
             ${{ steps.imagem.outputs.nome }}:${{ needs.ambiente.outputs.nome }}
             ${{ steps.imagem.outputs.nome }}:sha-${{ github.sha }}
             ${{ needs.ambiente.outputs.nome == 'producao' && format('{0}:latest', steps.imagem.outputs.nome) || '' }}
+          # O commit vai para dentro da imagem: a verificação final compara com ele
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -92,68 +95,40 @@ jobs:
           COOLIFY_URL: ${{ vars.COOLIFY_URL }}
           COOLIFY_APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-        run: |
-          if [ -z "$COOLIFY_URL" ] || [ -z "$COOLIFY_APP_UUID" ] || [ -z "$COOLIFY_TOKEN" ]; then
-            echo "::warning::COOLIFY_URL, COOLIFY_APP_UUID ou COOLIFY_TOKEN não configurados neste ambiente: a imagem foi publicada, mas nada foi implantado."
-            exit 0
-          fi
-          resposta="$(curl --fail-with-body --silent --show-error --max-time 60 \
-            -H "Authorization: Bearer $COOLIFY_TOKEN" \
-            "${COOLIFY_URL%/}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false")"
-          echo "Resposta do Coolify: $resposta"
-          deployment="$(printf '%s' "$resposta" | jq -r '.deployments[0].deployment_uuid // empty')"
-          if [ -z "$deployment" ]; then
-            echo "::error::O Coolify não devolveu o identificador do deploy."
-            exit 1
-          fi
-          echo "uuid=$deployment" >> "$GITHUB_OUTPUT"
+        run: bash scripts/coolify-deploy.sh disparar
 
       - name: Esperar o Coolify terminar o deploy
         if: steps.deploy.outputs.uuid != ''
         env:
           COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          DEPLOYMENT: ${{ steps.deploy.outputs.uuid }}
-        run: |
-          for tentativa in $(seq 1 60); do
-            status="$(curl --silent --show-error --max-time 30 \
-              -H "Authorization: Bearer $COOLIFY_TOKEN" \
-              "${COOLIFY_URL%/}/api/v1/deployments/${DEPLOYMENT}" | jq -r '.status // "desconhecido"')"
-            echo "Tentativa $tentativa: $status"
-            case "$status" in
-              finished) echo "Deploy concluído."; exit 0 ;;
-              failed|cancelled*|error) echo "::error::O deploy terminou com status '$status'. Veja os logs no Coolify."; exit 1 ;;
-            esac
-            sleep 10
-          done
-          echo "::error::O deploy não terminou em 10 minutos."
-          exit 1
+        run: bash scripts/coolify-deploy.sh aguardar "${{ steps.deploy.outputs.uuid }}"
 
-      - name: Conferir se a API responde em /ready
+  verificar:
+    name: Verificar no ar
+    needs: [ambiente, entregar]
+    # Roda mesmo se a entrega falhar: mostra o que está no ar de fato
+    if: ${{ !cancelled() && needs.entregar.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Conferir se a versão nova está no ar
         env:
-          APP_URL: ${{ vars.APP_URL }}
+          APP_URL: ${{ needs.entregar.outputs.url }}
         run: |
           if [ -z "$APP_URL" ]; then
-            echo "::warning::APP_URL não configurada neste ambiente: verificação ignorada."
+            echo "::warning title=Verificação ignorada::APP_URL não configurada no environment ${{ needs.ambiente.outputs.nome }}."
             exit 0
           fi
-          url="${APP_URL%/}/ready"
-          for tentativa in $(seq 1 10); do
-            if curl --fail --silent --show-error --max-time 15 "$url"; then
-              echo
-              echo "API pronta em $url (tentativa $tentativa)."
-              exit 0
-            fi
-            echo "Tentativa $tentativa de 10 falhou; nova tentativa em 15 s."
-            sleep 15
-          done
-          echo "::error::A API não respondeu em $url depois do deploy."
-          exit 1
+          bash scripts/verificar-no-ar.sh "$APP_URL" api "${{ github.sha }}"
 
   seguranca:
     name: Segurança
-    needs: entregar
-    if: needs.entregar.outputs.url != ''
+    needs: [entregar, verificar]
+    if: needs.verificar.result == 'success' && needs.entregar.outputs.url != ''
     runs-on: ubuntu-latest
     steps:
       - name: Baixar o código
