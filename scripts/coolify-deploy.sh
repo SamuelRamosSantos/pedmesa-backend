@@ -131,6 +131,17 @@ aguardar() {
   for tentativa in $(seq 1 60); do
     chamar GET "/api/v1/deployments/${deployment}"
 
+    if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+      # Disparar exige a permissão "deploy"; consultar o andamento exige "read".
+      # Sem ela não adianta repetir: segue, e a etapa "Verificar no ar" confere
+      # se a versão nova subiu.
+      local aviso="O token consegue disparar o deploy, mas não consultar o andamento (HTTP $STATUS). Gere o token do Coolify com as permissões 'read' e 'deploy' para o pipeline acompanhar o deploy e mostrar o log quando falhar. Seguindo: a etapa 'Verificar no ar' confere o resultado."
+      echo "::warning title=Token do Coolify sem permissão de leitura::$aviso"
+      resumo "### ⚠️ Deploy disparado sem acompanhamento"$'\n\n'"$aviso"
+      echo "acompanhado=nao" >> "${GITHUB_OUTPUT:-/dev/null}"
+      exit 0
+    fi
+
     if [ "$STATUS" != "200" ]; then
       echo "Tentativa $tentativa: não consegui consultar o deploy ($(explicar_status "$STATUS"))."
     else

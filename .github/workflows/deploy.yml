@@ -56,6 +56,7 @@ jobs:
       packages: write
     outputs:
       url: ${{ vars.APP_URL }}
+      acompanhado: ${{ steps.aguardar.outputs.acompanhado }}
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -98,6 +99,7 @@ jobs:
         run: bash scripts/coolify-deploy.sh disparar
 
       - name: Esperar o Coolify terminar o deploy
+        id: aguardar
         if: steps.deploy.outputs.uuid != ''
         env:
           COOLIFY_URL: ${{ vars.COOLIFY_URL }}
@@ -118,6 +120,8 @@ jobs:
       - name: Conferir se a versão nova está no ar
         env:
           APP_URL: ${{ needs.entregar.outputs.url }}
+          # Se o token não pôde acompanhar o deploy, esta é a única espera: até 10 min
+          TENTATIVAS: ${{ needs.entregar.outputs.acompanhado == 'nao' && '40' || '12' }}
         run: |
           if [ -z "$APP_URL" ]; then
             echo "::warning title=Verificação ignorada::APP_URL não configurada no environment ${{ needs.ambiente.outputs.nome }}."
