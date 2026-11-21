@@ -1,10 +1,38 @@
 import { AppError } from "../../../shared/errors/app-error";
 import { normalizarCep } from "../services/cep-normalizer";
-import { validarTextoObrigatorio, validarTextoOpcional } from "./cliente-input.validator";
+import {
+  validarTextoObrigatorio,
+  validarTextoOpcional,
+} from "./cliente-input.validator";
 
 const UFS_VALIDAS: ReadonlySet<string> = new Set([
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA",
-  "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
 ]);
 
 export interface CreateEnderecoClienteDto {
@@ -33,7 +61,10 @@ function validarUf(uf: unknown): string {
   const ufMaiuscula = typeof uf === "string" ? uf.trim().toUpperCase() : "";
 
   if (!UFS_VALIDAS.has(ufMaiuscula)) {
-    throw new AppError("uf inválida: informe a sigla do estado (ex.: SP).", 400);
+    throw new AppError(
+      "uf inválida: informe a sigla do estado (ex.: SP).",
+      400,
+    );
   }
 
   return ufMaiuscula;
@@ -51,11 +82,20 @@ function validarPrincipal(principal: unknown): boolean {
   return principal;
 }
 
-export function assertValidCreateEnderecoClienteDto(body: unknown): CreateEnderecoClienteDto {
-  const { cep, logradouro, numero, complemento, bairro, cidade, uf, referencia, principal } = (body ?? {}) as Record<
-    string,
-    unknown
-  >;
+export function assertValidCreateEnderecoClienteDto(
+  body: unknown,
+): CreateEnderecoClienteDto {
+  const {
+    cep,
+    logradouro,
+    numero,
+    complemento,
+    bairro,
+    cidade,
+    uf,
+    referencia,
+    principal,
+  } = (body ?? {}) as Record<string, unknown>;
 
   return {
     cep: validarCep(cep),

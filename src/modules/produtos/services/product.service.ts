@@ -20,7 +20,10 @@ async function isUsaModuloCozinha(tenantId: string): Promise<boolean> {
 }
 
 export class ProductService {
-  static async create(tenantId: string, dto: CreateProductDto): Promise<Product> {
+  static async create(
+    tenantId: string,
+    dto: CreateProductDto,
+  ): Promise<Product> {
     const categoryRepository = AppDataSource.getRepository(Category);
     const category = await categoryRepository.findOne({
       where: { id: dto.categoriaId, tenantId },
@@ -46,7 +49,10 @@ export class ProductService {
     return productRepository.save(product);
   }
 
-  static async list(tenantId: string, filters: ListProductsFilters): Promise<Product[]> {
+  static async list(
+    tenantId: string,
+    filters: ListProductsFilters,
+  ): Promise<Product[]> {
     const repository = AppDataSource.getRepository(Product);
     const where: FindOptionsWhere<Product> = { tenantId, ativo: true };
 
@@ -61,9 +67,15 @@ export class ProductService {
     return repository.find({ where, order: { nome: "ASC" } });
   }
 
-  static async updateDisponibilidade(tenantId: string, productId: string, disponivel: boolean): Promise<Product> {
+  static async updateDisponibilidade(
+    tenantId: string,
+    productId: string,
+    disponivel: boolean,
+  ): Promise<Product> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);
@@ -74,9 +86,15 @@ export class ProductService {
     return repository.save(product);
   }
 
-  static async update(tenantId: string, productId: string, dto: UpdateProductDto): Promise<Product> {
+  static async update(
+    tenantId: string,
+    productId: string,
+    dto: UpdateProductDto,
+  ): Promise<Product> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);
@@ -84,7 +102,9 @@ export class ProductService {
 
     if (dto.categoriaId !== undefined) {
       const categoryRepository = AppDataSource.getRepository(Category);
-      const category = await categoryRepository.findOne({ where: { id: dto.categoriaId, tenantId } });
+      const category = await categoryRepository.findOne({
+        where: { id: dto.categoriaId, tenantId },
+      });
 
       if (!category) {
         throw new AppError("Categoria não encontrada.", 404);
@@ -119,7 +139,9 @@ export class ProductService {
 
   static async delete(tenantId: string, productId: string): Promise<void> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);

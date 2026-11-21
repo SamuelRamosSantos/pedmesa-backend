@@ -4,13 +4,21 @@ import { assertValidUpdateClienteDto } from "./update-cliente.dto";
 
 describe("assertValidUpdateClienteDto", () => {
   it("valida e normaliza só os campos enviados", () => {
-    expect(assertValidUpdateClienteDto({ telefone: "(33) 3521-1234" })).toEqual({ telefone: "3335211234" });
-    expect(assertValidUpdateClienteDto({ nome: " João " })).toEqual({ nome: "João" });
+    expect(assertValidUpdateClienteDto({ telefone: "(33) 3521-1234" })).toEqual(
+      { telefone: "3335211234" },
+    );
+    expect(assertValidUpdateClienteDto({ nome: " João " })).toEqual({
+      nome: "João",
+    });
   });
 
   it("observacoes: null limpa o campo e ausente não altera", () => {
-    expect(assertValidUpdateClienteDto({ observacoes: null })).toEqual({ observacoes: null });
-    expect(assertValidUpdateClienteDto({ nome: "João" })).not.toHaveProperty("observacoes");
+    expect(assertValidUpdateClienteDto({ observacoes: null })).toEqual({
+      observacoes: null,
+    });
+    expect(assertValidUpdateClienteDto({ nome: "João" })).not.toHaveProperty(
+      "observacoes",
+    );
   });
 
   it.each([

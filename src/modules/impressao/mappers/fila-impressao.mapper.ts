@@ -1,4 +1,8 @@
-import { FilaImpressao, StatusFilaImpressao, TipoFilaImpressao } from "../entities/fila-impressao.entity";
+import {
+  FilaImpressao,
+  StatusFilaImpressao,
+  TipoFilaImpressao,
+} from "../entities/fila-impressao.entity";
 import { PrintJobItemPayload } from "../types/print-job.types";
 
 export interface FilaImpressaoResponse {
@@ -13,7 +17,9 @@ export interface FilaImpressaoResponse {
   criado_em: Date;
 }
 
-export function toFilaImpressaoResponse(job: FilaImpressao): FilaImpressaoResponse {
+export function toFilaImpressaoResponse(
+  job: FilaImpressao,
+): FilaImpressaoResponse {
   return {
     id: job.id,
     tipo: job.tipo,

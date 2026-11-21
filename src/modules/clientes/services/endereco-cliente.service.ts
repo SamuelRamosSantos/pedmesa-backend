@@ -9,7 +9,11 @@ import { deveSerPrincipal } from "./endereco-principal";
 // Trava a linha do cliente até o fim da transação: duas trocas de endereço principal
 // simultâneas para o mesmo cliente passam a rodar em fila, em vez de uma delas
 // esbarrar no índice único parcial de principal.
-async function travarCliente(manager: EntityManager, tenantId: string, clienteId: string): Promise<Cliente> {
+async function travarCliente(
+  manager: EntityManager,
+  tenantId: string,
+  clienteId: string,
+): Promise<Cliente> {
   const cliente = await manager
     .createQueryBuilder(Cliente, "cliente")
     .setLock("pessimistic_write")
@@ -24,19 +28,29 @@ async function travarCliente(manager: EntityManager, tenantId: string, clienteId
   return cliente;
 }
 
-async function desmarcarPrincipalAtual(manager: EntityManager, cliente: Cliente): Promise<void> {
+async function desmarcarPrincipalAtual(
+  manager: EntityManager,
+  cliente: Cliente,
+): Promise<void> {
   await manager.update(
     EnderecoCliente,
     { clienteId: cliente.id, tenantId: cliente.tenantId, principal: true },
-    { principal: false }
+    { principal: false },
   );
 }
 
 export class EnderecoClienteService {
-  static async criar(tenantId: string, clienteId: string, dto: CreateEnderecoClienteDto): Promise<EnderecoCliente> {
+  static async criar(
+    tenantId: string,
+    clienteId: string,
+    dto: CreateEnderecoClienteDto,
+  ): Promise<EnderecoCliente> {
     return AppDataSource.transaction(async (manager) => {
       const cliente = await travarCliente(manager, tenantId, clienteId);
-      const quantidadeExistente = await manager.countBy(EnderecoCliente, { clienteId: cliente.id, tenantId });
+      const quantidadeExistente = await manager.countBy(EnderecoCliente, {
+        clienteId: cliente.id,
+        tenantId,
+      });
       const principal = deveSerPrincipal(dto.principal, quantidadeExistente);
 
       if (principal) {
@@ -49,15 +63,23 @@ export class EnderecoClienteService {
           principal,
           clienteId: cliente.id,
           tenantId: cliente.tenantId,
-        })
+        }),
       );
     });
   }
 
-  static async definirPrincipal(tenantId: string, clienteId: string, enderecoId: string): Promise<EnderecoCliente> {
+  static async definirPrincipal(
+    tenantId: string,
+    clienteId: string,
+    enderecoId: string,
+  ): Promise<EnderecoCliente> {
     return AppDataSource.transaction(async (manager) => {
       const cliente = await travarCliente(manager, tenantId, clienteId);
-      const endereco = await manager.findOneBy(EnderecoCliente, { id: enderecoId, clienteId: cliente.id, tenantId });
+      const endereco = await manager.findOneBy(EnderecoCliente, {
+        id: enderecoId,
+        clienteId: cliente.id,
+        tenantId,
+      });
 
       if (!endereco) {
         throw new AppError("Endereço não encontrado.", 404);

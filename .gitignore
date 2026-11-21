@@ -5,3 +5,11 @@ dist/
 .DS_Store
 scripts/dev/mock-printer-received.bin
 .claude/
+coverage/
+.env.test
+uploads/
+
+# Agentes de IA (arquivos locais)
+.agents/PLAN.md
+.mcp.json
+mcp_config.json

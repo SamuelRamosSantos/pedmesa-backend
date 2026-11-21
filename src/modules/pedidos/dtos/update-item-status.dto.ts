@@ -13,11 +13,19 @@ export interface UpdateItemStatusDto {
   status: StatusItem;
 }
 
-export function assertValidUpdateItemStatusDto(body: unknown): UpdateItemStatusDto {
+export function assertValidUpdateItemStatusDto(
+  body: unknown,
+): UpdateItemStatusDto {
   const { status } = (body ?? {}) as Record<string, unknown>;
 
-  if (typeof status !== "string" || !STATUS_VALIDOS.includes(status as StatusItem)) {
-    throw new AppError(`status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`, 400);
+  if (
+    typeof status !== "string" ||
+    !STATUS_VALIDOS.includes(status as StatusItem)
+  ) {
+    throw new AppError(
+      `status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`,
+      400,
+    );
   }
 
   return { status: status as StatusItem };

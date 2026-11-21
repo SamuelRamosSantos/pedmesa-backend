@@ -40,7 +40,12 @@ export class UserService {
     return repository.find({ where: { tenantId }, order: { nome: "ASC" } });
   }
 
-  static async update(tenantId: string, userId: string, actingUserId: string, dto: UpdateUserDto): Promise<User> {
+  static async update(
+    tenantId: string,
+    userId: string,
+    actingUserId: string,
+    dto: UpdateUserDto,
+  ): Promise<User> {
     const repository = AppDataSource.getRepository(User);
     const user = await repository.findOne({ where: { id: userId, tenantId } });
 
@@ -89,7 +94,11 @@ export class UserService {
     }
   }
 
-  static async changePassword(tenantId: string, userId: string, novaSenha: string): Promise<void> {
+  static async changePassword(
+    tenantId: string,
+    userId: string,
+    novaSenha: string,
+  ): Promise<void> {
     const repository = AppDataSource.getRepository(User);
     const user = await repository.findOne({ where: { id: userId, tenantId } });
 
@@ -101,7 +110,12 @@ export class UserService {
     await repository.save(user);
   }
 
-  static async updateAtivo(tenantId: string, userId: string, actingUserId: string, ativo: boolean): Promise<User> {
+  static async updateAtivo(
+    tenantId: string,
+    userId: string,
+    actingUserId: string,
+    ativo: boolean,
+  ): Promise<User> {
     const repository = AppDataSource.getRepository(User);
     const user = await repository.findOne({ where: { id: userId, tenantId } });
 
@@ -109,7 +123,11 @@ export class UserService {
       throw new AppError("Usuário não encontrado.", 404);
     }
 
-    assertNaoAlteraProprioAcesso({ isSelf: user.id === actingUserId, rolesAtuais: user.roles, novoAtivo: ativo });
+    assertNaoAlteraProprioAcesso({
+      isSelf: user.id === actingUserId,
+      rolesAtuais: user.roles,
+      novoAtivo: ativo,
+    });
 
     user.ativo = ativo;
     return repository.save(user);

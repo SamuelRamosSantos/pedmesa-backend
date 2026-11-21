@@ -26,11 +26,15 @@ describe("assertTransicaoValida", () => {
   });
 
   it("permite reabrir um item entregue de volta para pronto", () => {
-    expect(() => assertTransicaoValida(StatusItem.ENTREGUE, StatusItem.PRONTO)).not.toThrow();
+    expect(() =>
+      assertTransicaoValida(StatusItem.ENTREGUE, StatusItem.PRONTO),
+    ).not.toThrow();
   });
 
   it("permite reabrir um item cancelado de volta para pendente", () => {
-    expect(() => assertTransicaoValida(StatusItem.CANCELADO, StatusItem.PENDENTE)).not.toThrow();
+    expect(() =>
+      assertTransicaoValida(StatusItem.CANCELADO, StatusItem.PENDENTE),
+    ).not.toThrow();
   });
 
   it.each([
@@ -44,12 +48,14 @@ describe("assertTransicaoValida", () => {
     [StatusItem.CANCELADO, StatusItem.EM_PREPARO],
     [StatusItem.CANCELADO, StatusItem.PRONTO],
   ])("rejeita transição inválida de %s para %s", (atual, novo) => {
-    expect(() => assertTransicaoValida(atual, novo)).toThrow(/Transição de status inválida/);
+    expect(() => assertTransicaoValida(atual, novo)).toThrow(
+      /Transição de status inválida/,
+    );
   });
 
   it("rejeita definir o mesmo status já vigente", () => {
-    expect(() => assertTransicaoValida(StatusItem.EM_PREPARO, StatusItem.EM_PREPARO)).toThrow(
-      /já está com o status/
-    );
+    expect(() =>
+      assertTransicaoValida(StatusItem.EM_PREPARO, StatusItem.EM_PREPARO),
+    ).toThrow(/já está com o status/);
   });
 });

@@ -18,7 +18,10 @@ export interface UpdateTenantConfigDto {
   cep?: string | null;
 }
 
-function assertValidStringOpcional(valor: unknown, campo: string): string | null | undefined {
+function assertValidStringOpcional(
+  valor: unknown,
+  campo: string,
+): string | null | undefined {
   if (valor === undefined) {
     return undefined;
   }
@@ -34,7 +37,10 @@ function assertValidStringOpcional(valor: unknown, campo: string): string | null
   return valor.trim() || null;
 }
 
-function assertValidEmailOpcional(valor: unknown, campo: string): string | null | undefined {
+function assertValidEmailOpcional(
+  valor: unknown,
+  campo: string,
+): string | null | undefined {
   if (valor === undefined) {
     return undefined;
   }
@@ -50,7 +56,9 @@ function assertValidEmailOpcional(valor: unknown, campo: string): string | null 
   return valor;
 }
 
-export function assertValidUpdateTenantConfigDto(body: unknown): UpdateTenantConfigDto {
+export function assertValidUpdateTenantConfigDto(
+  body: unknown,
+): UpdateTenantConfigDto {
   const {
     nome_fantasia: nomeFantasia,
     ramo_atividade: ramoAtividade,
@@ -75,17 +83,26 @@ export function assertValidUpdateTenantConfigDto(body: unknown): UpdateTenantCon
     dto.nomeFantasia = nomeFantasia.trim();
   }
 
-  const ramoAtividadeValidado = assertValidStringOpcional(ramoAtividade, "ramo_atividade");
+  const ramoAtividadeValidado = assertValidStringOpcional(
+    ramoAtividade,
+    "ramo_atividade",
+  );
   if (ramoAtividadeValidado !== undefined) {
     dto.ramoAtividade = ramoAtividadeValidado;
   }
 
-  const emailEmpresaValidado = assertValidEmailOpcional(emailEmpresa, "email_empresa");
+  const emailEmpresaValidado = assertValidEmailOpcional(
+    emailEmpresa,
+    "email_empresa",
+  );
   if (emailEmpresaValidado !== undefined) {
     dto.emailEmpresa = emailEmpresaValidado;
   }
 
-  const emailProprietarioValidado = assertValidEmailOpcional(emailProprietario, "email_proprietario");
+  const emailProprietarioValidado = assertValidEmailOpcional(
+    emailProprietario,
+    "email_proprietario",
+  );
   if (emailProprietarioValidado !== undefined) {
     dto.emailProprietario = emailProprietarioValidado;
   }
@@ -103,12 +120,18 @@ export function assertValidUpdateTenantConfigDto(body: unknown): UpdateTenantCon
       !Number.isInteger(quantidadeComandas) ||
       quantidadeComandas <= 0
     ) {
-      throw new AppError("quantidade_comandas deve ser um número inteiro maior que zero.", 400);
+      throw new AppError(
+        "quantidade_comandas deve ser um número inteiro maior que zero.",
+        400,
+      );
     }
     dto.quantidadeComandas = quantidadeComandas;
   }
 
-  const logradouroValidado = assertValidStringOpcional(logradouro, "logradouro");
+  const logradouroValidado = assertValidStringOpcional(
+    logradouro,
+    "logradouro",
+  );
   if (logradouroValidado !== undefined) {
     dto.logradouro = logradouroValidado;
   }

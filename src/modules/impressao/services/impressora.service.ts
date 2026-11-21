@@ -10,15 +10,24 @@ export class ImpressoraService {
     return repository.find({ where: { tenantId }, order: { criadoEm: "ASC" } });
   }
 
-  static async create(tenantId: string, dto: CreateImpressoraDto): Promise<Impressora> {
+  static async create(
+    tenantId: string,
+    dto: CreateImpressoraDto,
+  ): Promise<Impressora> {
     const repository = AppDataSource.getRepository(Impressora);
     const impressora = repository.create({ tenantId, ...dto });
     return repository.save(impressora);
   }
 
-  static async update(tenantId: string, impressoraId: string, dto: UpdateImpressoraDto): Promise<Impressora> {
+  static async update(
+    tenantId: string,
+    impressoraId: string,
+    dto: UpdateImpressoraDto,
+  ): Promise<Impressora> {
     const repository = AppDataSource.getRepository(Impressora);
-    const impressora = await repository.findOne({ where: { id: impressoraId, tenantId } });
+    const impressora = await repository.findOne({
+      where: { id: impressoraId, tenantId },
+    });
 
     if (!impressora) {
       throw new AppError("Impressora não encontrada.", 404);

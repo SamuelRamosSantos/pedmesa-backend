@@ -22,28 +22,45 @@ describe("assertValidJoinComandasDto", () => {
   it("remove IDs secundários duplicados sem lançar erro", () => {
     const dto = assertValidJoinComandasDto({
       comanda_principal_id: PRINCIPAL_ID,
-      comandas_secundarias_ids: [SECUNDARIA_1_ID, SECUNDARIA_1_ID, SECUNDARIA_2_ID],
+      comandas_secundarias_ids: [
+        SECUNDARIA_1_ID,
+        SECUNDARIA_1_ID,
+        SECUNDARIA_2_ID,
+      ],
     });
 
-    expect(dto.comandasSecundariasIds).toEqual([SECUNDARIA_1_ID, SECUNDARIA_2_ID]);
+    expect(dto.comandasSecundariasIds).toEqual([
+      SECUNDARIA_1_ID,
+      SECUNDARIA_2_ID,
+    ]);
   });
 
   it("rejeita comanda_principal_id ausente ou inválido", () => {
     expect(() =>
-      assertValidJoinComandasDto({ comandas_secundarias_ids: [SECUNDARIA_1_ID] })
+      assertValidJoinComandasDto({
+        comandas_secundarias_ids: [SECUNDARIA_1_ID],
+      }),
     ).toThrow(AppError);
 
     expect(() =>
-      assertValidJoinComandasDto({ comanda_principal_id: "nao-e-uuid", comandas_secundarias_ids: [SECUNDARIA_1_ID] })
+      assertValidJoinComandasDto({
+        comanda_principal_id: "nao-e-uuid",
+        comandas_secundarias_ids: [SECUNDARIA_1_ID],
+      }),
     ).toThrow(AppError);
   });
 
   it("rejeita lista de secundárias vazia ou ausente", () => {
     expect(() =>
-      assertValidJoinComandasDto({ comanda_principal_id: PRINCIPAL_ID, comandas_secundarias_ids: [] })
+      assertValidJoinComandasDto({
+        comanda_principal_id: PRINCIPAL_ID,
+        comandas_secundarias_ids: [],
+      }),
     ).toThrow(AppError);
 
-    expect(() => assertValidJoinComandasDto({ comanda_principal_id: PRINCIPAL_ID })).toThrow(AppError);
+    expect(() =>
+      assertValidJoinComandasDto({ comanda_principal_id: PRINCIPAL_ID }),
+    ).toThrow(AppError);
   });
 
   it("rejeita um ID inválido dentro da lista de secundárias", () => {
@@ -51,7 +68,7 @@ describe("assertValidJoinComandasDto", () => {
       assertValidJoinComandasDto({
         comanda_principal_id: PRINCIPAL_ID,
         comandas_secundarias_ids: [SECUNDARIA_1_ID, "nao-e-uuid"],
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -60,7 +77,7 @@ describe("assertValidJoinComandasDto", () => {
       assertValidJoinComandasDto({
         comanda_principal_id: PRINCIPAL_ID,
         comandas_secundarias_ids: [SECUNDARIA_1_ID, PRINCIPAL_ID],
-      })
+      }),
     ).toThrow(AppError);
   });
 

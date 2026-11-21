@@ -4,7 +4,9 @@ import { assertValidUpdateTenantConfigDto } from "./update-tenant-config.dto";
 
 describe("assertValidUpdateTenantConfigDto", () => {
   it("aceita update parcial só com nome_fantasia", () => {
-    const dto = assertValidUpdateTenantConfigDto({ nome_fantasia: "Lanchonete Nova" });
+    const dto = assertValidUpdateTenantConfigDto({
+      nome_fantasia: "Lanchonete Nova",
+    });
 
     expect(dto).toEqual({ nomeFantasia: "Lanchonete Nova" });
   });
@@ -78,27 +80,47 @@ describe("assertValidUpdateTenantConfigDto", () => {
   });
 
   it("rejeita nome_fantasia vazio", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ nome_fantasia: "   " })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ nome_fantasia: "   " }),
+    ).toThrow(AppError);
   });
 
   it("rejeita e-mail inválido", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ email_empresa: "nao-e-email" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ email_proprietario: "nao-e-email" })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ email_empresa: "nao-e-email" }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ email_proprietario: "nao-e-email" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita usa_modulo_cozinha não booleano", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ usa_modulo_cozinha: "sim" })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ usa_modulo_cozinha: "sim" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita quantidade_comandas não positiva", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: 0 })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: -5 })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: 1.5 })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: 0 }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: -5 }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: 1.5 }),
+    ).toThrow(AppError);
   });
 
   it("rejeita estado que não seja uma sigla de UF de 2 letras", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ estado: "Paraná" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ estado: "P" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ estado: 123 })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ estado: "Paraná" }),
+    ).toThrow(AppError);
+    expect(() => assertValidUpdateTenantConfigDto({ estado: "P" })).toThrow(
+      AppError,
+    );
+    expect(() => assertValidUpdateTenantConfigDto({ estado: 123 })).toThrow(
+      AppError,
+    );
   });
 });

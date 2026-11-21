@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 // Captado pelo formulário público da landing page (pedmesa-site, PED-48) —
 // não tem tenant_id porque ainda não existe estabelecimento nenhum nesse

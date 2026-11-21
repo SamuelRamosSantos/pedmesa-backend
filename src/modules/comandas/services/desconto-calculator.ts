@@ -13,11 +13,18 @@ export interface DescontoCalculado {
   total_final: number;
 }
 
-export function calcularDesconto(subtotal: number, desconto: DescontoInput): DescontoCalculado {
+export function calcularDesconto(
+  subtotal: number,
+  desconto: DescontoInput,
+): DescontoCalculado {
   const subtotalCents = toCents(subtotal);
 
   if (desconto.tipo === DescontoTipo.NENHUM) {
-    return { subtotal: fromCents(subtotalCents), desconto_aplicado: 0, total_final: fromCents(subtotalCents) };
+    return {
+      subtotal: fromCents(subtotalCents),
+      desconto_aplicado: 0,
+      total_final: fromCents(subtotalCents),
+    };
   }
 
   const descontoCents =
@@ -26,7 +33,10 @@ export function calcularDesconto(subtotal: number, desconto: DescontoInput): Des
       : toCents(desconto.valor);
 
   if (descontoCents > subtotalCents) {
-    throw new AppError("O desconto informado é maior que o valor da comanda.", 400);
+    throw new AppError(
+      "O desconto informado é maior que o valor da comanda.",
+      400,
+    );
   }
 
   return {
@@ -55,10 +65,13 @@ export interface RateioIntegranteComDesconto {
 // a soma dos totais individuais bata exatamente com o total_final da comanda.
 export function ratearDescontoPorIntegrante(
   integrantes: RateioIntegranteInput[],
-  descontoTotal: number
+  descontoTotal: number,
 ): RateioIntegranteComDesconto[] {
   const descontoTotalCents = toCents(descontoTotal);
-  const somaTotalCents = integrantes.reduce((soma, integrante) => soma + toCents(integrante.totalAPagar), 0);
+  const somaTotalCents = integrantes.reduce(
+    (soma, integrante) => soma + toCents(integrante.totalAPagar),
+    0,
+  );
 
   if (descontoTotalCents === 0 || somaTotalCents === 0) {
     return integrantes.map((integrante) => ({
@@ -78,7 +91,9 @@ export function ratearDescontoPorIntegrante(
 
     const descontoIntegranteCents = isUltimo
       ? descontoTotalCents - descontoDistribuidoCents
-      : Math.round((totalIntegranteCents / somaTotalCents) * descontoTotalCents);
+      : Math.round(
+          (totalIntegranteCents / somaTotalCents) * descontoTotalCents,
+        );
 
     descontoDistribuidoCents += descontoIntegranteCents;
 

@@ -29,18 +29,23 @@ function itemBloqueiaExclusaoPedido(item: ItemParaExclusaoPedido): boolean {
   return item.statusItem === StatusItem.ENTREGUE;
 }
 
-export function assertPodeExcluirPedido(params: AssertPodeExcluirPedidoParams): void {
+export function assertPodeExcluirPedido(
+  params: AssertPodeExcluirPedidoParams,
+): void {
   const isAdmin = params.actingUserRoles.includes(UserRole.ADMIN);
   const isDono = params.pedidoUsuarioId === params.actingUserId;
 
   if (!isAdmin && !isDono) {
-    throw new AppError("Você só pode excluir pedidos que você mesmo lançou.", 403);
+    throw new AppError(
+      "Você só pode excluir pedidos que você mesmo lançou.",
+      403,
+    );
   }
 
   if (params.itens.some(itemBloqueiaExclusaoPedido)) {
     throw new AppError(
       "Só é possível excluir o pedido enquanto os itens que precisam de preparo estiverem pendentes e os demais ainda não tiverem sido entregues.",
-      400
+      400,
     );
   }
 }

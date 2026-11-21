@@ -5,7 +5,9 @@ export interface ListComandasFilters {
   status: ComandaStatus;
 }
 
-export function parseListComandasFilters(query: Record<string, unknown>): ListComandasFilters {
+export function parseListComandasFilters(
+  query: Record<string, unknown>,
+): ListComandasFilters {
   const { status } = query;
 
   if (status === undefined) {
@@ -13,7 +15,10 @@ export function parseListComandasFilters(query: Record<string, unknown>): ListCo
   }
 
   if (status !== ComandaStatus.ABERTA && status !== ComandaStatus.FECHADA) {
-    throw new AppError("O parâmetro status deve ser 'aberta' ou 'fechada'.", 400);
+    throw new AppError(
+      "O parâmetro status deve ser 'aberta' ou 'fechada'.",
+      400,
+    );
   }
 
   return { status };

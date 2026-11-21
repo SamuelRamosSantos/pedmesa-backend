@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreatePedidosAndItensPedidoTables1700000000004 implements MigrationInterface {
+export class CreatePedidosAndItensPedidoTables1700000000004
+  implements MigrationInterface
+{
   name = "CreatePedidosAndItensPedidoTables1700000000004";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -38,7 +45,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -49,7 +56,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
         referencedTableName: "comandas",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -60,7 +67,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
         referencedTableName: "usuarios",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
 
     await queryRunner.createTable(
@@ -114,7 +121,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -125,7 +132,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
         referencedTableName: "pedidos",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -136,7 +143,7 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
         referencedTableName: "produtos",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -147,20 +154,33 @@ export class CreatePedidosAndItensPedidoTables1700000000004 implements Migration
         referencedTableName: "integrantes_comanda",
         referencedColumnNames: ["id"],
         onDelete: "SET NULL",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("itens_pedido", "fk_itens_pedido_integrante_id");
-    await queryRunner.dropForeignKey("itens_pedido", "fk_itens_pedido_produto_id");
-    await queryRunner.dropForeignKey("itens_pedido", "fk_itens_pedido_pedido_id");
+    await queryRunner.dropForeignKey(
+      "itens_pedido",
+      "fk_itens_pedido_integrante_id",
+    );
+    await queryRunner.dropForeignKey(
+      "itens_pedido",
+      "fk_itens_pedido_produto_id",
+    );
+    await queryRunner.dropForeignKey(
+      "itens_pedido",
+      "fk_itens_pedido_pedido_id",
+    );
     await queryRunner.dropTable("itens_pedido");
-    await queryRunner.query(`DROP TYPE IF EXISTS "itens_pedido_status_item_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "itens_pedido_status_item_enum"`,
+    );
 
     await queryRunner.dropForeignKey("pedidos", "fk_pedidos_usuario_id");
     await queryRunner.dropForeignKey("pedidos", "fk_pedidos_comanda_id");
     await queryRunner.dropTable("pedidos");
-    await queryRunner.query(`DROP TYPE IF EXISTS "pedidos_status_preparo_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "pedidos_status_preparo_enum"`,
+    );
   }
 }

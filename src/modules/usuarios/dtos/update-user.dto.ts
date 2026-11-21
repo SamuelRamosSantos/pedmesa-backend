@@ -45,14 +45,20 @@ export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
 
   if (podeExcluirItemFechamento !== undefined) {
     if (typeof podeExcluirItemFechamento !== "boolean") {
-      throw new AppError("Campo pode_excluir_item_fechamento deve ser booleano.", 400);
+      throw new AppError(
+        "Campo pode_excluir_item_fechamento deve ser booleano.",
+        400,
+      );
     }
     dto.podeExcluirItemFechamento = podeExcluirItemFechamento;
   }
 
   if (podeConcederDesconto !== undefined) {
     if (typeof podeConcederDesconto !== "boolean") {
-      throw new AppError("Campo pode_conceder_desconto deve ser booleano.", 400);
+      throw new AppError(
+        "Campo pode_conceder_desconto deve ser booleano.",
+        400,
+      );
     }
     dto.podeConcederDesconto = podeConcederDesconto;
   }

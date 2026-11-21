@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { AppDataSource } from "../../config/data-source";
-import { HashService } from "../../modules/auth/services/hash.service";
 import { SuperAdmin } from "../../modules/admin/entities/super-admin.entity";
+import { HashService } from "../../modules/auth/services/hash.service";
 
 const NOME = "Super Admin";
 const EMAIL = process.env.SUPER_ADMIN_EMAIL ?? "superadmin@pedmesa.com";
@@ -24,7 +24,7 @@ async function run(): Promise<void> {
         email: EMAIL,
         senhaHash,
         ativo: true,
-      })
+      }),
     );
 
     console.log(`✅ Super-admin criado: ${superAdmin.email} / senha: ${SENHA}`);

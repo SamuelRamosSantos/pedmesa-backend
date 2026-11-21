@@ -13,11 +13,19 @@ export interface AddPagamentoComandaDto {
   valor: number;
 }
 
-export function assertValidAddPagamentoComandaDto(body: unknown): AddPagamentoComandaDto {
+export function assertValidAddPagamentoComandaDto(
+  body: unknown,
+): AddPagamentoComandaDto {
   const { forma, valor } = (body ?? {}) as Record<string, unknown>;
 
-  if (typeof forma !== "string" || !FORMAS_PAGAMENTO_VALIDAS.includes(forma as FormaPagamento)) {
-    throw new AppError(`forma deve ser um dos seguintes: ${FORMAS_PAGAMENTO_VALIDAS.join(", ")}.`, 400);
+  if (
+    typeof forma !== "string" ||
+    !FORMAS_PAGAMENTO_VALIDAS.includes(forma as FormaPagamento)
+  ) {
+    throw new AppError(
+      `forma deve ser um dos seguintes: ${FORMAS_PAGAMENTO_VALIDAS.join(", ")}.`,
+      400,
+    );
   }
 
   if (typeof valor !== "number" || !Number.isFinite(valor) || valor <= 0) {

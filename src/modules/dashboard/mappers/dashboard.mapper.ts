@@ -1,6 +1,10 @@
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
 import { PeriodoDashboard } from "../dtos/dashboard-filtro.dto";
-import { HistoricoComandaLinha, ProdutoMaisPedido, ResumoDashboard } from "../services/dashboard.service";
+import {
+  HistoricoComandaLinha,
+  ProdutoMaisPedido,
+  ResumoDashboard,
+} from "../services/dashboard.service";
 
 export interface ProdutoMaisPedidoResponse {
   produto_nome: string;
@@ -28,7 +32,7 @@ export function toDashboardResponse(
   periodo: PeriodoDashboard,
   resumo: ResumoDashboard,
   produtos: ProdutoMaisPedido[],
-  historico: HistoricoComandaLinha[]
+  historico: HistoricoComandaLinha[],
 ): DashboardResponse {
   return {
     periodo,

@@ -18,13 +18,25 @@ describe("assertValidCreateClienteDto", () => {
   });
 
   it("observacoes ausente, null ou em branco vira null", () => {
-    expect(assertValidCreateClienteDto({ ...VALID_BODY, observacoes: undefined }).observacoes).toBeNull();
-    expect(assertValidCreateClienteDto({ ...VALID_BODY, observacoes: null }).observacoes).toBeNull();
-    expect(assertValidCreateClienteDto({ ...VALID_BODY, observacoes: "   " }).observacoes).toBeNull();
+    expect(
+      assertValidCreateClienteDto({ ...VALID_BODY, observacoes: undefined })
+        .observacoes,
+    ).toBeNull();
+    expect(
+      assertValidCreateClienteDto({ ...VALID_BODY, observacoes: null })
+        .observacoes,
+    ).toBeNull();
+    expect(
+      assertValidCreateClienteDto({ ...VALID_BODY, observacoes: "   " })
+        .observacoes,
+    ).toBeNull();
   });
 
   it("ignora campos não declarados, como tenant_id vindo do cliente", () => {
-    const dto = assertValidCreateClienteDto({ ...VALID_BODY, tenant_id: "outro-tenant" });
+    const dto = assertValidCreateClienteDto({
+      ...VALID_BODY,
+      tenant_id: "outro-tenant",
+    });
     expect(dto).not.toHaveProperty("tenant_id");
     expect(dto).not.toHaveProperty("tenantId");
   });
@@ -37,7 +49,10 @@ describe("assertValidCreateClienteDto", () => {
     ["telefone inválido", { ...VALID_BODY, telefone: "1234" }],
     ["telefone que não é texto", { ...VALID_BODY, telefone: 11987654321 }],
     ["observacoes que não é texto", { ...VALID_BODY, observacoes: 42 }],
-    ["observacoes longa demais", { ...VALID_BODY, observacoes: "a".repeat(501) }],
+    [
+      "observacoes longa demais",
+      { ...VALID_BODY, observacoes: "a".repeat(501) },
+    ],
     ["corpo vazio", undefined],
   ])("rejeita %s", (_caso, body) => {
     expect(() => assertValidCreateClienteDto(body)).toThrow(AppError);

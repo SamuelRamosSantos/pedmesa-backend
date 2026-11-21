@@ -24,19 +24,29 @@ describe("assertValidCreateTenantDto", () => {
   });
 
   it("rejeita nome_fantasia ausente ou vazio", () => {
-    expect(() => assertValidCreateTenantDto({ ...VALID_BODY, nome_fantasia: "" })).toThrow(AppError);
-    expect(() => assertValidCreateTenantDto({ ...VALID_BODY, nome_fantasia: undefined })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTenantDto({ ...VALID_BODY, nome_fantasia: "" }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTenantDto({ ...VALID_BODY, nome_fantasia: undefined }),
+    ).toThrow(AppError);
   });
 
   it("rejeita cnpj_cpf ausente", () => {
-    expect(() => assertValidCreateTenantDto({ ...VALID_BODY, cnpj_cpf: "" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTenantDto({ ...VALID_BODY, cnpj_cpf: "" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita e-mail do administrador inválido", () => {
-    expect(() => assertValidCreateTenantDto({ ...VALID_BODY, admin_email: "não-é-email" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTenantDto({ ...VALID_BODY, admin_email: "não-é-email" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita senha do administrador curta demais", () => {
-    expect(() => assertValidCreateTenantDto({ ...VALID_BODY, admin_senha: "123" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTenantDto({ ...VALID_BODY, admin_senha: "123" }),
+    ).toThrow(AppError);
   });
 });

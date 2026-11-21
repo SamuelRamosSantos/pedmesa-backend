@@ -5,7 +5,10 @@ const ROLES_VALIDAS = Object.values(UserRole);
 
 export function assertValidRoles(roles: unknown): UserRole[] {
   if (!Array.isArray(roles) || roles.length === 0) {
-    throw new AppError("Selecione ao menos um papel (visão) para o usuário.", 400);
+    throw new AppError(
+      "Selecione ao menos um papel (visão) para o usuário.",
+      400,
+    );
   }
 
   const rolesUnicas = [...new Set(roles)];

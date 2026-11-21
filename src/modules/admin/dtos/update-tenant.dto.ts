@@ -23,7 +23,10 @@ export interface UpdateTenantDto {
   cep?: string | null;
 }
 
-function assertValidStringOpcional(valor: unknown, campo: string): string | null | undefined {
+function assertValidStringOpcional(
+  valor: unknown,
+  campo: string,
+): string | null | undefined {
   if (valor === undefined) {
     return undefined;
   }
@@ -39,7 +42,10 @@ function assertValidStringOpcional(valor: unknown, campo: string): string | null
   return valor.trim() || null;
 }
 
-function assertValidEmailOpcional(valor: unknown, campo: string): string | null | undefined {
+function assertValidEmailOpcional(
+  valor: unknown,
+  campo: string,
+): string | null | undefined {
   if (valor === undefined) {
     return undefined;
   }
@@ -92,37 +98,58 @@ export function assertValidUpdateTenantDto(body: unknown): UpdateTenantDto {
     dto.cnpjCpf = cnpjCpf.trim();
   }
 
-  const razaoSocialValidado = assertValidStringOpcional(razaoSocial, "razao_social");
+  const razaoSocialValidado = assertValidStringOpcional(
+    razaoSocial,
+    "razao_social",
+  );
   if (razaoSocialValidado !== undefined) {
     dto.razaoSocial = razaoSocialValidado;
   }
 
-  const inscricaoEstadualValidado = assertValidStringOpcional(inscricaoEstadual, "inscricao_estadual");
+  const inscricaoEstadualValidado = assertValidStringOpcional(
+    inscricaoEstadual,
+    "inscricao_estadual",
+  );
   if (inscricaoEstadualValidado !== undefined) {
     dto.inscricaoEstadual = inscricaoEstadualValidado;
   }
 
-  const ramoAtividadeValidado = assertValidStringOpcional(ramoAtividade, "ramo_atividade");
+  const ramoAtividadeValidado = assertValidStringOpcional(
+    ramoAtividade,
+    "ramo_atividade",
+  );
   if (ramoAtividadeValidado !== undefined) {
     dto.ramoAtividade = ramoAtividadeValidado;
   }
 
-  const nomeProprietarioValidado = assertValidStringOpcional(nomeProprietario, "nome_proprietario");
+  const nomeProprietarioValidado = assertValidStringOpcional(
+    nomeProprietario,
+    "nome_proprietario",
+  );
   if (nomeProprietarioValidado !== undefined) {
     dto.nomeProprietario = nomeProprietarioValidado;
   }
 
-  const cpfProprietarioValidado = assertValidStringOpcional(cpfProprietario, "cpf_proprietario");
+  const cpfProprietarioValidado = assertValidStringOpcional(
+    cpfProprietario,
+    "cpf_proprietario",
+  );
   if (cpfProprietarioValidado !== undefined) {
     dto.cpfProprietario = cpfProprietarioValidado;
   }
 
-  const emailEmpresaValidado = assertValidEmailOpcional(emailEmpresa, "email_empresa");
+  const emailEmpresaValidado = assertValidEmailOpcional(
+    emailEmpresa,
+    "email_empresa",
+  );
   if (emailEmpresaValidado !== undefined) {
     dto.emailEmpresa = emailEmpresaValidado;
   }
 
-  const emailProprietarioValidado = assertValidEmailOpcional(emailProprietario, "email_proprietario");
+  const emailProprietarioValidado = assertValidEmailOpcional(
+    emailProprietario,
+    "email_proprietario",
+  );
   if (emailProprietarioValidado !== undefined) {
     dto.emailProprietario = emailProprietarioValidado;
   }
@@ -135,13 +162,23 @@ export function assertValidUpdateTenantDto(body: unknown): UpdateTenantDto {
   }
 
   if (quantidadeComandas !== undefined) {
-    if (typeof quantidadeComandas !== "number" || !Number.isInteger(quantidadeComandas) || quantidadeComandas <= 0) {
-      throw new AppError("quantidade_comandas deve ser um número inteiro maior que zero.", 400);
+    if (
+      typeof quantidadeComandas !== "number" ||
+      !Number.isInteger(quantidadeComandas) ||
+      quantidadeComandas <= 0
+    ) {
+      throw new AppError(
+        "quantidade_comandas deve ser um número inteiro maior que zero.",
+        400,
+      );
     }
     dto.quantidadeComandas = quantidadeComandas;
   }
 
-  const logradouroValidado = assertValidStringOpcional(logradouro, "logradouro");
+  const logradouroValidado = assertValidStringOpcional(
+    logradouro,
+    "logradouro",
+  );
   if (logradouroValidado !== undefined) {
     dto.logradouro = logradouroValidado;
   }

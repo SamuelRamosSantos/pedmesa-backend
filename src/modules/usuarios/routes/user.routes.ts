@@ -1,8 +1,14 @@
 import { Router } from "express";
 import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
+import {
+  changePassword,
+  create,
+  list,
+  update,
+  updateAtivo,
+} from "../controllers/user.controller";
 import { UserRole } from "../entities/user.entity";
-import { changePassword, create, list, update, updateAtivo } from "../controllers/user.controller";
 
 const userRoutes = Router();
 

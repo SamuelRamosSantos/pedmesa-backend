@@ -5,7 +5,11 @@ import { toDashboardResponse } from "../mappers/dashboard.mapper";
 import { DashboardService } from "../services/dashboard.service";
 import { resolverIntervaloPeriodo } from "../services/periodo-resolver";
 
-export async function getResumo(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getResumo(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidDashboardFiltroDto(req.query);
@@ -17,7 +21,9 @@ export async function getResumo(req: Request, res: Response, next: NextFunction)
       DashboardService.getHistoricoComandas(tenantId, intervalo),
     ]);
 
-    res.status(200).json(toDashboardResponse(dto.periodo, resumo, produtos, historico));
+    res
+      .status(200)
+      .json(toDashboardResponse(dto.periodo, resumo, produtos, historico));
   } catch (error) {
     next(error);
   }

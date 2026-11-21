@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements MigrationInterface {
+export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013
+  implements MigrationInterface
+{
   name = "AddDadosEmpresaAndModuloCozinhaToTenants1700000000013";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +13,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -21,7 +23,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "30",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -31,7 +33,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -41,7 +43,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -51,7 +53,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "20",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -61,7 +63,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -71,7 +73,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -81,7 +83,7 @@ export class AddDadosEmpresaAndModuloCozinhaToTenants1700000000013 implements Mi
         type: "boolean",
         default: true,
         isNullable: false,
-      })
+      }),
     );
   }
 

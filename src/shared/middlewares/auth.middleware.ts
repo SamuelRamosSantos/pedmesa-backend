@@ -5,7 +5,11 @@ import { AppError } from "../errors/app-error";
 
 const METODOS_DE_ESCRITA = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
-export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export function authMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -39,7 +43,10 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
         metodo: req.method,
         rota: req.originalUrl,
       }).catch((error) => {
-        console.error("[AUDIT LOG] Falha ao registrar ação durante impersonation:", error);
+        console.error(
+          "[AUDIT LOG] Falha ao registrar ação durante impersonation:",
+          error,
+        );
       });
     }
 

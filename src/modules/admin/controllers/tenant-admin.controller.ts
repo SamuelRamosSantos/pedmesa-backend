@@ -9,7 +9,11 @@ import { assertValidUpdateTenantStatusDto } from "../dtos/update-tenant-status.d
 import { toTenantAdminResponse } from "../mappers/tenant-admin.mapper";
 import { SuperAdminService } from "../services/super-admin.service";
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const dto = assertValidCreateTenantDto(req.body);
     const tenant = await SuperAdminService.criarTenant(dto);
@@ -20,9 +24,15 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    const filters = parseListTenantsFilters(req.query as Record<string, unknown>);
+    const filters = parseListTenantsFilters(
+      req.query as Record<string, unknown>,
+    );
     const tenants = await SuperAdminService.listarTenants(filters);
 
     res.status(200).json(tenants.map(toTenantAdminResponse));
@@ -31,7 +41,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function update(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { id } = req.params;
 
@@ -48,7 +62,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { id } = req.params;
 
@@ -65,7 +83,11 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
   }
 }
 
-export async function impersonar(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function impersonar(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { id } = req.params;
 
@@ -74,7 +96,10 @@ export async function impersonar(req: Request, res: Response, next: NextFunction
     }
 
     const superAdminId = getSuperAdminId(req);
-    const resultado = await SuperAdminService.impersonarTenant(id, superAdminId);
+    const resultado = await SuperAdminService.impersonarTenant(
+      id,
+      superAdminId,
+    );
 
     res.status(200).json(resultado);
   } catch (error) {

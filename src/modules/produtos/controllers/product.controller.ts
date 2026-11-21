@@ -4,12 +4,16 @@ import { getTenantId } from "../../../shared/utils/get-tenant-id";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreateProductDto } from "../dtos/create-product.dto";
 import { parseListProductsFilters } from "../dtos/list-products.dto";
-import { assertValidUpdateAvailabilityDto } from "../dtos/update-product-availability.dto";
 import { assertValidUpdateProductDto } from "../dtos/update-product.dto";
+import { assertValidUpdateAvailabilityDto } from "../dtos/update-product-availability.dto";
 import { toProductResponse } from "../mappers/product.mapper";
 import { ProductService } from "../services/product.service";
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateProductDto(req.body);
@@ -21,10 +25,16 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
-    const filters = parseListProductsFilters(req.query as Record<string, unknown>);
+    const filters = parseListProductsFilters(
+      req.query as Record<string, unknown>,
+    );
     const products = await ProductService.list(tenantId, filters);
 
     res.status(200).json(products.map(toProductResponse));
@@ -33,7 +43,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export async function updateDisponibilidade(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateDisponibilidade(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;
@@ -43,7 +57,11 @@ export async function updateDisponibilidade(req: Request, res: Response, next: N
     }
 
     const dto = assertValidUpdateAvailabilityDto(req.body);
-    const product = await ProductService.updateDisponibilidade(tenantId, id, dto.disponivel);
+    const product = await ProductService.updateDisponibilidade(
+      tenantId,
+      id,
+      dto.disponivel,
+    );
 
     res.status(200).json(toProductResponse(product));
   } catch (error) {
@@ -51,7 +69,11 @@ export async function updateDisponibilidade(req: Request, res: Response, next: N
   }
 }
 
-export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function update(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;
@@ -69,7 +91,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function remove(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;

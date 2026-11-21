@@ -2,8 +2,14 @@ import { In } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { fromCents, toCents } from "../../../shared/utils/money";
 import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
-import { FormaPagamento, PagamentoComanda } from "../../comandas/entities/pagamento-comanda.entity";
-import { ItemPedido, StatusItem } from "../../pedidos/entities/item-pedido.entity";
+import {
+  FormaPagamento,
+  PagamentoComanda,
+} from "../../comandas/entities/pagamento-comanda.entity";
+import {
+  ItemPedido,
+  StatusItem,
+} from "../../pedidos/entities/item-pedido.entity";
 import { IntervaloData } from "./periodo-resolver";
 
 export interface ResumoDashboard {
@@ -29,7 +35,10 @@ export interface HistoricoComandaLinha {
 const LIMITE_PRODUTOS_MAIS_PEDIDOS = 5;
 
 export class DashboardService {
-  static async getResumo(tenantId: string, intervalo: IntervaloData): Promise<ResumoDashboard> {
+  static async getResumo(
+    tenantId: string,
+    intervalo: IntervaloData,
+  ): Promise<ResumoDashboard> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
     const bruto = await comandaRepository
@@ -44,7 +53,10 @@ export class DashboardService {
 
     const faturamentoCents = toCents(Number(bruto?.faturamento ?? 0));
     const comandasFechadas = Number(bruto?.quantidade ?? 0);
-    const ticketMedioCents = comandasFechadas > 0 ? Math.round(faturamentoCents / comandasFechadas) : 0;
+    const ticketMedioCents =
+      comandasFechadas > 0
+        ? Math.round(faturamentoCents / comandasFechadas)
+        : 0;
 
     return {
       faturamento: fromCents(faturamentoCents),
@@ -53,7 +65,10 @@ export class DashboardService {
     };
   }
 
-  static async getProdutosMaisPedidos(tenantId: string, intervalo: IntervaloData): Promise<ProdutoMaisPedido[]> {
+  static async getProdutosMaisPedidos(
+    tenantId: string,
+    intervalo: IntervaloData,
+  ): Promise<ProdutoMaisPedido[]> {
     const itemRepository = AppDataSource.getRepository(ItemPedido);
 
     const linhas = await itemRepository
@@ -66,7 +81,9 @@ export class DashboardService {
       .where("comanda.tenantId = :tenantId", { tenantId })
       .andWhere("comanda.status = :status", { status: ComandaStatus.FECHADA })
       .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo)
-      .andWhere("item.statusItem != :cancelado", { cancelado: StatusItem.CANCELADO })
+      .andWhere("item.statusItem != :cancelado", {
+        cancelado: StatusItem.CANCELADO,
+      })
       .groupBy("produto.id")
       .addGroupBy("produto.nome")
       .orderBy("quantidade", "DESC")
@@ -79,7 +96,10 @@ export class DashboardService {
     }));
   }
 
-  static async getHistoricoComandas(tenantId: string, intervalo: IntervaloData): Promise<HistoricoComandaLinha[]> {
+  static async getHistoricoComandas(
+    tenantId: string,
+    intervalo: IntervaloData,
+  ): Promise<HistoricoComandaLinha[]> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
     const comandas = await comandaRepository
@@ -102,7 +122,9 @@ export class DashboardService {
 
     const formasPorComandaId = new Map<string, Set<FormaPagamento>>();
     pagamentos.forEach((pagamento) => {
-      const formas = formasPorComandaId.get(pagamento.comandaId) ?? new Set<FormaPagamento>();
+      const formas =
+        formasPorComandaId.get(pagamento.comandaId) ??
+        new Set<FormaPagamento>();
       formas.add(pagamento.forma);
       formasPorComandaId.set(pagamento.comandaId, formas);
     });

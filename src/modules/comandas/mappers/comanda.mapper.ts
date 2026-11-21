@@ -1,4 +1,8 @@
-import { Comanda, ComandaStatus, DescontoTipo } from "../entities/comanda.entity";
+import {
+  Comanda,
+  ComandaStatus,
+  DescontoTipo,
+} from "../entities/comanda.entity";
 import { FechamentoResultado } from "../services/comanda.service";
 import { RateioIntegranteComDesconto } from "../services/desconto-calculator";
 import { IntegranteResponse, toIntegranteResponse } from "./integrante.mapper";
@@ -19,7 +23,9 @@ export interface ComandaListItemResponse {
   aberta_em: Date;
 }
 
-export function toComandaDetailResponse(comanda: Comanda): ComandaDetailResponse {
+export function toComandaDetailResponse(
+  comanda: Comanda,
+): ComandaDetailResponse {
   return {
     id: comanda.id,
     numero_comanda: comanda.numeroComanda,
@@ -29,7 +35,9 @@ export function toComandaDetailResponse(comanda: Comanda): ComandaDetailResponse
   };
 }
 
-export function toComandaListItemResponse(comanda: Comanda): ComandaListItemResponse {
+export function toComandaListItemResponse(
+  comanda: Comanda,
+): ComandaListItemResponse {
   return {
     id: comanda.id,
     numero_comanda: comanda.numeroComanda,
@@ -44,7 +52,9 @@ export interface JuntarComandasResponse {
   comanda_principal_id: string;
 }
 
-export function toJuntarComandasResponse(comandaPrincipal: Comanda): JuntarComandasResponse {
+export function toJuntarComandasResponse(
+  comandaPrincipal: Comanda,
+): JuntarComandasResponse {
   return {
     mensagem: "Comandas juntadas com sucesso.",
     comanda_principal_id: comandaPrincipal.id,
@@ -62,7 +72,9 @@ export interface FecharComandaResponse {
   divisao_por_integrante: RateioIntegranteComDesconto[];
 }
 
-export function toFecharComandaResponse(resultado: FechamentoResultado): FecharComandaResponse {
+export function toFecharComandaResponse(
+  resultado: FechamentoResultado,
+): FecharComandaResponse {
   return {
     status: resultado.comanda.status,
     mensagem: "Comanda quitada com sucesso e liberada para o salão.",
@@ -80,7 +92,9 @@ export interface DescontoComandaResponse {
   desconto_valor: number;
 }
 
-export function toDescontoComandaResponse(comanda: Comanda): DescontoComandaResponse {
+export function toDescontoComandaResponse(
+  comanda: Comanda,
+): DescontoComandaResponse {
   return {
     desconto_tipo: comanda.descontoTipo,
     desconto_valor: comanda.descontoValor,
@@ -92,7 +106,9 @@ export interface CancelarComandaResponse {
   mensagem: string;
 }
 
-export function toCancelarComandaResponse(comanda: Comanda): CancelarComandaResponse {
+export function toCancelarComandaResponse(
+  comanda: Comanda,
+): CancelarComandaResponse {
   return {
     status: comanda.status,
     mensagem: "Comanda cancelada e mesa liberada com sucesso.",

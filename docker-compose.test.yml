@@ -1,0 +1,19 @@
+# Banco descartável para os testes de integração (npm test).
+# Porta 5433 para não conflitar com o Postgres de desenvolvimento (5432).
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: pedmesa_postgres_test
+    environment:
+      POSTGRES_USER: pedmesa_test_user
+      POSTGRES_PASSWORD: pedmesa_test_password
+      POSTGRES_DB: pedmesa_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pedmesa_test_user -d pedmesa_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

@@ -2,7 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { verifySuperAdminToken } from "../../modules/auth/utils/jwt.util";
 import { AppError } from "../errors/app-error";
 
-export function superAdminAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export function superAdminAuthMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {

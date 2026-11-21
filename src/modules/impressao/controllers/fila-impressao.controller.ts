@@ -6,7 +6,11 @@ import { assertValidUpdateStatusFilaDto } from "../dtos/update-status-fila.dto";
 import { toFilaImpressaoResponse } from "../mappers/fila-impressao.mapper";
 import { FilaImpressaoService } from "../services/fila-impressao.service";
 
-export async function listPendentes(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function listPendentes(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const jobs = await FilaImpressaoService.listPendentes(tenantId);
@@ -17,7 +21,11 @@ export async function listPendentes(req: Request, res: Response, next: NextFunct
   }
 }
 
-export async function updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;

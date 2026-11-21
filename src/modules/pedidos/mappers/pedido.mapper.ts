@@ -36,7 +36,9 @@ export interface PedidoListItemResponse {
   itens: PedidoItemResponse[];
 }
 
-export function toPedidoListItemResponse(pedido: Pedido): PedidoListItemResponse {
+export function toPedidoListItemResponse(
+  pedido: Pedido,
+): PedidoListItemResponse {
   return {
     id: pedido.id,
     comanda_id: pedido.comandaId,
@@ -66,7 +68,10 @@ export interface UpdateItemStatusResponse {
   };
 }
 
-export function toUpdateItemStatusResponse(item: ItemPedido, pedido: Pedido): UpdateItemStatusResponse {
+export function toUpdateItemStatusResponse(
+  item: ItemPedido,
+  pedido: Pedido,
+): UpdateItemStatusResponse {
   return {
     item_id: item.id,
     status_item: item.statusItem,

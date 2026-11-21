@@ -9,6 +9,10 @@ const categoryRoutes = Router();
 categoryRoutes.use(authMiddleware);
 
 categoryRoutes.post("/", rbacMiddleware([UserRole.ADMIN]), create);
-categoryRoutes.get("/", rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA]), list);
+categoryRoutes.get(
+  "/",
+  rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA]),
+  list,
+);
 
 export default categoryRoutes;

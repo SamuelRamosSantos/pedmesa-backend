@@ -4,7 +4,9 @@ import { assertValidUpdateTenantDto } from "./update-tenant.dto";
 
 describe("assertValidUpdateTenantDto", () => {
   it("aceita atualização parcial de um único campo", () => {
-    expect(assertValidUpdateTenantDto({ nome_fantasia: "Novo Nome" })).toEqual({ nomeFantasia: "Novo Nome" });
+    expect(assertValidUpdateTenantDto({ nome_fantasia: "Novo Nome" })).toEqual({
+      nomeFantasia: "Novo Nome",
+    });
   });
 
   it("aceita cnpj_cpf e campos legais que o próprio tenant não edita", () => {
@@ -26,23 +28,33 @@ describe("assertValidUpdateTenantDto", () => {
   });
 
   it("permite limpar um campo opcional enviando null", () => {
-    expect(assertValidUpdateTenantDto({ razao_social: null })).toEqual({ razaoSocial: null });
+    expect(assertValidUpdateTenantDto({ razao_social: null })).toEqual({
+      razaoSocial: null,
+    });
   });
 
   it("rejeita nome_fantasia vazio", () => {
-    expect(() => assertValidUpdateTenantDto({ nome_fantasia: "  " })).toThrow(AppError);
+    expect(() => assertValidUpdateTenantDto({ nome_fantasia: "  " })).toThrow(
+      AppError,
+    );
   });
 
   it("rejeita cnpj_cpf vazio", () => {
-    expect(() => assertValidUpdateTenantDto({ cnpj_cpf: "" })).toThrow(AppError);
+    expect(() => assertValidUpdateTenantDto({ cnpj_cpf: "" })).toThrow(
+      AppError,
+    );
   });
 
   it("rejeita e-mail inválido", () => {
-    expect(() => assertValidUpdateTenantDto({ email_empresa: "não-é-email" })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantDto({ email_empresa: "não-é-email" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita estado fora do formato de UF", () => {
-    expect(() => assertValidUpdateTenantDto({ estado: "SPX" })).toThrow(AppError);
+    expect(() => assertValidUpdateTenantDto({ estado: "SPX" })).toThrow(
+      AppError,
+    );
   });
 
   it("rejeita corpo vazio", () => {

@@ -13,7 +13,7 @@ export class LeadService {
         whatsapp: dto.whatsapp,
         nomeEstabelecimento: dto.nomeEstabelecimento,
         cpfCnpj: dto.cpfCnpj,
-      })
+      }),
     );
   }
 

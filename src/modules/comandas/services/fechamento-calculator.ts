@@ -15,9 +15,15 @@ export interface AvaliacaoFechamento {
   suficiente: boolean;
 }
 
-export function avaliarFechamento(valorTotalComanda: number, pagamentos: PagamentoInput[]): AvaliacaoFechamento {
+export function avaliarFechamento(
+  valorTotalComanda: number,
+  pagamentos: PagamentoInput[],
+): AvaliacaoFechamento {
   const totalComandaCents = toCents(valorTotalComanda);
-  const totalPagoCents = pagamentos.reduce((soma, pagamento) => soma + toCents(pagamento.valor), 0);
+  const totalPagoCents = pagamentos.reduce(
+    (soma, pagamento) => soma + toCents(pagamento.valor),
+    0,
+  );
 
   return {
     totalComandaCents,

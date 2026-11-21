@@ -41,7 +41,7 @@ export class CreateTenantsTable1700000000000 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
   }
 

@@ -11,8 +11,16 @@ describe("normalizarLocalidade", () => {
     ["remove acentos e cedilha", "Conceição de Macabu", "conceicao de macabu"],
     ["converte para minúsculas", "BELA VISTA", "bela vista"],
     ["apara as pontas", "  Centro  ", "centro"],
-    ["colapsa tabs, quebras de linha e espaço não separável", "Vila\t\nMariana Alta", "vila mariana alta"],
-    ["mantém hífen e apóstrofo", "Santa Bárbara d'Oeste - SP", "santa barbara d'oeste - sp"],
+    [
+      "colapsa tabs, quebras de linha e espaço não separável",
+      "Vila\t\nMariana Alta",
+      "vila mariana alta",
+    ],
+    [
+      "mantém hífen e apóstrofo",
+      "Santa Bárbara d'Oeste - SP",
+      "santa barbara d'oeste - sp",
+    ],
   ])("%s", (_caso, entrada, esperado) => {
     expect(normalizarLocalidade(entrada)).toBe(esperado);
   });

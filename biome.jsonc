@@ -1,0 +1,35 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "ignoreUnknown": false },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noNonNullAssertion": "off",
+        // As entidades do TypeORM dependem do emitDecoratorMetadata: trocar o import
+        // de uma classe usada como tipo de propriedade por `import type` apaga a
+        // referência em runtime e quebra o metadata das colunas e relações.
+        "useImportType": "off"
+      },
+      "complexity": {
+        // Services e utilitários são classes só com membros estáticos (padrão atual
+        // do projeto). Convertê-los para módulos de funções é refatoração à parte.
+        "noStaticOnlyClass": "off",
+        "noThisInStatic": "off"
+      }
+    }
+  },
+  "javascript": { "formatter": { "quoteStyle": "double" } },
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

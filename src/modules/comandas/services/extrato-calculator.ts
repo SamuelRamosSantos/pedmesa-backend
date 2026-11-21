@@ -1,7 +1,11 @@
-import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 import { fromCents, toCents } from "../../../shared/utils/money";
+import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 
-const STATUS_PENDENTES_ENTREGA: StatusItem[] = [StatusItem.PENDENTE, StatusItem.EM_PREPARO, StatusItem.PRONTO];
+const STATUS_PENDENTES_ENTREGA: StatusItem[] = [
+  StatusItem.PENDENTE,
+  StatusItem.EM_PREPARO,
+  StatusItem.PRONTO,
+];
 
 export interface ExtratoItemInput {
   id: string;
@@ -71,7 +75,9 @@ export interface ExtratoCalculado {
   itens_pendentes: ItemPendenteEntrega[];
 }
 
-export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado {
+export function calcularExtrato(
+  input: ExtratoCalculatorInput,
+): ExtratoCalculado {
   const quantidadeIntegrantes = input.integrantes.length;
 
   let totalIndividualCents = 0;
@@ -95,8 +101,14 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
     if (item.integranteId === null) {
       totalCompartilhadoCents += subtotalCents;
 
-      const valorPorPessoaCents = quantidadeIntegrantes > 0 ? Math.round(subtotalCents / quantidadeIntegrantes) : 0;
-      itensCompartilhados.push({ ...linha, valor_por_pessoa: fromCents(valorPorPessoaCents) });
+      const valorPorPessoaCents =
+        quantidadeIntegrantes > 0
+          ? Math.round(subtotalCents / quantidadeIntegrantes)
+          : 0;
+      itensCompartilhados.push({
+        ...linha,
+        valor_por_pessoa: fromCents(valorPorPessoaCents),
+      });
       continue;
     }
 
@@ -108,24 +120,29 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
   }
 
   const valorCompartilhadoPorPessoaCents =
-    quantidadeIntegrantes > 0 ? Math.round(totalCompartilhadoCents / quantidadeIntegrantes) : 0;
+    quantidadeIntegrantes > 0
+      ? Math.round(totalCompartilhadoCents / quantidadeIntegrantes)
+      : 0;
 
-  const divisaoPorIntegrante: ExtratoIntegranteResultado[] = input.integrantes.map((integrante) => {
-    const itensIndividuais = linhasPorIntegrante.get(integrante.id) ?? [];
-    const totalIndividualIntegranteCents = itensIndividuais.reduce(
-      (soma, linha) => soma + toCents(linha.subtotal),
-      0
-    );
+  const divisaoPorIntegrante: ExtratoIntegranteResultado[] =
+    input.integrantes.map((integrante) => {
+      const itensIndividuais = linhasPorIntegrante.get(integrante.id) ?? [];
+      const totalIndividualIntegranteCents = itensIndividuais.reduce(
+        (soma, linha) => soma + toCents(linha.subtotal),
+        0,
+      );
 
-    return {
-      integrante_id: integrante.id,
-      nome: integrante.nome,
-      itens_individuais: itensIndividuais,
-      total_individual: fromCents(totalIndividualIntegranteCents),
-      cota_compartilhada: fromCents(valorCompartilhadoPorPessoaCents),
-      total_a_pagar: fromCents(totalIndividualIntegranteCents + valorCompartilhadoPorPessoaCents),
-    };
-  });
+      return {
+        integrante_id: integrante.id,
+        nome: integrante.nome,
+        itens_individuais: itensIndividuais,
+        total_individual: fromCents(totalIndividualIntegranteCents),
+        cota_compartilhada: fromCents(valorCompartilhadoPorPessoaCents),
+        total_a_pagar: fromCents(
+          totalIndividualIntegranteCents + valorCompartilhadoPorPessoaCents,
+        ),
+      };
+    });
 
   const valorTotalComandaCents = totalIndividualCents + totalCompartilhadoCents;
 
@@ -142,7 +159,9 @@ export function calcularExtrato(input: ExtratoCalculatorInput): ExtratoCalculado
       total_itens_individuais: fromCents(totalIndividualCents),
       total_itens_compartilhados: fromCents(totalCompartilhadoCents),
       quantidade_integrantes: quantidadeIntegrantes,
-      valor_compartilhado_por_pessoa: fromCents(valorCompartilhadoPorPessoaCents),
+      valor_compartilhado_por_pessoa: fromCents(
+        valorCompartilhadoPorPessoaCents,
+      ),
       valor_total_comanda: fromCents(valorTotalComandaCents),
     },
     divisao_por_integrante: divisaoPorIntegrante,
