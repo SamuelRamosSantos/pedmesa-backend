@@ -5,3 +5,7 @@ dist/
 .DS_Store
 scripts/dev/mock-printer-received.bin
 .claude/
+
+# Uploads salvos em disco local (STORAGE_DRIVER=local, padrão em dev) — em
+# produção (STORAGE_DRIVER=s3) esse diretório nem chega a ser usado.
+/uploads/

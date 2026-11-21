@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../../shared/errors/app-error";
+import { setTenantAuthCookie } from "../../../shared/utils/auth-cookies";
 import { getSuperAdminId } from "../../../shared/utils/get-super-admin-id";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreateTenantDto } from "../dtos/create-tenant.dto";
@@ -7,7 +8,7 @@ import { parseListTenantsFilters } from "../dtos/list-tenants.dto";
 import { assertValidUpdateTenantDto } from "../dtos/update-tenant.dto";
 import { assertValidUpdateTenantStatusDto } from "../dtos/update-tenant-status.dto";
 import { toTenantAdminResponse } from "../mappers/tenant-admin.mapper";
-import { SuperAdminService } from "../services/super-admin.service";
+import { IMPERSONATION_TOKEN_EXPIRES_IN, SuperAdminService } from "../services/super-admin.service";
 
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -75,8 +76,11 @@ export async function impersonar(req: Request, res: Response, next: NextFunction
 
     const superAdminId = getSuperAdminId(req);
     const resultado = await SuperAdminService.impersonarTenant(id, superAdminId);
+    const { token, ...body } = resultado;
 
-    res.status(200).json(resultado);
+    setTenantAuthCookie(res, token, IMPERSONATION_TOKEN_EXPIRES_IN);
+
+    res.status(200).json(body);
   } catch (error) {
     next(error);
   }

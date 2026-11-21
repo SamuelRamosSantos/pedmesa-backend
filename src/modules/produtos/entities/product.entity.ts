@@ -46,4 +46,7 @@ export class Product {
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
+
+  @Column({ name: "imagem_url", type: "varchar", length: 1024, nullable: true })
+  imagemUrl!: string | null;
 }

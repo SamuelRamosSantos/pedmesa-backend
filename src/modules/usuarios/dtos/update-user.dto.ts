@@ -11,6 +11,7 @@ export interface UpdateUserDto {
   podeExcluirItemFechamento?: boolean;
   podeConcederDesconto?: boolean;
   ativo?: boolean;
+  fotoUrl?: string | null;
 }
 
 export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
@@ -21,6 +22,7 @@ export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
     pode_excluir_item_fechamento: podeExcluirItemFechamento,
     pode_conceder_desconto: podeConcederDesconto,
     ativo,
+    foto_url: fotoUrl,
   } = (body ?? {}) as Record<string, unknown>;
 
   const dto: UpdateUserDto = {};
@@ -62,6 +64,13 @@ export function assertValidUpdateUserDto(body: unknown): UpdateUserDto {
       throw new AppError("Campo ativo deve ser booleano.", 400);
     }
     dto.ativo = ativo;
+  }
+
+  if (fotoUrl !== undefined) {
+    if (fotoUrl !== null && typeof fotoUrl !== "string") {
+      throw new AppError("Campo foto_url inválido.", 400);
+    }
+    dto.fotoUrl = fotoUrl;
   }
 
   if (Object.keys(dto).length === 0) {

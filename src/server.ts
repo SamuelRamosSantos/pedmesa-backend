@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import { AppDataSource } from "./config/data-source";
@@ -15,8 +16,11 @@ import leadRoutes from "./modules/leads/routes/lead.routes";
 import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
 import productRoutes from "./modules/produtos/routes/product.routes";
 import tenantRoutes from "./modules/tenants/routes/tenant.routes";
+import uploadRoutes from "./modules/uploads/routes/upload.routes";
 import userRoutes from "./modules/usuarios/routes/user.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
+import { apiRateLimiter } from "./shared/middlewares/rate-limit.middleware";
+import { UPLOADS_DIR, UPLOADS_URL_PREFIX } from "./shared/storage/local-disk.storage";
 
 const app = express();
 
@@ -24,10 +28,27 @@ const app = express();
 // ataques direcionados a CVEs conhecidas do framework/versão.
 app.disable("x-powered-by");
 
+// Em produção a API roda atrás do proxy reverso do Coolify (Traefik) — sem isso,
+// req.ip sempre resolveria pro IP interno do proxy, e o rate limit abaixo contaria
+// TODOS os usuários como um único cliente. "1" = confia só no primeiro hop
+// (o proxy imediatamente na frente da API), não numa cadeia arbitrária de proxies.
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
-app.use(cors({ origin: corsOrigins }));
+// credentials: true é obrigatório pro navegador aceitar mandar/receber os cookies
+// de autenticação (PED-76) em requisições cross-origin do front — com credentials
+// habilitado, o pacote "cors" já reflete a origem específica da allowlist acima
+// em vez de "*", que é exigido pelo próprio spec de CORS quando credentials=true.
+app.use(cors({ origin: corsOrigins, credentials: true }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Só usado quando STORAGE_DRIVER=local (padrão em dev) — em produção com S3 as
+// imagens são servidas diretamente pelo bucket/CDN, não pela API.
+app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({
@@ -35,6 +56,8 @@ app.get("/health", (_req, res) => {
     database: AppDataSource.isInitialized ? "connected" : "disconnected",
   });
 });
+
+app.use("/api/v1", apiRateLimiter);
 
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -48,6 +71,7 @@ app.use("/api/v1/leads", leadRoutes);
 app.use("/api/v1/pedidos", pedidosRoutes);
 app.use("/api/v1/produtos", productRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
+app.use("/api/v1/uploads", uploadRoutes);
 app.use("/api/v1/usuarios", userRoutes);
 
 app.use(errorHandlerMiddleware);
