@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../../shared/errors/app-error";
 import { getStorageService } from "../../../shared/storage/get-storage-service";
-import { getExtensionForImageMimeType } from "../utils/image-mime-type";
+import { getTenantId } from "../../../shared/utils/get-tenant-id";
+import { detectarTipoImagem } from "../utils/detect-image-type";
+
+const TIPO_NAO_PERMITIDO =
+  "Tipo de arquivo não permitido. Envie um arquivo JPG, PNG ou WEBP.";
 
 export async function uploadImagem(
   req: Request,
@@ -13,20 +17,19 @@ export async function uploadImagem(
       throw new AppError("Nenhum arquivo enviado.", 400);
     }
 
-    const extension = getExtensionForImageMimeType(req.file.mimetype);
+    // O Content-Type declarado pelo cliente já passou pelo filtro do multer, mas
+    // quem decide o tipo (e o Content-Type gravado no storage) são os bytes.
+    const tipo = detectarTipoImagem(req.file.buffer);
 
-    if (!extension) {
-      throw new AppError(
-        "Tipo de arquivo não permitido. Envie um arquivo JPG, PNG ou WEBP.",
-        400,
-      );
+    if (!tipo) {
+      throw new AppError(TIPO_NAO_PERMITIDO, 400);
     }
 
-    const storageService = getStorageService();
-    const url = await storageService.upload({
+    const url = await getStorageService().upload({
+      tenantId: getTenantId(req),
       buffer: req.file.buffer,
-      mimeType: req.file.mimetype,
-      extension,
+      mimeType: tipo.mimeType,
+      extension: tipo.extension,
     });
 
     res.status(201).json({ url });

@@ -10,14 +10,14 @@ API REST do **PedMesa**, sistema multi-tenant de gestão de comandas, pedidos, d
 - Pedidos e itens com fluxo de preparo para o KDS da cozinha.
 - Delivery: clientes e endereços, taxas por bairro, cotação de frete, pedido delivery com troco, painel de expedição e sincronização do status da entrega com o preparo.
 - Fila de impressão térmica (ESC/POS por TCP e agente desktop `pedmesa-print-agent`), incluindo tickets de entrega.
-- Upload de imagens em disco local (desenvolvimento) ou em storage compatível com S3 (produção).
+- Upload de imagens no Cloudflare R2 em duas etapas (pasta `pendentes/` até salvar, limpa sozinha pelo bucket), com o tipo conferido pelos bytes do arquivo, pasta por estabelecimento e remoção da imagem antiga ao trocar.
 - Dashboard do administrador, gestão de usuários e configurações do estabelecimento (inclusive do delivery).
 - Super-admin: cadastro, status e impersonação de tenants e leitura dos leads da landing page.
 - Rate limit geral e um limite mais restrito para tentativas de login que falham.
 
 ## Stack
 
-Node.js, TypeScript (`strict`), Express 4, TypeORM 0.3 e PostgreSQL 16; `cookie-parser`, `express-rate-limit`, `multer` e `@aws-sdk/client-s3`. Testes com Vitest e Supertest; lint e formatação com Biome; Husky e Commitlint nos commits.
+Node.js, TypeScript (`strict`), Express 4, TypeORM 0.3 e PostgreSQL 16; `cookie-parser`, `express-rate-limit`, `multer` e `@aws-sdk/client-s3` (para o Cloudflare R2). Testes com Vitest e Supertest; lint e formatação com Biome; Husky e Commitlint nos commits.
 
 ## Pré-requisitos
 
@@ -38,20 +38,19 @@ O deploy é feito pelo Coolify. A publicação automatizada por pipeline está p
 
 1. **Variáveis de ambiente:** copie `.env.example` para `.env` e preencha.
 
-   | Variável                                                                                                                         | Uso                                                                                                                                                            |
-   | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `PORT`, `NODE_ENV`                                                                                                               | porta e ambiente; em `production` o cookie fica `secure` e a API confia no primeiro proxy (`trust proxy`)                                                      |
-   | `CORS_ORIGIN`                                                                                                                    | origens liberadas, separadas por vírgula (5173 = frontend, 5174 = site). Precisa listar a origem exata do frontend, porque a sessão é cookie com `credentials` |
-   | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`                                                                    | PostgreSQL                                                                                                                                                     |
-   | `JWT_SECRET`, `JWT_EXPIRES_IN`                                                                                                   | sessão dos usuários dos tenants (também define a validade do cookie)                                                                                           |
-   | `SUPER_ADMIN_JWT_SECRET`                                                                                                         | sessão do super-admin (segredo separado)                                                                                                                       |
-   | `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_SENHA`                                                                                         | usados pelo `npm run seed:super-admin`                                                                                                                         |
-   | `PRINT_FAILURE_RATE`                                                                                                             | taxa de falha simulada da impressora mock (0 a 1)                                                                                                              |
-   | `STORAGE_DRIVER`                                                                                                                 | `local` (padrão) ou `s3`                                                                                                                                       |
-   | `UPLOADS_DIR`, `PUBLIC_URL_BASE`                                                                                                 | pasta e URL pública dos uploads no driver `local`                                                                                                              |
-   | `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`, `S3_PUBLIC_URL_BASE` | driver `s3` (AWS S3, R2, MinIO...)                                                                                                                             |
-   | `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX`                                                                                 | limite geral da API                                                                                                                                            |
-   | `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX`                                                                               | limite de logins que falham                                                                                                                                    |
+   | Variável                                                                                       | Uso                                                                                                                                                                                                                                                              |
+   | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `PORT`, `NODE_ENV`                                                                             | porta e ambiente; em `production` o cookie fica `secure` e a API confia no primeiro proxy (`trust proxy`)                                                                                                                                                        |
+   | `CORS_ORIGIN`                                                                                  | origens liberadas, separadas por vírgula (5173 = frontend, 5174 = site). Precisa listar a origem exata do frontend, porque a sessão é cookie com `credentials`                                                                                                   |
+   | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`                                  | PostgreSQL                                                                                                                                                                                                                                                       |
+   | `JWT_SECRET`, `JWT_EXPIRES_IN`                                                                 | sessão dos usuários dos tenants (também define a validade do cookie)                                                                                                                                                                                             |
+   | `SUPER_ADMIN_JWT_SECRET`                                                                       | sessão do super-admin (segredo separado)                                                                                                                                                                                                                         |
+   | `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_SENHA`                                                       | usados pelo `npm run seed:super-admin`                                                                                                                                                                                                                           |
+   | `PRINT_FAILURE_RATE`                                                                           | taxa de falha simulada da impressora mock (0 a 1)                                                                                                                                                                                                                |
+   | `STORAGE_DRIVER`                                                                               | `r2` (padrão); a suíte de testes usa `memoria`                                                                                                                                                                                                                   |
+   | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL_BASE` | Cloudflare R2: conta, token do bucket (Object Read & Write), bucket (`pedmesa-imagens-dev` em dev e homologação, `pedmesa-imagens` em produção) e domínio público (`https://cdn-dev.pedmesa.com.br` / `https://cdn.pedmesa.com.br`). **Sem elas a API não sobe** |
+   | `API_RATE_LIMIT_WINDOW_MS`, `API_RATE_LIMIT_MAX`                                               | limite geral da API                                                                                                                                                                                                                                              |
+   | `AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX`                                             | limite de logins que falham                                                                                                                                                                                                                                      |
 
    > O `.env` de desenvolvimento costuma apontar para o Postgres compartilhado da VPS. Para um banco só seu, suba o `docker-compose.yml` (Postgres na porta 5432) e aponte o `.env` para `localhost`.
 
@@ -82,6 +81,8 @@ Os testes unitários cobrem a lógica pura (DTO validators, calculators e transi
 2. Suba o banco de testes: `docker compose -f docker-compose.test.yml up -d` (porta 5433, dados em memória).
 3. Rode `npm test`. O setup global aplica as migrations e o seed antes da suíte.
 4. Ao terminar: `docker compose -f docker-compose.test.yml down`.
+
+As imagens nunca vão para o R2 nos testes: o setup força `STORAGE_DRIVER=memoria`, um storage em memória que os testes conseguem inspecionar.
 
 Para um teste autenticado, use `autenticar(usuario)` de `tests/helpers/factories.ts`: ele faz o login e devolve um cliente que guarda o cookie de sessão.
 
