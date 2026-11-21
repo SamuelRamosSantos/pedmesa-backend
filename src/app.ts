@@ -20,10 +20,6 @@ import uploadRoutes from "./modules/uploads/routes/upload.routes";
 import userRoutes from "./modules/usuarios/routes/user.routes";
 import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
 import { apiRateLimiter } from "./shared/middlewares/rate-limit.middleware";
-import {
-  UPLOADS_DIR,
-  UPLOADS_URL_PREFIX,
-} from "./shared/storage/local-disk.storage";
 
 // Instância do Express sem `listen`: o server.ts sobe o servidor e os testes de
 // integração usam esta mesma instância pelo Supertest.
@@ -53,9 +49,8 @@ app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Só usado quando STORAGE_DRIVER=local (padrão em dev) — em produção com S3 as
-// imagens são servidas diretamente pelo bucket/CDN, não pela API.
-app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR));
+// As imagens não passam pela API: ficam no Cloudflare R2 e são servidas pelo
+// domínio do bucket (cdn.pedmesa.com.br / cdn-dev.pedmesa.com.br). Ver PED-45.
 
 // Liveness: o processo está de pé. Não consulta o banco.
 app.get("/health", (_req, res) => {

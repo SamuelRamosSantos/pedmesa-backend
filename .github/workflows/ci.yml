@@ -68,6 +68,7 @@ jobs:
       JWT_EXPIRES_IN: 1h
       SUPER_ADMIN_JWT_SECRET: outro-segredo-somente-para-ci
       PRINT_FAILURE_RATE: 0
+      STORAGE_DRIVER: memoria
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7

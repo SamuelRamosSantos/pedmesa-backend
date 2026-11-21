@@ -8,6 +8,9 @@ process.env.NODE_ENV = "test";
 // Não sobrescreve o que já veio do ambiente (no CI as variáveis vêm do workflow).
 config({ path: ".env.test" });
 
+// As imagens nunca vão para o R2 durante os testes, seja qual for o .env.test.
+process.env.STORAGE_DRIVER = "memoria";
+
 function falhar(mensagem: string): never {
   // Impresso também no console: no globalSetup o erro lançado pode ficar escondido.
   console.error(`\n${mensagem}\n`);

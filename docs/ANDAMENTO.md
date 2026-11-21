@@ -25,7 +25,7 @@
 - Extrato com divisão de conta, descontos, pagamentos, pré-conta, fechamento e cancelamento.
 - Delivery no backend: clientes e endereços, taxas por bairro, cotação de frete, pedido delivery com troco, painel de expedição, transições de status com concorrência controlada e sincronização com o preparo.
 - Fila de impressão por TCP e pelo agente desktop, com tickets de cozinha, pré-conta e entrega.
-- Upload de imagens (disco local ou S3), rate limit, dashboard, usuários, configurações do tenant e leads.
+- Upload de imagens no Cloudflare R2 por tenant (PED-45), rate limit, dashboard, usuários, configurações do tenant e leads.
 - Organização do repositório: Biome, Husky + Commitlint, guardrails de IA (`.agents/`), documentação em `docs/`, suíte de integração com banco `_test`, `/ready`, CI e Dependabot.
 
 ## 3. Em andamento (fora da `main`)

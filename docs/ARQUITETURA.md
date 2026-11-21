@@ -4,15 +4,15 @@
 
 ## 1. Stack
 
-| Camada       | Tecnologia                                                                   |
-| ------------ | ---------------------------------------------------------------------------- |
-| Runtime      | Node.js 26 (CI)                                                              |
-| Linguagem    | TypeScript 5 com `strict`, compilado para CommonJS                           |
-| HTTP         | Express 4, `cors` (com `credentials`), `cookie-parser`, `express-rate-limit` |
-| Persistência | TypeORM 0.3 sobre PostgreSQL 16, migrations versionadas                      |
-| Autenticação | JWT (`jsonwebtoken`) em cookie HttpOnly, senhas com `bcryptjs`               |
-| Arquivos     | `multer`; disco local ou storage compatível com S3 (`@aws-sdk/client-s3`)    |
-| Qualidade    | Biome, Vitest, Supertest, Husky e Commitlint                                 |
+| Camada       | Tecnologia                                                                           |
+| ------------ | ------------------------------------------------------------------------------------ |
+| Runtime      | Node.js 26 (CI)                                                                      |
+| Linguagem    | TypeScript 5 com `strict`, compilado para CommonJS                                   |
+| HTTP         | Express 4, `cors` (com `credentials`), `cookie-parser`, `express-rate-limit`         |
+| Persistência | TypeORM 0.3 sobre PostgreSQL 16, migrations versionadas                              |
+| Autenticação | JWT (`jsonwebtoken`) em cookie HttpOnly, senhas com `bcryptjs`                       |
+| Arquivos     | `multer` em memória; Cloudflare R2 pela API compatível com S3 (`@aws-sdk/client-s3`) |
+| Qualidade    | Biome, Vitest, Supertest, Husky e Commitlint                                         |
 
 ## 2. Visão de sistema
 
@@ -22,7 +22,8 @@ flowchart LR
     Front["pedmesa-frontend<br/>garçom, cozinha, caixa, expedição, admin, super-admin"] -- "cookie HttpOnly" --> API
     Agente["pedmesa-print-agent<br/>Electron no PC do caixa"] -- "token do agente" --> API
     API["pedmesa-backend<br/>/api/v1"] --> DB[("PostgreSQL")]
-    API --> Storage[("Disco local ou S3")]
+    API --> Storage[("Cloudflare R2<br/>cdn.pedmesa.com.br")]
+    Front -- "imagens" --> Storage
     API -- "ESC/POS por TCP" --> Impressora["Impressora térmica de rede"]
     Agente -- "fila do Windows" --> ImpressoraUSB["Impressora USB/local"]
 ```
@@ -51,7 +52,7 @@ src/
   shared/
     errors/app-error.ts
     middlewares/           # auth, rbac, permissão, super-admin, agente, rate limit, error handler
-    storage/               # drivers de upload (disco local e S3)
+    storage/               # R2 (produção e dev), memória (testes), chaves e URLs por tenant
     utils/                 # money, auth-cookies, getTenantId, getUserId, isUuid, isUniqueViolation...
 tests/                     # integração com Supertest (setup, helpers, suítes)
 ```
@@ -162,7 +163,11 @@ flowchart LR
 - **Dinheiro:** `toCents`/`fromCents` em toda aritmética.
 - **Tenant suspenso ou cancelado** não consegue logar (403).
 - **Impressão:** lançar um pedido enfileira `pedido_cozinha` (`PrintQueue.enqueuePedidoCozinha`); a pré-conta gera `pre_conta` e o delivery gera `entrega`. Para impressora de rede, o `PrintQueue` tenta até 3 vezes antes de marcar `falhou`.
-- **Upload:** só imagens JPEG, PNG e WebP, até 5 MB.
+- **Upload (PED-45):** só JPEG, PNG e WebP até 5 MB, com o tipo detectado pelos bytes (não pelo `Content-Type` do cliente). Funciona em duas etapas:
+  1. `POST /uploads` grava em `pendentes/tenants/<tenant_id>/<uuid>.<ext>` (com `Cache-Control: public, max-age=31536000, immutable`) e devolve essa URL, usada na prévia da tela.
+  2. Ao salvar o produto ou o usuário, o service promove o arquivo (`prepararNovaImagem`: cópia para `tenants/<tenant_id>/<uuid>.<ext>` e exclusão do pendente) e grava a URL definitiva. Se o save falhar, a cópia definitiva é apagada.
+
+  `imagem_url` e `foto_url` só aceitam `null` ou um upload **pendente** do próprio tenant; reenviar a URL que o cadastro já tem é aceito (inclusive dados anteriores ao R2). Upload pendente que já expirou volta 400. Ao trocar ou remover a imagem, a anterior é apagada depois do save; falha nessa remoção só gera log. Desativar um produto não apaga a imagem. Uploads nunca salvos ficam em `pendentes/` e são apagados em 1 dia pela regra de ciclo de vida do bucket (configurada no painel do R2).
 
 ## 8. Erros e observabilidade
 
@@ -179,6 +184,7 @@ As regras completas (camadas, funções puras, transações, tenant, dinheiro, m
 - `docs/api-endpoints.md` e `docs/banco-de-dados.md` são do planejamento inicial e estão desatualizados.
 - A suíte de integração (`tests/`) cobre por enquanto infraestrutura, saúde e login; os services que acessam o banco ainda são validados por teste manual.
 - No extrato, a cota compartilhada por pessoa usa `Math.round`, então a soma das cotas pode diferir do total em alguns centavos (ex.: R$ 10,00 entre 3 pessoas).
+- Uma imagem apagada do bucket pode continuar acessível pela URL antiga no domínio `cdn`/`cdn-dev` até sair do cache da Cloudflare (o objeto sobe com `immutable`). Ninguém mais referencia essa URL; se for preciso tirar do ar na hora (ex.: foto de usuário), será necessário purgar o cache pela API da Cloudflare (card próprio).
 - Fuso horário entre Node e Postgres ainda não padronizado (PED-114).
 - Status de preparo do pedido pode ficar desatualizado quando o KDS avança itens em paralelo (PED-115; correção na branch PED-82).
 - O backend não tem Dockerfile próprio nem pipeline de deploy (PED-117 e PED-119).
