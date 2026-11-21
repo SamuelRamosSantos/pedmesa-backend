@@ -8,7 +8,9 @@ export function errorHandlerMiddleware(
   _next: NextFunction,
 ): void {
   if (error instanceof AppError) {
-    res.status(error.statusCode).json({ message: error.message });
+    res
+      .status(error.statusCode)
+      .json({ ...error.extras, message: error.message });
     return;
   }
 

@@ -5,8 +5,11 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from "typeorm";
+import { Entrega } from "../../delivery/entities/entrega.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { IntegranteComanda } from "./integrante-comanda.entity";
 
@@ -128,4 +131,13 @@ export class Comanda {
     (integrante) => integrante.comanda,
   )
   integrantes!: IntegranteComanda[];
+
+  // Lado inverso do 1:1 com a entrega (ADR-001): só existe em comandas de delivery e só
+  // vem preenchido quando a consulta faz o join (KDS e dashboard, PED-103). Relation<>
+  // evita a referência circular de metadata entre as duas entidades.
+  @OneToOne(
+    () => Entrega,
+    (entrega) => entrega.comanda,
+  )
+  entrega?: Relation<Entrega> | null;
 }

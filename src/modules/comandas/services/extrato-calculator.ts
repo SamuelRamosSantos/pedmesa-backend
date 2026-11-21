@@ -30,6 +30,8 @@ export interface ExtratoIntegranteInput {
 export interface ExtratoCalculatorInput {
   itens: ExtratoItemInput[];
   integrantes: ExtratoIntegranteInput[];
+  // Taxa de entrega do delivery (snapshot em entregas.taxa_entrega). Ausente ou 0 para mesa.
+  taxaEntrega?: number;
 }
 
 export interface ExtratoItemLinha {
@@ -63,13 +65,26 @@ export interface ResumoFinanceiro {
   total_itens_compartilhados: number;
   quantidade_integrantes: number;
   valor_compartilhado_por_pessoa: number;
+  // Só os itens: é a base do desconto (ADR-001, decisão 2 do PO: a taxa nunca é descontada).
   valor_total_comanda: number;
+  taxa_entrega: number;
+  // Itens + taxa de entrega, antes do desconto. Igual a valor_total_comanda para mesa.
+  valor_total_com_entrega: number;
+}
+
+// Item cancelado: aparece no extrato para conferência, mas não é cobrado.
+export interface ExtratoItemCanceladoLinha {
+  id: string;
+  produto: string;
+  qtd: number;
+  integrante_id: string | null;
 }
 
 export interface ExtratoCalculado {
   resumo_financeiro: ResumoFinanceiro;
   divisao_por_integrante: ExtratoIntegranteResultado[];
   itens_compartilhados: ExtratoItemCompartilhadoLinha[];
+  itens_cancelados: ExtratoItemCanceladoLinha[];
   itens_pendentes_entrega: number;
   possui_itens_pendentes: boolean;
   itens_pendentes: ItemPendenteEntrega[];
@@ -85,8 +100,20 @@ export function calcularExtrato(
 
   const linhasPorIntegrante = new Map<string, ExtratoItemLinha[]>();
   const itensCompartilhados: ExtratoItemCompartilhadoLinha[] = [];
+  const itensCancelados: ExtratoItemCanceladoLinha[] = [];
 
   for (const item of input.itens) {
+    // Cancelado não é cobrado: fica fora do total, da divisão e da cota compartilhada.
+    if (item.statusItem === StatusItem.CANCELADO) {
+      itensCancelados.push({
+        id: item.id,
+        produto: item.produtoNome,
+        qtd: item.quantidade,
+        integrante_id: item.integranteId,
+      });
+      continue;
+    }
+
     const precoUnitarioCents = toCents(item.precoUnitario);
     const subtotalCents = item.quantidade * precoUnitarioCents;
 
@@ -145,6 +172,7 @@ export function calcularExtrato(
     });
 
   const valorTotalComandaCents = totalIndividualCents + totalCompartilhadoCents;
+  const taxaEntregaCents = toCents(input.taxaEntrega ?? 0);
 
   const itensPendentes: ItemPendenteEntrega[] = input.itens
     .filter((item) => STATUS_PENDENTES_ENTREGA.includes(item.statusItem))
@@ -163,9 +191,14 @@ export function calcularExtrato(
         valorCompartilhadoPorPessoaCents,
       ),
       valor_total_comanda: fromCents(valorTotalComandaCents),
+      taxa_entrega: fromCents(taxaEntregaCents),
+      valor_total_com_entrega: fromCents(
+        valorTotalComandaCents + taxaEntregaCents,
+      ),
     },
     divisao_por_integrante: divisaoPorIntegrante,
     itens_compartilhados: itensCompartilhados,
+    itens_cancelados: itensCancelados,
     itens_pendentes_entrega: itensPendentes.length,
     possui_itens_pendentes: itensPendentes.length > 0,
     itens_pendentes: itensPendentes,

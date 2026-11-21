@@ -43,6 +43,9 @@ describe("calcularExtrato", () => {
       quantidade_integrantes: 2,
       valor_compartilhado_por_pessoa: 15.0,
       valor_total_comanda: 75.0,
+      // PED-94: campos novos; para mesa a taxa é 0 e o total com entrega é igual ao dos itens.
+      taxa_entrega: 0,
+      valor_total_com_entrega: 75.0,
     });
 
     const lucas = resultado.divisao_por_integrante.find(
@@ -120,6 +123,9 @@ describe("calcularExtrato", () => {
       quantidade_integrantes: 1,
       valor_compartilhado_por_pessoa: 0,
       valor_total_comanda: 0,
+      // PED-94: campos novos; para mesa a taxa é 0 e o total com entrega é igual ao dos itens.
+      taxa_entrega: 0,
+      valor_total_com_entrega: 0,
     });
 
     expect(resultado.divisao_por_integrante).toEqual([
@@ -498,6 +504,78 @@ describe("calcularExtrato", () => {
 
       expect(resultado.possui_itens_pendentes).toBe(false);
       expect(resultado.itens_pendentes_entrega).toBe(0);
+    });
+
+    it("não cobra itens cancelados: ficam fora do total e da divisão, listados em itens_cancelados", () => {
+      const resultado = calcularExtrato({
+        integrantes: [
+          { id: "lucas", nome: "Lucas" },
+          { id: "mari", nome: "Mari" },
+        ],
+        itens: [
+          {
+            id: "item-1",
+            produtoNome: "X-Salada",
+            quantidade: 1,
+            precoUnitario: 25.0,
+            integranteId: "lucas",
+            statusItem: StatusItem.ENTREGUE,
+          },
+          {
+            id: "item-2",
+            produtoNome: "Suco de Uva",
+            quantidade: 1,
+            precoUnitario: 9.0,
+            integranteId: "lucas",
+            statusItem: StatusItem.CANCELADO,
+          },
+          {
+            id: "item-3",
+            produtoNome: "Porção",
+            quantidade: 1,
+            precoUnitario: 30.0,
+            integranteId: null,
+            statusItem: StatusItem.CANCELADO,
+          },
+        ],
+      });
+
+      expect(resultado.resumo_financeiro.valor_total_comanda).toBe(25.0);
+      expect(resultado.resumo_financeiro.total_itens_compartilhados).toBe(0);
+      expect(resultado.itens_compartilhados).toEqual([]);
+      expect(
+        resultado.divisao_por_integrante.find(
+          (i) => i.integrante_id === "lucas",
+        )?.total_a_pagar,
+      ).toBe(25.0);
+      expect(resultado.itens_cancelados).toEqual([
+        {
+          id: "item-2",
+          produto: "Suco de Uva",
+          qtd: 1,
+          integrante_id: "lucas",
+        },
+        { id: "item-3", produto: "Porção", qtd: 1, integrante_id: null },
+      ]);
+    });
+
+    it("comanda só com itens cancelados fica zerada (pode ser cancelada sem pagamento)", () => {
+      const resultado = calcularExtrato({
+        integrantes: [{ id: "lucas", nome: "Lucas" }],
+        itens: [
+          {
+            id: "item-1",
+            produtoNome: "X-Salada",
+            quantidade: 2,
+            precoUnitario: 25.0,
+            integranteId: "lucas",
+            statusItem: StatusItem.CANCELADO,
+          },
+        ],
+        taxaEntrega: 7.5,
+      });
+
+      expect(resultado.resumo_financeiro.valor_total_comanda).toBe(0);
     });
 
     it("retorna possui_itens_pendentes = true quando há itens ainda na cozinha/bar (pendente, em_preparo ou pronto)", () => {

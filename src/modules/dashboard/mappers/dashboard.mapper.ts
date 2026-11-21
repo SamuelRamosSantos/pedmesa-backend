@@ -1,3 +1,4 @@
+import { TipoAtendimento } from "../../comandas/entities/comanda.entity";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
 import { PeriodoDashboard } from "../dtos/dashboard-filtro.dto";
 import {
@@ -14,7 +15,8 @@ export interface ProdutoMaisPedidoResponse {
 export interface HistoricoComandaResponse {
   comanda_id: string;
   fechada_em: Date;
-  mesa: number | null;
+  tipo_atendimento: TipoAtendimento;
+  identificador: string;
   valor: number;
   formas_pagamento: FormaPagamento[];
 }
@@ -22,6 +24,7 @@ export interface HistoricoComandaResponse {
 export interface DashboardResponse {
   periodo: PeriodoDashboard;
   faturamento: number;
+  taxas_entrega: number;
   comandas_fechadas: number;
   ticket_medio: number;
   produtos_mais_pedidos: ProdutoMaisPedidoResponse[];
@@ -37,6 +40,7 @@ export function toDashboardResponse(
   return {
     periodo,
     faturamento: resumo.faturamento,
+    taxas_entrega: resumo.taxasEntrega,
     comandas_fechadas: resumo.comandasFechadas,
     ticket_medio: resumo.ticketMedio,
     produtos_mais_pedidos: produtos.map((produto) => ({
@@ -46,7 +50,8 @@ export function toDashboardResponse(
     historico_comandas: historico.map((linha) => ({
       comanda_id: linha.comandaId,
       fechada_em: linha.fechadaEm,
-      mesa: linha.mesa,
+      tipo_atendimento: linha.tipoAtendimento,
+      identificador: linha.identificador,
       valor: linha.valor,
       formas_pagamento: linha.formasPagamento,
     })),

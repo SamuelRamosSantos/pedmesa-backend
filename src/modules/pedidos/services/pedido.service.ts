@@ -1,11 +1,9 @@
-import { In } from "typeorm";
+import { EntityManager } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Comanda, ComandaStatus } from "../../comandas/entities/comanda.entity";
-import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
 import { exigirNumeroDaMesa } from "../../comandas/services/numero-comanda";
 import { PrintQueue } from "../../impressao/queue/print-queue";
-import { Product } from "../../produtos/entities/product.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { UserRole } from "../../usuarios/entities/user.entity";
 import { CreatePedidoDto } from "../dtos/create-pedido.dto";
@@ -13,9 +11,13 @@ import { ListPedidosFilters } from "../dtos/list-pedidos.dto";
 import { ItemPedido, StatusItem } from "../entities/item-pedido.entity";
 import { LogExclusaoItem } from "../entities/log-exclusao-item.entity";
 import { Pedido, StatusPreparo } from "../entities/pedido.entity";
-import { resolveStatusItemInicial } from "./item-status-inicial";
 import { assertTransicaoValida } from "./item-status-transition";
+import { lancarItensNaComanda } from "./lancamento-itens";
 import { assertPodeExcluirPedido } from "./pedido-delete-guard";
+import {
+  executarAcoesPosCommit,
+  notificarPreparoAtualizado,
+} from "./preparo-atualizado.port";
 import { calcularStatusPreparoPedido } from "./status-preparo-calculator";
 
 export class PedidoService {
@@ -52,122 +54,20 @@ export class PedidoService {
     // commit, então recusar ali deixaria o pedido gravado com resposta de erro.
     const numeroMesa = exigirNumeroDaMesa(comanda.numeroComanda);
 
-    const produtoIds = [...new Set(dto.itens.map((item) => item.produtoId))];
-    const productRepository = AppDataSource.getRepository(Product);
-    const produtos = await productRepository.findBy({
-      id: In(produtoIds),
-      tenantId,
-    });
-    const produtosPorId = new Map(
-      produtos.map((produto) => [produto.id, produto]),
+    const { pedido, itensImpressao } = await AppDataSource.transaction(
+      (manager) =>
+        lancarItensNaComanda(manager, tenant, comanda, usuarioId, dto),
     );
 
-    const integranteIds = [
-      ...new Set(
-        dto.itens
-          .map((item) => item.integranteId)
-          .filter((id): id is string => id !== null),
-      ),
-    ];
-    const integrantesPorId = new Map<string, IntegranteComanda>();
-
-    if (integranteIds.length > 0) {
-      const integranteRepository =
-        AppDataSource.getRepository(IntegranteComanda);
-      const integrantes = await integranteRepository.findBy({
-        id: In(integranteIds),
-        comandaId: comanda.id,
-      });
-      for (const integrante of integrantes) {
-        integrantesPorId.set(integrante.id, integrante);
-      }
-    }
-
-    dto.itens.forEach((item, index) => {
-      const produto = produtosPorId.get(item.produtoId);
-
-      if (!produto) {
-        throw new AppError(
-          `O produto informado no item ${index} não foi encontrado.`,
-          400,
-        );
-      }
-
-      if (!produto.disponivel) {
-        throw new AppError(
-          `O produto "${produto.nome}" está indisponível no momento.`,
-          400,
-        );
-      }
-
-      if (
-        item.integranteId !== null &&
-        !integrantesPorId.has(item.integranteId)
-      ) {
-        throw new AppError(
-          `O integrante informado no item ${index} não pertence a esta comanda.`,
-          400,
-        );
-      }
-    });
-
-    const pedido = await AppDataSource.transaction(async (manager) => {
-      const pedidoCriado = await manager.save(
-        manager.create(Pedido, {
-          comandaId: comanda.id,
-          usuarioId,
-          statusPreparo: StatusPreparo.PENDENTE,
-        }),
-      );
-
-      const itens = dto.itens.map((item) => {
-        const produto = produtosPorId.get(item.produtoId) as Product;
-
-        return manager.create(ItemPedido, {
-          pedidoId: pedidoCriado.id,
-          produtoId: item.produtoId,
-          integranteId: item.integranteId,
-          quantidade: item.quantidade,
-          precoUnitario: produto.preco,
-          observacao: item.observacao,
-          statusItem: resolveStatusItemInicial(
-            produto.precisaPreparo,
-            tenant.usaModuloCozinha,
-          ),
-        });
-      });
-
-      pedidoCriado.itens = await manager.save(itens);
-
-      pedidoCriado.statusPreparo = calcularStatusPreparoPedido(
-        pedidoCriado.itens.map((item) => item.statusItem),
-      );
-      await manager.save(pedidoCriado);
-
-      return pedidoCriado;
-    });
-
+    // Fora da transação, só depois do commit (PED-95).
     await PrintQueue.enqueuePedidoCozinha({
       tenant_id: tenantId,
       comanda_id: comanda.id,
       pedido_id: pedido.id,
       numero_comanda: numeroMesa,
+      numero_entrega: null,
       criado_em: pedido.criadoEm,
-      itens: dto.itens.map((item) => {
-        const produto = produtosPorId.get(item.produtoId) as Product;
-        const integrante = item.integranteId
-          ? (integrantesPorId.get(item.integranteId) ?? null)
-          : null;
-
-        return {
-          produto_nome: produto.nome,
-          quantidade: item.quantidade,
-          preco_unitario: produto.preco,
-          subtotal: produto.preco * item.quantidade,
-          integrante_nome: integrante?.nome ?? null,
-          observacao: item.observacao,
-        };
-      }),
+      itens: itensImpressao,
     });
 
     return pedido;
@@ -183,9 +83,14 @@ export class PedidoService {
       .createQueryBuilder("pedido")
       .innerJoin("pedido.comanda", "comanda")
       .innerJoin("pedido.usuario", "usuario")
+      // Badge do KDS (PED-103): mesa pelo número da comanda, delivery pelo número da entrega.
+      .leftJoin("comanda.entrega", "entrega")
       .addSelect([
         "comanda.id",
         "comanda.numeroComanda",
+        "comanda.tipoAtendimento",
+        "entrega.id",
+        "entrega.numeroEntrega",
         "usuario.id",
         "usuario.nome",
       ])
@@ -216,37 +121,51 @@ export class PedidoService {
     itemId: string,
     novoStatus: StatusItem,
   ): Promise<{ item: ItemPedido; pedido: Pedido }> {
-    return AppDataSource.transaction(async (manager) => {
-      const item = await manager
-        .createQueryBuilder(ItemPedido, "item")
-        .innerJoin("item.pedido", "pedido")
-        .innerJoin("pedido.comanda", "comanda")
-        .where("item.id = :itemId", { itemId })
-        .andWhere("comanda.tenantId = :tenantId", { tenantId })
-        .getOne();
+    const { item, pedido, acoesPosCommit } = await AppDataSource.transaction(
+      async (manager) => {
+        // O tipo de atendimento vem no mesmo join que já garante o tenant: para mesa, o
+        // handler do delivery sai sem nova consulta.
+        const item = await manager
+          .createQueryBuilder(ItemPedido, "item")
+          .innerJoin("item.pedido", "pedido")
+          .innerJoin("pedido.comanda", "comanda")
+          .addSelect([
+            "pedido.id",
+            "pedido.comandaId",
+            "comanda.id",
+            "comanda.tipoAtendimento",
+          ])
+          .where("item.id = :itemId", { itemId })
+          .andWhere("comanda.tenantId = :tenantId", { tenantId })
+          .getOne();
 
-      if (!item) {
-        throw new AppError("Item de pedido não encontrado.", 404);
-      }
+        if (!item) {
+          throw new AppError("Item de pedido não encontrado.", 404);
+        }
 
-      assertTransicaoValida(item.statusItem, novoStatus);
+        assertTransicaoValida(item.statusItem, novoStatus);
 
-      item.statusItem = novoStatus;
-      await manager.save(item);
+        await manager.update(
+          ItemPedido,
+          { id: item.id },
+          { statusItem: novoStatus },
+        );
+        item.statusItem = novoStatus;
 
-      const itensDoPedido = await manager.find(ItemPedido, {
-        where: { pedidoId: item.pedidoId },
-      });
-      const pedido = await manager.findOneOrFail(Pedido, {
-        where: { id: item.pedidoId },
-      });
-      pedido.statusPreparo = calcularStatusPreparoPedido(
-        itensDoPedido.map((i) => i.statusItem),
-      );
-      await manager.save(pedido);
+        const pedido = await recalcularStatusPreparo(manager, item.pedidoId);
+        const acoesPosCommit = await notificarPreparoAtualizado(manager, {
+          tenantId,
+          comandaId: item.pedido.comandaId,
+          tipoAtendimento: item.pedido.comanda.tipoAtendimento,
+        });
 
-      return { item, pedido };
-    });
+        return { item, pedido, acoesPosCommit };
+      },
+    );
+
+    await executarAcoesPosCommit(acoesPosCommit);
+
+    return { item, pedido };
   }
 
   static async deleteItem(
@@ -254,7 +173,7 @@ export class PedidoService {
     itemId: string,
     excluidoPorUsuarioId: string,
   ): Promise<void> {
-    await AppDataSource.transaction(async (manager) => {
+    const acoesPosCommit = await AppDataSource.transaction(async (manager) => {
       const item = await manager
         .createQueryBuilder(ItemPedido, "item")
         .innerJoinAndSelect("item.produto", "produto")
@@ -279,7 +198,7 @@ export class PedidoService {
         manager.create(LogExclusaoItem, {
           tenantId,
           comandaId: item.pedido.comandaId,
-          numeroComanda: exigirNumeroDaMesa(item.pedido.comanda.numeroComanda),
+          numeroComanda: item.pedido.comanda.numeroComanda,
           pedidoId: item.pedidoId,
           produtoNome: item.produto.nome,
           quantidade: item.quantidade,
@@ -288,20 +207,17 @@ export class PedidoService {
         }),
       );
 
-      const pedidoId = item.pedidoId;
       await manager.delete(ItemPedido, { id: itemId });
+      await recalcularStatusPreparo(manager, item.pedidoId);
 
-      const itensRestantes = await manager.find(ItemPedido, {
-        where: { pedidoId },
+      return notificarPreparoAtualizado(manager, {
+        tenantId,
+        comandaId: item.pedido.comandaId,
+        tipoAtendimento: item.pedido.comanda.tipoAtendimento,
       });
-      const pedido = await manager.findOneOrFail(Pedido, {
-        where: { id: pedidoId },
-      });
-      pedido.statusPreparo = calcularStatusPreparoPedido(
-        itensRestantes.map((i) => i.statusItem),
-      );
-      await manager.save(pedido);
     });
+
+    await executarAcoesPosCommit(acoesPosCommit);
   }
 
   static async deleteOwnPedido(
@@ -342,6 +258,34 @@ export class PedidoService {
       actingUserRoles,
     });
 
-    await repository.remove(pedido);
+    // Excluir um pedido inteiro também muda o preparo da comanda (ex.: só restam pedidos
+    // prontos), então avisa a porta na mesma transação.
+    const acoesPosCommit = await AppDataSource.transaction(async (manager) => {
+      await manager.remove(pedido);
+
+      return notificarPreparoAtualizado(manager, {
+        tenantId,
+        comandaId: pedido.comandaId,
+        tipoAtendimento: pedido.comanda.tipoAtendimento,
+      });
+    });
+
+    await executarAcoesPosCommit(acoesPosCommit);
   }
+}
+
+// Recalcula e grava o status de preparo do pedido a partir dos itens que restaram.
+async function recalcularStatusPreparo(
+  manager: EntityManager,
+  pedidoId: string,
+): Promise<Pedido> {
+  const itens = await manager.find(ItemPedido, { where: { pedidoId } });
+  const pedido = await manager.findOneOrFail(Pedido, {
+    where: { id: pedidoId },
+  });
+  pedido.statusPreparo = calcularStatusPreparoPedido(
+    itens.map((item) => item.statusItem),
+  );
+
+  return manager.save(pedido);
 }

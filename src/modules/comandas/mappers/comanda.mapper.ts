@@ -68,6 +68,7 @@ export interface FecharComandaResponse {
   desconto_tipo: DescontoTipo;
   desconto_valor: number;
   desconto_aplicado: number;
+  taxa_entrega: number;
   total_final: number;
   divisao_por_integrante: RateioIntegranteComDesconto[];
 }
@@ -82,6 +83,7 @@ export function toFecharComandaResponse(
     desconto_tipo: resultado.descontoTipo,
     desconto_valor: resultado.descontoValor,
     desconto_aplicado: resultado.descontoAplicado,
+    taxa_entrega: resultado.taxaEntrega,
     total_final: resultado.totalFinal,
     divisao_por_integrante: resultado.divisaoPorIntegrante,
   };

@@ -9,6 +9,7 @@ import {
   User,
   UserRole,
 } from "../../src/modules/usuarios/entities/user.entity";
+import { TENANT_COOKIE_NAME } from "../../src/shared/utils/auth-cookies";
 import { criarCliente } from "./client";
 
 // Dados sempre únicos (randomUUID): nenhum teste depende do estado deixado por outro.
@@ -53,18 +54,26 @@ export async function criarUsuario(
   );
 }
 
-/** Faz login pela API e devolve o token JWT do usuário. */
-export async function autenticar(usuario: User): Promise<string> {
-  const resposta = await criarCliente()
+/**
+ * Faz login pela API e devolve um cliente já autenticado: a sessão vem no cookie
+ * HttpOnly `pedmesa_token` (PED-76), que o `agent` guarda e reenvia sozinho.
+ */
+export async function autenticar(usuario: User) {
+  const cliente = criarCliente();
+
+  const resposta = await cliente
     .post("/api/v1/auth/login")
     .send({ email: usuario.email, senha: SENHA_PADRAO })
     .expect(200);
 
-  const token: unknown = resposta.body.token;
+  const cookies = resposta.headers["set-cookie"];
+  const recebeuSessao =
+    Array.isArray(cookies) &&
+    cookies.some((cookie) => cookie.startsWith(`${TENANT_COOKIE_NAME}=`));
 
-  if (typeof token !== "string") {
-    throw new Error("Login de teste não devolveu um token.");
+  if (!recebeuSessao) {
+    throw new Error("O login de teste não devolveu o cookie de sessão.");
   }
 
-  return token;
+  return cliente;
 }

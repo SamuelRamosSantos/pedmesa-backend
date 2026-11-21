@@ -13,6 +13,8 @@ export enum UserRole {
   GARCOM = "garcom",
   COZINHA = "cozinha",
   CAIXA = "caixa",
+  // Cria pedidos delivery e opera o painel de expedição (ADR-001, PED-113).
+  EXPEDICAO = "expedicao",
 }
 
 @Entity("usuarios")
@@ -56,6 +58,9 @@ export class User {
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
+
+  @Column({ name: "foto_url", type: "varchar", length: 1024, nullable: true })
+  fotoUrl!: string | null;
 
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;

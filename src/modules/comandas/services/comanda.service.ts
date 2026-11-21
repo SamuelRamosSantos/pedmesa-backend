@@ -2,10 +2,8 @@ import { In } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
-import { fromCents } from "../../../shared/utils/money";
+import { itensDoExtratoParaImpressao } from "../../impressao/formatters/itens-do-extrato";
 import { PrintQueue } from "../../impressao/queue/print-queue";
-import { PrintJobItemPayload } from "../../impressao/types/print-job.types";
-import { ItemPedido } from "../../pedidos/entities/item-pedido.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { AddPagamentoComandaDto } from "../dtos/add-pagamento-comanda.dto";
 import { CreateComandaDto } from "../dtos/create-comanda.dto";
@@ -21,27 +19,17 @@ import {
 } from "../entities/comanda.entity";
 import { IntegranteComanda } from "../entities/integrante-comanda.entity";
 import { PagamentoComanda } from "../entities/pagamento-comanda.entity";
+import { cancelarComandaZeradaNaTransacao } from "./cancelamento-comanda";
+import { calcularDesconto } from "./desconto-calculator";
+import { carregarExtrato, ExtratoCarregado } from "./extrato-loader";
 import {
-  calcularDesconto,
-  RateioIntegranteComDesconto,
-  ratearDescontoPorIntegrante,
-} from "./desconto-calculator";
-import { calcularExtrato, ExtratoCalculado } from "./extrato-calculator";
-import {
-  avaliarFechamento,
-  podeCancelarComandaZerada,
-} from "./fechamento-calculator";
+  FechamentoResultado,
+  fecharComandaNaTransacao,
+} from "./fechamento-comanda";
+import { assertComandasPodemSerJuntadas } from "./juncao-comanda";
 import { exigirNumeroDaMesa } from "./numero-comanda";
 
-export interface FechamentoResultado {
-  comanda: Comanda;
-  subtotal: number;
-  descontoTipo: DescontoTipo;
-  descontoValor: number;
-  descontoAplicado: number;
-  totalFinal: number;
-  divisaoPorIntegrante: RateioIntegranteComDesconto[];
-}
+export type { FechamentoResultado } from "./fechamento-comanda";
 
 export class ComandaService {
   static async create(
@@ -118,9 +106,14 @@ export class ComandaService {
     const repository = AppDataSource.getRepository(Comanda);
 
     return repository.find({
-      where: { tenantId, status: filters.status },
+      where: {
+        tenantId,
+        status: filters.status,
+        tipoAtendimento: filters.tipoAtendimento,
+      },
       relations: { integrantes: true },
-      order: { numeroComanda: "ASC" },
+      // Delivery não tem número de mesa: ordena pela abertura.
+      order: { numeroComanda: "ASC", abertaEm: "ASC" },
     });
   }
 
@@ -154,51 +147,8 @@ export class ComandaService {
   static async getExtrato(
     tenantId: string,
     comandaId: string,
-  ): Promise<{
-    comanda: Comanda;
-    calculado: ExtratoCalculado;
-    pagamentos: PagamentoComanda[];
-  }> {
-    const comandaRepository = AppDataSource.getRepository(Comanda);
-    const comanda = await comandaRepository.findOne({
-      where: { id: comandaId, tenantId },
-      relations: { integrantes: true },
-    });
-
-    if (!comanda) {
-      throw new AppError("Comanda não encontrada.", 404);
-    }
-
-    const itemRepository = AppDataSource.getRepository(ItemPedido);
-    const itens = await itemRepository
-      .createQueryBuilder("item")
-      .innerJoin("item.pedido", "pedido")
-      .leftJoinAndSelect("item.produto", "produto")
-      .where("pedido.comandaId = :comandaId", { comandaId: comanda.id })
-      .getMany();
-
-    const calculado = calcularExtrato({
-      itens: itens.map((item) => ({
-        id: item.id,
-        produtoNome: item.produto.nome,
-        quantidade: item.quantidade,
-        precoUnitario: item.precoUnitario,
-        integranteId: item.integranteId,
-        statusItem: item.statusItem,
-      })),
-      integrantes: comanda.integrantes.map((integrante) => ({
-        id: integrante.id,
-        nome: integrante.nome,
-      })),
-    });
-
-    const pagamentoRepository = AppDataSource.getRepository(PagamentoComanda);
-    const pagamentos = await pagamentoRepository.find({
-      where: { comandaId: comanda.id },
-      order: { criadoEm: "ASC" },
-    });
-
-    return { comanda, calculado, pagamentos };
+  ): Promise<ExtratoCarregado> {
+    return carregarExtrato(AppDataSource.manager, tenantId, comandaId);
   }
 
   static async addPagamento(
@@ -311,6 +261,7 @@ export class ComandaService {
       id: In(todosOsIds),
       tenantId,
     });
+    assertComandasPodemSerJuntadas(comandasEncontradas);
     const comandasPorId = new Map(
       comandasEncontradas.map((comanda) => [comanda.id, comanda]),
     );
@@ -377,37 +328,12 @@ export class ComandaService {
       );
     }
 
-    const itens: PrintJobItemPayload[] = [
-      ...calculado.divisao_por_integrante.flatMap((integrante) =>
-        integrante.itens_individuais.map(
-          (item): PrintJobItemPayload => ({
-            produto_nome: item.produto,
-            quantidade: item.qtd,
-            preco_unitario: item.preco_unitario,
-            subtotal: item.subtotal,
-            integrante_nome: integrante.nome,
-            observacao: null,
-          }),
-        ),
-      ),
-      ...calculado.itens_compartilhados.map(
-        (item): PrintJobItemPayload => ({
-          produto_nome: item.produto,
-          quantidade: item.qtd,
-          preco_unitario: item.preco_unitario,
-          subtotal: item.subtotal,
-          integrante_nome: null,
-          observacao: null,
-        }),
-      ),
-    ];
-
     await PrintQueue.enqueuePreConta({
       tenant_id: tenantId,
       comanda_id: comanda.id,
       numero_comanda: exigirNumeroDaMesa(comanda.numeroComanda),
       gerado_em: new Date(),
-      itens,
+      itens: itensDoExtratoParaImpressao(calculado),
       valor_total: calculado.resumo_financeiro.valor_total_comanda,
     });
   }
@@ -418,124 +344,22 @@ export class ComandaService {
     dto: FecharComandaDto,
     actorPodeConcederDesconto: boolean,
   ): Promise<FechamentoResultado> {
-    const { comanda, calculado, pagamentos } = await this.getExtrato(
-      tenantId,
-      comandaId,
+    return AppDataSource.transaction((manager) =>
+      fecharComandaNaTransacao(manager, {
+        tenantId,
+        comandaId,
+        dto,
+        actorPodeConcederDesconto,
+      }),
     );
-
-    if (comanda.status !== ComandaStatus.ABERTA) {
-      throw new AppError("Esta comanda já está fechada.", 400);
-    }
-
-    if (pagamentos.length === 0) {
-      throw new AppError(
-        "É necessário registrar ao menos um pagamento antes de fechar a comanda.",
-        400,
-      );
-    }
-
-    if (
-      dto.descontoTipo !== DescontoTipo.NENHUM &&
-      !actorPodeConcederDesconto
-    ) {
-      throw new AppError("Você não tem permissão para conceder desconto.", 403);
-    }
-
-    const descontoCalculado = calcularDesconto(
-      calculado.resumo_financeiro.valor_total_comanda,
-      {
-        tipo: dto.descontoTipo,
-        valor: dto.descontoValor,
-      },
-    );
-
-    const avaliacao = avaliarFechamento(
-      descontoCalculado.total_final,
-      pagamentos.map((pagamento) => ({ valor: pagamento.valor })),
-    );
-
-    if (!avaliacao.suficiente) {
-      throw new AppError(
-        `Valor pago (R$ ${fromCents(avaliacao.totalPagoCents).toFixed(2)}) é insuficiente para quitar a comanda (total: R$ ${fromCents(
-          avaliacao.totalComandaCents,
-        ).toFixed(2)}).`,
-        400,
-      );
-    }
-
-    const divisaoPorIntegrante = ratearDescontoPorIntegrante(
-      calculado.divisao_por_integrante.map((integrante) => ({
-        integranteId: integrante.integrante_id,
-        nome: integrante.nome,
-        totalAPagar: integrante.total_a_pagar,
-      })),
-      descontoCalculado.desconto_aplicado,
-    );
-
-    const comandaFechada = await AppDataSource.transaction(async (manager) => {
-      const comandaTravada = await manager.findOne(Comanda, {
-        where: { id: comanda.id, tenantId },
-      });
-
-      if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
-        throw new AppError("Esta comanda já está fechada.", 400);
-      }
-
-      comandaTravada.status = ComandaStatus.FECHADA;
-      comandaTravada.fechadaEm = new Date();
-      comandaTravada.descontoTipo = dto.descontoTipo;
-      comandaTravada.descontoValor = dto.descontoValor;
-      comandaTravada.subtotal = descontoCalculado.subtotal;
-      comandaTravada.totalFinal = descontoCalculado.total_final;
-
-      return manager.save(comandaTravada);
-    });
-
-    return {
-      comanda: comandaFechada,
-      subtotal: descontoCalculado.subtotal,
-      descontoTipo: dto.descontoTipo,
-      descontoValor: dto.descontoValor,
-      descontoAplicado: descontoCalculado.desconto_aplicado,
-      totalFinal: descontoCalculado.total_final,
-      divisaoPorIntegrante,
-    };
   }
 
   static async cancelarZerada(
     tenantId: string,
     comandaId: string,
   ): Promise<Comanda> {
-    const { comanda, calculado } = await this.getExtrato(tenantId, comandaId);
-
-    if (comanda.status !== ComandaStatus.ABERTA) {
-      throw new AppError("Esta comanda já está fechada.", 400);
-    }
-
-    if (
-      !podeCancelarComandaZerada(
-        calculado.resumo_financeiro.valor_total_comanda,
-      )
-    ) {
-      throw new AppError(
-        "Esta comanda possui itens com valor pendente e não pode ser cancelada diretamente. Utilize o fechamento com pagamento.",
-        400,
-      );
-    }
-
-    return AppDataSource.transaction(async (manager) => {
-      const comandaTravada = await manager.findOne(Comanda, {
-        where: { id: comanda.id, tenantId },
-      });
-
-      if (!comandaTravada || comandaTravada.status !== ComandaStatus.ABERTA) {
-        throw new AppError("Esta comanda já está fechada.", 400);
-      }
-
-      comandaTravada.status = ComandaStatus.FECHADA;
-      comandaTravada.fechadaEm = new Date();
-
-      return manager.save(comandaTravada);
-    });
+    return AppDataSource.transaction((manager) =>
+      cancelarComandaZeradaNaTransacao(manager, tenantId, comandaId),
+    );
   }
 }

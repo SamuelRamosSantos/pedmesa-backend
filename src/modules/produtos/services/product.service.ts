@@ -44,6 +44,7 @@ export class ProductService {
       descricao: dto.descricao,
       disponivel: dto.disponivel,
       precisaPreparo: usaModuloCozinha ? dto.precisaPreparo : false,
+      imagemUrl: dto.imagemUrl,
     });
 
     return productRepository.save(product);
@@ -132,6 +133,10 @@ export class ProductService {
     if (dto.precisaPreparo !== undefined) {
       const usaModuloCozinha = await isUsaModuloCozinha(tenantId);
       product.precisaPreparo = usaModuloCozinha ? dto.precisaPreparo : false;
+    }
+
+    if (dto.imagemUrl !== undefined) {
+      product.imagemUrl = dto.imagemUrl;
     }
 
     return repository.save(product);

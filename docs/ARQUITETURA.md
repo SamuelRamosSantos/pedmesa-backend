@@ -1,56 +1,62 @@
 # Arquitetura — pedmesa-backend
 
-> Estado descrito: branch `main`. Funcionalidades que ainda estão em branches de épico aparecem em `docs/ANDAMENTO.md`.
+> Estado descrito: branch `main`. O que ainda está em branches de épico aparece em `docs/ANDAMENTO.md`.
 
 ## 1. Stack
 
-| Camada       | Tecnologia                                              |
-| ------------ | ------------------------------------------------------- |
-| Runtime      | Node.js 26 (CI)                                         |
-| Linguagem    | TypeScript 5 com `strict`, compilado para CommonJS      |
-| HTTP         | Express 4, `cors`                                       |
-| Persistência | TypeORM 0.3 sobre PostgreSQL 16, migrations versionadas |
-| Autenticação | JWT (`jsonwebtoken`), senhas com `bcryptjs`             |
-| Qualidade    | Biome, Vitest, Supertest, Husky e Commitlint            |
+| Camada       | Tecnologia                                                                   |
+| ------------ | ---------------------------------------------------------------------------- |
+| Runtime      | Node.js 26 (CI)                                                              |
+| Linguagem    | TypeScript 5 com `strict`, compilado para CommonJS                           |
+| HTTP         | Express 4, `cors` (com `credentials`), `cookie-parser`, `express-rate-limit` |
+| Persistência | TypeORM 0.3 sobre PostgreSQL 16, migrations versionadas                      |
+| Autenticação | JWT (`jsonwebtoken`) em cookie HttpOnly, senhas com `bcryptjs`               |
+| Arquivos     | `multer`; disco local ou storage compatível com S3 (`@aws-sdk/client-s3`)    |
+| Qualidade    | Biome, Vitest, Supertest, Husky e Commitlint                                 |
 
 ## 2. Visão de sistema
 
 ```mermaid
 flowchart LR
     Site["pedmesa-site<br/>landing page"] -- "POST /leads" --> API
-    Front["pedmesa-frontend<br/>garçom, cozinha, caixa, admin, super-admin"] -- "JWT" --> API
+    Front["pedmesa-frontend<br/>garçom, cozinha, caixa, expedição, admin, super-admin"] -- "cookie HttpOnly" --> API
     Agente["pedmesa-print-agent<br/>Electron no PC do caixa"] -- "token do agente" --> API
     API["pedmesa-backend<br/>/api/v1"] --> DB[("PostgreSQL")]
+    API --> Storage[("Disco local ou S3")]
     API -- "ESC/POS por TCP" --> Impressora["Impressora térmica de rede"]
     Agente -- "fila do Windows" --> ImpressoraUSB["Impressora USB/local"]
 ```
 
-Cada estabelecimento é um **tenant**. Todas as tabelas de negócio têm `tenant_id`, e o tenant de cada requisição vem do token, nunca do corpo.
+Cada estabelecimento é um **tenant**. Todas as tabelas de negócio têm `tenant_id`, e o tenant de cada requisição vem da sessão, nunca do corpo.
 
 ## 3. Estrutura de pastas
 
 ```text
 src/
-  app.ts                   # Express: middlewares, /health, /ready, routers e error handler
+  app.ts                   # Express: middlewares, /health, /ready, rate limit, routers e error handler
   server.ts                # inicializa o AppDataSource e faz o listen
-  config/data-source.ts    # opções do TypeORM (entidades e migrations por glob)
+  config/
+    data-source.ts         # opções do TypeORM (entidades e migrations por glob)
+    env.ts                 # carrega o .env (ou o .env.test em modo de teste)
+    test-database-guard.ts # trava: em teste, só banco local terminado em _test
   database/migrations/     # 1700000000000-*.ts em diante
   database/seeds/          # initial, delivery e super-admin
   modules/<modulo>/
     routes/                # Router do Express + middlewares de acesso
     controllers/           # valida, chama o service, responde pelo mapper
     dtos/                  # assertValid…Dto (type guards) e testes
-    services/              # casos de uso; *-calculator.ts e *-transition.ts são funções puras
+    services/              # casos de uso; *-calculator.ts, *-transition.ts e regras puras
     mappers/               # entidade -> resposta (snake_case)
-    entities/              # entidades do TypeORM
+    entities/              # entidades do TypeORM (*.entity.ts)
   shared/
     errors/app-error.ts
-    middlewares/           # auth, rbac, permissão, super-admin, agente, error handler
-    utils/                 # money, getTenantId, getUserId, isUuid, isUniqueViolation...
+    middlewares/           # auth, rbac, permissão, super-admin, agente, rate limit, error handler
+    storage/               # drivers de upload (disco local e S3)
+    utils/                 # money, auth-cookies, getTenantId, getUserId, isUuid, isUniqueViolation...
 tests/                     # integração com Supertest (setup, helpers, suítes)
 ```
 
-Módulos: `admin`, `auth`, `categorias`, `clientes`, `comandas`, `dashboard`, `delivery`, `impressao`, `leads`, `pedidos`, `produtos`, `tenants` e `usuarios`.
+Módulos: `admin`, `auth`, `categorias`, `clientes`, `comandas`, `dashboard`, `delivery`, `impressao`, `leads`, `pedidos`, `produtos`, `tenants`, `uploads` e `usuarios`.
 
 ## 4. Camadas e fluxo de uma requisição
 
@@ -65,34 +71,36 @@ flowchart LR
     C -- "mapper to…Response" --> Res["JSON snake_case"]
 ```
 
-1. O router aplica `authMiddleware` (valida o JWT e preenche `req.user`) e `rbacMiddleware([...papéis])`.
+1. Toda rota sob `/api/v1` passa pelo `apiRateLimiter`. O router aplica `authMiddleware` (lê o cookie de sessão e preenche `req.user`) e `rbacMiddleware([...papéis])`.
 2. O controller valida o body com o DTO validator, chama o service e responde por um mapper. Entidade nunca vai direto para o `res.json()`.
-3. O service carrega os dados, chama as funções puras para decidir ou calcular e persiste. Escrita em mais de uma tabela roda numa transação única; etapas reaproveitáveis recebem o `EntityManager`.
+3. O service carrega os dados, chama as funções puras para decidir ou calcular e persiste. Escrita em mais de uma tabela roda numa transação única; etapas reaproveitáveis recebem o `EntityManager` (`lancarItensNaComanda`, `carregarExtrato`, `fecharComandaNaTransacao`).
 4. Efeitos externos (fila de impressão) rodam depois do commit.
 5. Erros sobem como `AppError` e são convertidos pelo `errorHandlerMiddleware`.
 
+**Composição entre módulos:** o módulo de pedidos publica mudanças de status de preparo, e o delivery as escuta (`registrarSincronizacaoPreparoDelivery`, em `app.ts`) para atualizar o status da entrega (PED-98). Pedidos não importa nada do delivery.
+
 ## 5. Modelo de dados
 
-| Tabela                          | Entidade                      | Observação                                                                                        |
-| ------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------- |
-| `tenants`                       | `Tenant`                      | status `ativo`, `suspenso`, `cancelado`; `quantidade_comandas`; dados da empresa; token do agente |
-| `usuarios`                      | `User`                        | `roles` é uma lista; `pode_conceder_desconto`                                                     |
-| `super_admins`                  | `SuperAdmin`                  | fora dos tenants                                                                                  |
-| `audit_logs`                    | `AuditLog`                    | ações do super-admin (inclusive impersonação)                                                     |
-| `categorias`, `produtos`        | `Category`, `Product`         | `precisa_preparo`, `ativo`, disponibilidade                                                       |
-| `comandas`                      | `Comanda`                     | `aberta`/`fechada`; `tipo_atendimento` `mesa`/`delivery`; desconto e totais                       |
-| `integrantes_comanda`           | `IntegranteComanda`           | pessoas que dividem a conta                                                                       |
-| `pedidos`                       | `Pedido`                      | `status_preparo`                                                                                  |
-| `itens_pedido`                  | `ItemPedido`                  | **não** `item_pedido`; status do item para o KDS                                                  |
-| `logs_exclusao_item`            | `LogExclusaoItem`             | auditoria de item excluído no fechamento                                                          |
-| `pagamentos_comanda`            | `PagamentoComanda`            | `pix`, `dinheiro`, `cartao_credito`, `cartao_debito`                                              |
-| `impressoras`, `fila_impressao` | `Impressora`, `FilaImpressao` | jobs `pedido_cozinha` e `pre_conta`; status `pendente`, `enviado`, `falhou`                       |
-| `leads`                         | `Lead`                        | contatos da landing page                                                                          |
-| `clientes`, `enderecos_cliente` | `Cliente`, `EnderecoCliente`  | delivery                                                                                          |
-| `taxas_entrega`                 | `TaxaEntrega`                 | **não** `taxa_entrega`; taxa por bairro                                                           |
-| `entregas`                      | `Entrega`                     | `em_producao`, `pronto_para_envio`, `em_rota`, `entregue`, `cancelado`                            |
-| `historico_status_entrega`      | `HistoricoStatusEntrega`      | singular; append-only (trigger recusa UPDATE e DELETE)                                            |
-| `sequencias_entrega`            | — (só SQL)                    | contador do `numero_entrega`                                                                      |
+| Tabela                          | Entidade                      | Observação                                                                                                                  |
+| ------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `tenants`                       | `Tenant`                      | status `ativo`, `suspenso`, `cancelado`; `quantidade_comandas`; dados da empresa; configuração do delivery; token do agente |
+| `usuarios`                      | `User`                        | `roles` é uma lista; `pode_conceder_desconto`; `pode_excluir_item_fechamento`                                               |
+| `super_admins`                  | `SuperAdmin`                  | fora dos tenants                                                                                                            |
+| `audit_logs`                    | `AuditLog`                    | ações do super-admin (inclusive durante a impersonação)                                                                     |
+| `categorias`, `produtos`        | `Category`, `Product`         | `precisa_preparo`, `ativo`, disponibilidade e imagem                                                                        |
+| `comandas`                      | `Comanda`                     | `aberta`/`fechada`; `tipo_atendimento` `mesa`/`delivery`; desconto e totais                                                 |
+| `integrantes_comanda`           | `IntegranteComanda`           | pessoas que dividem a conta                                                                                                 |
+| `pedidos`                       | `Pedido`                      | `status_preparo`                                                                                                            |
+| `itens_pedido`                  | `ItemPedido`                  | **não** `item_pedido`; status do item para o KDS                                                                            |
+| `logs_exclusao_item`            | `LogExclusaoItem`             | auditoria de item excluído no fechamento                                                                                    |
+| `pagamentos_comanda`            | `PagamentoComanda`            | `pix`, `dinheiro`, `cartao_credito`, `cartao_debito`                                                                        |
+| `impressoras`, `fila_impressao` | `Impressora`, `FilaImpressao` | jobs `pedido_cozinha`, `pre_conta` e `entrega`; status `pendente`, `enviado`, `falhou`                                      |
+| `leads`                         | `Lead`                        | contatos da landing page                                                                                                    |
+| `clientes`, `enderecos_cliente` | `Cliente`, `EnderecoCliente`  | delivery                                                                                                                    |
+| `taxas_entrega`                 | `TaxaEntrega`                 | **não** `taxa_entrega`; taxa por bairro                                                                                     |
+| `entregas`                      | `Entrega`                     | `em_producao`, `pronto_para_envio`, `em_rota`, `entregue`, `cancelado`; troco                                               |
+| `historico_status_entrega`      | `HistoricoStatusEntrega`      | singular; append-only (trigger recusa UPDATE e DELETE)                                                                      |
+| `sequencias_entrega`            | — (só SQL)                    | contador do `numero_entrega`                                                                                                |
 
 - O nome da classe nem sempre bate com o da tabela: em SQL puro, confira o `@Entity("...")`.
 - As tabelas do delivery usam **FKs compostas com `tenant_id`** (`(cliente_id, tenant_id)`, `(comanda_id, tenant_id)`, `(entrega_id, tenant_id)`), então o banco recusa (`23503`) linhas que misturem tenants.
@@ -100,38 +108,43 @@ flowchart LR
 
 ## 6. Autenticação e autorização
 
-- **Usuários dos tenants:** `POST /api/v1/auth/login` com `{ "email", "senha" }` devolve `{ token, usuario: { id, nome, roles } }`. O token vai em `Authorization: Bearer <token>`.
-- **Super-admin:** o mesmo login reconhece o super-admin e devolve um token assinado com `SUPER_ADMIN_JWT_SECRET`; as rotas `/admin` usam `superAdminAuthMiddleware`.
+- **Usuários dos tenants:** `POST /api/v1/auth/login` com `{ "email", "senha" }` grava o JWT no cookie HttpOnly `pedmesa_token` (`SameSite=Lax`, `Secure` em produção) e devolve no corpo os dados do usuário e os papéis, sem o token. `POST /auth/logout` apaga o cookie. O frontend envia o cookie com `withCredentials`, então o `CORS_ORIGIN` precisa listar a origem exata dele.
+- **Super-admin:** o mesmo login reconhece o super-admin e usa o cookie `pedmesa_admin_token`, assinado com `SUPER_ADMIN_JWT_SECRET`; as rotas `/admin` usam `superAdminAuthMiddleware`, e o logout é `POST /auth/admin-logout`.
 - **Agente de impressão:** `GET /impressao/pendentes` e `PATCH /impressao/:id/status` usam `agentAuthMiddleware`, com o token do agente gerado em `POST /tenants/token-agente`.
-- Toda escrita autenticada é registrada pelo `authMiddleware` quando há impersonação (auditoria).
+- **Impersonação:** toda escrita feita durante uma sessão de impersonação é registrada em `audit_logs` pelo `authMiddleware`.
+- **Rate limit:** limite geral em `/api/v1` (`API_RATE_LIMIT_*`) e limite de logins que falham (`AUTH_RATE_LIMIT_*`). Em produção, `trust proxy` = 1 para contar o IP real atrás do proxy do Coolify.
 
 ### Matriz de acesso (`/api/v1`)
 
-| Recurso                                                                 | admin | caixa | garcom | cozinha | Outro                                     |
-| ----------------------------------------------------------------------- | :---: | :---: | :----: | :-----: | ----------------------------------------- |
-| `POST /auth/login`                                                      |       |       |        |         | público                                   |
-| `POST /leads`                                                           |       |       |        |         | público                                   |
-| `/admin/*`                                                              |       |       |        |         | super-admin                               |
-| `GET /categorias`                                                       |   ✓   |   ✓   |   ✓    |         |                                           |
-| `POST /categorias`                                                      |   ✓   |       |        |         |                                           |
-| `GET /produtos`                                                         |   ✓   |   ✓   |   ✓    |    ✓    |                                           |
-| `PATCH /produtos/:id/disponibilidade`                                   |   ✓   |       |        |    ✓    |                                           |
-| `POST`, `PUT`, `DELETE /produtos`                                       |   ✓   |       |        |         |                                           |
-| `POST`, `GET /comandas`, `POST /comandas/juntar`, integrantes e extrato |   ✓   |   ✓   |   ✓    |         |                                           |
-| Pagamentos, desconto, pré-conta e fechamento da comanda                 |   ✓   |   ✓   |        |         | desconto exige `pode_conceder_desconto`   |
-| `POST /comandas/:id/cancelar`                                           |   ✓   |   ✓   |   ✓    |         |                                           |
-| `POST /comandas/:comandaId/pedidos`                                     |   ✓   |       |   ✓    |         |                                           |
-| `GET /pedidos`, `PATCH /pedidos/itens/:itemId/status`                   |   ✓   |       |   ✓    |    ✓    |                                           |
-| `DELETE /pedidos/itens/:itemId`                                         |   ✓   |   ✓   |        |         | exige permissão de exclusão no fechamento |
-| `DELETE /pedidos/:id`                                                   |   ✓   |       |   ✓    |         |                                           |
-| `GET /dashboard`, `/usuarios/*`, `/impressao/impressoras`               |   ✓   |       |        |         |                                           |
-| `GET /tenants/me`                                                       |   ✓   |   ✓   |   ✓    |    ✓    |                                           |
-| `PATCH /tenants/configuracoes`, `POST /tenants/token-agente`            |   ✓   |       |        |         |                                           |
-| `GET /impressao/pendentes`, `PATCH /impressao/:id/status`               |       |       |        |         | token do agente                           |
+| Recurso                                                                                                                                    | admin | caixa | garcom | cozinha | expedicao | Outro                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | :---: | :---: | :----: | :-----: | :-------: | --------------------------------------- |
+| `POST /auth/login`, `/auth/logout`, `/auth/admin-logout`                                                                                   |       |       |        |         |           | público                                 |
+| `POST /leads`                                                                                                                              |       |       |        |         |           | público                                 |
+| `/admin/*`                                                                                                                                 |       |       |        |         |           | super-admin                             |
+| `GET /categorias`                                                                                                                          |   ✓   |   ✓   |   ✓    |         |     ✓     |                                         |
+| `POST /categorias`                                                                                                                         |   ✓   |       |        |         |           |                                         |
+| `GET /produtos`                                                                                                                            |   ✓   |   ✓   |   ✓    |    ✓    |     ✓     |                                         |
+| `PATCH /produtos/:id/disponibilidade`                                                                                                      |   ✓   |       |        |    ✓    |           |                                         |
+| `POST`, `PUT`, `DELETE /produtos`                                                                                                          |   ✓   |       |        |         |           |                                         |
+| `POST /uploads`                                                                                                                            |   ✓   |       |        |         |           |                                         |
+| `POST`, `GET /comandas`, `POST /comandas/juntar`, integrantes e extrato                                                                    |   ✓   |   ✓   |   ✓    |         |           |                                         |
+| Pagamentos, desconto, pré-conta e fechamento da comanda                                                                                    |   ✓   |   ✓   |        |         |           | desconto exige `pode_conceder_desconto` |
+| `POST /comandas/:id/cancelar`                                                                                                              |   ✓   |   ✓   |   ✓    |         |           |                                         |
+| `POST /comandas/:comandaId/pedidos`                                                                                                        |   ✓   |       |   ✓    |         |           |                                         |
+| `GET /pedidos`, `PATCH /pedidos/itens/:itemId/status`                                                                                      |   ✓   |       |   ✓    |    ✓    |           |                                         |
+| `DELETE /pedidos/itens/:itemId`                                                                                                            |   ✓   |   ✓   |        |         |           | exige `pode_excluir_item_fechamento`    |
+| `DELETE /pedidos/:id`                                                                                                                      |   ✓   |       |   ✓    |         |           |                                         |
+| `/clientes/*` (clientes e endereços)                                                                                                       |   ✓   |       |        |         |     ✓     |                                         |
+| `POST /delivery/cotacao`, `POST /delivery/pedidos`, `GET /delivery/entregas`, `PATCH /delivery/entregas/:id/status`, reimpressão do ticket |   ✓   |       |        |         |     ✓     |                                         |
+| `/delivery/taxas`                                                                                                                          |   ✓   |       |        |         |           |                                         |
+| `GET /dashboard`, `/usuarios/*`, `/impressao/impressoras`                                                                                  |   ✓   |       |        |         |           |                                         |
+| `GET /tenants/me`                                                                                                                          |   ✓   |   ✓   |   ✓    |    ✓    |     ✓     |                                         |
+| `PATCH /tenants/configuracoes`, `POST /tenants/token-agente`                                                                               |   ✓   |       |        |         |           |                                         |
+| `GET /impressao/pendentes`, `PATCH /impressao/:id/status`                                                                                  |       |       |        |         |           | token do agente                         |
 
 ## 7. Regras de negócio implementadas
 
-- **Comanda:** o `numero_comanda` deve ser menor ou igual ao `quantidade_comandas` do tenant e único entre as comandas `aberta`. Comanda fechada não aceita alteração.
+- **Comanda:** o `numero_comanda` deve ser menor ou igual ao `quantidade_comandas` do tenant e único entre as comandas `aberta`. Comanda fechada não aceita alteração. Itens cancelados não entram no extrato nem no fechamento.
 - **Status do item** (`item-status-transition.ts`, tabela `TRANSICOES_VALIDAS`):
 
   | De           | Para                              |
@@ -142,11 +155,14 @@ flowchart LR
   | `entregue`   | `pronto`                          |
   | `cancelado`  | `pendente`                        |
 
+- **Status da entrega** (`entrega-status-transition.ts`): `em_producao` → `pronto_para_envio` ou `cancelado`; `pronto_para_envio` → `em_rota`, `em_producao` ou `cancelado`; `em_rota` → `entregue` ou `pronto_para_envio`; `entregue` e `cancelado` são finais. Há guardas sobre o preparo dos pedidos, e o cancelamento e o retorno a partir de `em_rota` exigem motivo. Mudanças concorrentes são controladas (PED-99).
+- **Delivery:** o pedido nasce numa transação única (comanda `delivery`, pedido, entrega, histórico e tickets de cozinha e de entrega). A taxa de entrega soma ao extrato e ao fechamento sem receber desconto. O troco é calculado em centavos, com limite de sanidade (`TROCO_MAXIMO_CENTS`). A cotação de frete usa a taxa do bairro, com estratégia plugável (`services/frete/`).
 - **Desconto:** percentual ou valor fixo, só por usuário com `pode_conceder_desconto` (`desconto-calculator.ts`).
 - **Extrato e fechamento:** divisão entre itens individuais e compartilhados, cota por integrante e total final calculados em funções puras (`extrato-calculator.ts`, `fechamento-calculator.ts`), sempre em centavos.
 - **Dinheiro:** `toCents`/`fromCents` em toda aritmética.
 - **Tenant suspenso ou cancelado** não consegue logar (403).
-- **Impressão:** lançar um pedido enfileira um job `pedido_cozinha` na `fila_impressao` (`PrintQueue.enqueuePedidoCozinha`); a pré-conta gera `pre_conta`. Para impressora de rede, o `PrintQueue` tenta até 3 vezes antes de marcar `falhou`.
+- **Impressão:** lançar um pedido enfileira `pedido_cozinha` (`PrintQueue.enqueuePedidoCozinha`); a pré-conta gera `pre_conta` e o delivery gera `entrega`. Para impressora de rede, o `PrintQueue` tenta até 3 vezes antes de marcar `falhou`.
+- **Upload:** só imagens JPEG, PNG e WebP, até 5 MB.
 
 ## 8. Erros e observabilidade
 
@@ -161,9 +177,10 @@ As regras completas (camadas, funções puras, transações, tenant, dinheiro, m
 ## 10. Limitações conhecidas
 
 - `docs/api-endpoints.md` e `docs/banco-de-dados.md` são do planejamento inicial e estão desatualizados.
-- Services que acessam o banco não têm testes automatizados; a suíte de integração (`tests/`) cobre por enquanto infraestrutura e saúde, e é o lugar para novos testes de fluxo.
-- Fuso horário entre Node e Postgres ainda não padronizado (PED-114).
+- A suíte de integração (`tests/`) cobre por enquanto infraestrutura, saúde e login; os services que acessam o banco ainda são validados por teste manual.
 - No extrato, a cota compartilhada por pessoa usa `Math.round`, então a soma das cotas pode diferir do total em alguns centavos (ex.: R$ 10,00 entre 3 pessoas).
+- Fuso horário entre Node e Postgres ainda não padronizado (PED-114).
+- Status de preparo do pedido pode ficar desatualizado quando o KDS avança itens em paralelo (PED-115; correção na branch PED-82).
 - O backend não tem Dockerfile próprio nem pipeline de deploy (PED-117 e PED-119).
 
 ## 11. Setup local e fluxo de trabalho

@@ -13,7 +13,7 @@ const USUARIOS_SEED: { nome: string; email: string; roles: UserRole[] }[] = [
   {
     nome: "Administrador",
     email: "admin@pedmesa.com",
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.ADMIN, UserRole.EXPEDICAO],
   },
   {
     nome: "Garçom Teste",
@@ -75,7 +75,23 @@ async function run(): Promise<void> {
         `✅ Usuário ${usuario.roles.join(", ")} criado: ${usuario.email} / senha: ${SENHA_PADRAO}`,
       );
     } else {
-      console.log(`ℹ️  Usuário "${usuarioSeed.email}" já existe.`);
+      // Idempotente e só aditivo: acrescenta papéis novos do seed (ex.: expedicao, PED-113)
+      // a usuários que já existiam, sem remover nenhum papel dado manualmente.
+      const papeisFaltando = usuarioSeed.roles.filter(
+        (role) => !existingUser.roles.includes(role),
+      );
+
+      if (papeisFaltando.length > 0) {
+        await userRepository.update(
+          { id: existingUser.id },
+          { roles: [...existingUser.roles, ...papeisFaltando] },
+        );
+        console.log(
+          `✅ Usuário "${usuarioSeed.email}" recebeu o(s) papel(éis): ${papeisFaltando.join(", ")}.`,
+        );
+      } else {
+        console.log(`ℹ️  Usuário "${usuarioSeed.email}" já existe.`);
+      }
     }
   }
 

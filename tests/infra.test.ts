@@ -20,17 +20,14 @@ describe("infraestrutura da suíte", () => {
   it("autentica um usuário criado pelas factories", async () => {
     const tenant = await criarTenant();
     const usuario = await criarUsuario(tenant, [UserRole.ADMIN]);
-    const token = await autenticar(usuario);
+    const cliente = await autenticar(usuario);
 
-    const resposta = await criarCliente()
-      .get("/api/v1/tenants/me")
-      .set("Authorization", `Bearer ${token}`)
-      .expect(200);
+    const resposta = await cliente.get("/api/v1/tenants/me").expect(200);
 
     expect(resposta.body.id).toBe(tenant.id);
   });
 
-  it("recusa rota protegida sem token", async () => {
+  it("recusa rota protegida sem o cookie de sessão", async () => {
     await criarCliente().get("/api/v1/tenants/me").expect(401);
   });
 });

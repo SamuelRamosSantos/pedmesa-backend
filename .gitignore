@@ -7,7 +7,10 @@ scripts/dev/mock-printer-received.bin
 .claude/
 coverage/
 .env.test
-uploads/
+
+# Uploads salvos em disco local (STORAGE_DRIVER=local, padrão em dev) — em
+# produção (STORAGE_DRIVER=s3) esse diretório nem chega a ser usado.
+/uploads/
 
 # Agentes de IA (arquivos locais)
 .agents/PLAN.md

@@ -23,6 +23,9 @@ export interface TenantResponse {
   estado: string | null;
   cep: string | null;
   token_agente: string | null;
+  delivery_ativo: boolean;
+  taxa_entrega_padrao: number | null;
+  pedido_minimo_delivery: number;
   criado_em: Date;
 }
 
@@ -50,6 +53,9 @@ export function toTenantResponse(tenant: Tenant): TenantResponse {
     estado: tenant.estado,
     cep: tenant.cep,
     token_agente: tenant.tokenAgente,
+    delivery_ativo: tenant.deliveryAtivo,
+    taxa_entrega_padrao: tenant.taxaEntregaPadrao,
+    pedido_minimo_delivery: tenant.pedidoMinimoDelivery,
     criado_em: tenant.criadoEm,
   };
 }
