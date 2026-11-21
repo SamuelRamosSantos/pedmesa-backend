@@ -48,6 +48,20 @@ validar_configuracao() {
     erro "COOLIFY_URL deve ser só o endereço do painel do Coolify (ex.: https://coolify.exemplo.com), sem caminho nem parâmetros. Valor atual: $COOLIFY_URL"
     exit 1
   fi
+
+  # Engano comum: colar a URL do "Deploy Webhook" do Coolify no lugar do UUID.
+  # Nesse caso o UUID é extraído da própria URL, com um aviso para corrigir.
+  if printf '%s' "$COOLIFY_APP_UUID" | grep -qE '[?&]uuid='; then
+    local extraido
+    extraido="$(printf '%s' "$COOLIFY_APP_UUID" | sed -E 's/.*[?&]uuid=([^&]+).*/\1/')"
+    echo "::warning title=COOLIFY_APP_UUID com a URL do webhook::A variável tem a URL inteira do Deploy Webhook. Usando o UUID '$extraido'; corrija a variável para conter só ele."
+    COOLIFY_APP_UUID="$extraido"
+  fi
+
+  if ! printf '%s' "$COOLIFY_APP_UUID" | grep -qE '^[A-Za-z0-9]+$'; then
+    erro "COOLIFY_APP_UUID deve ser só o UUID da aplicação no Coolify (letras e números, ex.: f1ey1p82cb6xiqgflrmpwnme), que aparece na URL da aplicação no painel. Valor atual: $COOLIFY_APP_UUID"
+    exit 1
+  fi
 }
 
 # Faz a chamada à API do Coolify. Deixa o status em $STATUS e o corpo em $CORPO.
