@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
 export class CreateUsersTable1700000000001 implements MigrationInterface {
   name = "CreateUsersTable1700000000001";
@@ -57,7 +62,7 @@ export class CreateUsersTable1700000000001 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -68,7 +73,7 @@ export class CreateUsersTable1700000000001 implements MigrationInterface {
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
   }
 

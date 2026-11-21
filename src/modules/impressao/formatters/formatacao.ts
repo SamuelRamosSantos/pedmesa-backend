@@ -20,12 +20,17 @@ export function formatarTelefone(digitos: string): string {
 
 // CEP gravado com 8 dígitos → "01310-100".
 export function formatarCep(digitos: string): string {
-  return digitos.length === 8 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos;
+  return digitos.length === 8
+    ? `${digitos.slice(0, 5)}-${digitos.slice(5)}`
+    : digitos;
 }
 
 // Linha que identifica o pedido no cupom: mesa ("Comanda/Mesa: #12") ou delivery
 // ("DELIVERY #0007", com 4 dígitos para destacar e caber no padrão do balcão).
-export function identificacaoDoPedido(numeroComanda: number | null, numeroEntrega: number | null): string {
+export function identificacaoDoPedido(
+  numeroComanda: number | null,
+  numeroEntrega: number | null,
+): string {
   if (numeroComanda !== null) {
     return `Comanda/Mesa: #${numeroComanda}`;
   }

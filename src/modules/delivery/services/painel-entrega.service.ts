@@ -7,7 +7,11 @@ import { Pedido } from "../../pedidos/entities/pedido.entity";
 import { ListarEntregasFiltros } from "../dtos/listar-entregas.dto";
 import { Entrega, StatusEntrega } from "../entities/entrega.entity";
 import { dataDaNumeracao } from "./data-numeracao";
-import { CardPainelEntrega, montarCardPainel, STATUS_TERMINAIS } from "./painel-entrega";
+import {
+  CardPainelEntrega,
+  montarCardPainel,
+  STATUS_TERMINAIS,
+} from "./painel-entrega";
 
 // Linha crua do Postgres: decimais chegam como string.
 interface LinhaPainelBruta {
@@ -37,12 +41,20 @@ interface LinhaPainelBruta {
 async function buscarLinhasPainel(
   tenantId: string,
   filtros: ListarEntregasFiltros,
-  agora: Date
+  agora: Date,
 ): Promise<LinhaPainelBruta[]> {
   const consulta = AppDataSource.getRepository(Entrega)
     .createQueryBuilder("entrega")
-    .innerJoin("entrega.cliente", "cliente", "cliente.tenantId = entrega.tenantId")
-    .innerJoin("entrega.comanda", "comanda", "comanda.tenantId = entrega.tenantId")
+    .innerJoin(
+      "entrega.cliente",
+      "cliente",
+      "cliente.tenantId = entrega.tenantId",
+    )
+    .innerJoin(
+      "entrega.comanda",
+      "comanda",
+      "comanda.tenantId = entrega.tenantId",
+    )
     .leftJoin(Pedido, "pedido", "pedido.comandaId = comanda.id")
     .leftJoin("pedido.itens", "item")
     .select("entrega.id", "id")
@@ -62,21 +74,28 @@ async function buscarLinhasPainel(
     .addSelect("comanda.descontoValor", "descontoValor")
     .addSelect(
       "COALESCE(SUM(item.quantidade * item.precoUnitario) FILTER (WHERE item.statusItem <> :itemCancelado), 0)",
-      "subtotalItensAtivos"
+      "subtotalItensAtivos",
     )
     .addSelect(
       "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL), ARRAY[]::text[])",
-      "statusDosItens"
+      "statusDosItens",
     )
     .addSelect("entrega.criadoEm", "criadoEm")
     .addSelect("entrega.previsaoEntregaEm", "previsaoEntregaEm")
-    .where("entrega.tenantId = :tenantId", { tenantId, itemCancelado: StatusItem.CANCELADO })
+    .where("entrega.tenantId = :tenantId", {
+      tenantId,
+      itemCancelado: StatusItem.CANCELADO,
+    })
     .andWhere(
       new Brackets((visivel) =>
         visivel
-          .where("entrega.statusEntrega NOT IN (:...terminais)", { terminais: STATUS_TERMINAIS })
-          .orWhere("entrega.dataNumeracao = :hoje", { hoje: dataDaNumeracao(agora) })
-      )
+          .where("entrega.statusEntrega NOT IN (:...terminais)", {
+            terminais: STATUS_TERMINAIS,
+          })
+          .orWhere("entrega.dataNumeracao = :hoje", {
+            hoje: dataDaNumeracao(agora),
+          }),
+      ),
     )
     .groupBy("entrega.id")
     .addGroupBy("cliente.id")
@@ -84,13 +103,18 @@ async function buscarLinhasPainel(
     .orderBy("entrega.criadoEm", "ASC");
 
   if (filtros.status !== null) {
-    consulta.andWhere("entrega.statusEntrega = :status", { status: filtros.status });
+    consulta.andWhere("entrega.statusEntrega = :status", {
+      status: filtros.status,
+    });
   }
 
   return consulta.getRawMany<LinhaPainelBruta>();
 }
 
-export async function listarEntregasPainel(tenantId: string, filtros: ListarEntregasFiltros): Promise<CardPainelEntrega[]> {
+export async function listarEntregasPainel(
+  tenantId: string,
+  filtros: ListarEntregasFiltros,
+): Promise<CardPainelEntrega[]> {
   const agora = new Date();
   const linhas = await buscarLinhasPainel(tenantId, filtros, agora);
 
@@ -103,7 +127,7 @@ export async function listarEntregasPainel(tenantId: string, filtros: ListarEntr
         descontoValor: Number(linha.descontoValor),
         subtotalItensAtivos: Number(linha.subtotalItensAtivos),
       },
-      agora
-    )
+      agora,
+    ),
   );
 }

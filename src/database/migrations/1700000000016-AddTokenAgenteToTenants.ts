@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddTokenAgenteToTenants1700000000016 implements MigrationInterface {
+export class AddTokenAgenteToTenants1700000000016
+  implements MigrationInterface
+{
   name = "AddTokenAgenteToTenants1700000000016";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -12,7 +14,7 @@ export class AddTokenAgenteToTenants1700000000016 implements MigrationInterface 
         length: "64",
         isNullable: true,
         isUnique: true,
-      })
+      }),
     );
   }
 

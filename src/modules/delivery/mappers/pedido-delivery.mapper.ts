@@ -13,7 +13,10 @@ export interface PedidoDeliveryCriadoResponse {
   previsao_entrega_em: Date | null;
 }
 
-export function toPedidoDeliveryCriadoResponse({ entrega, cotacao }: PedidoDeliveryCriado): PedidoDeliveryCriadoResponse {
+export function toPedidoDeliveryCriadoResponse({
+  entrega,
+  cotacao,
+}: PedidoDeliveryCriado): PedidoDeliveryCriadoResponse {
   return {
     entrega_id: entrega.id,
     comanda_id: entrega.comandaId,

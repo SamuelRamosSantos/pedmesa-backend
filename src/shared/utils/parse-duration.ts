@@ -12,7 +12,9 @@ export function parseDurationToMs(duration: string): number {
   const match = /^(\d+)(ms|s|m|h|d)$/.exec(duration.trim());
 
   if (!match) {
-    throw new Error(`Formato de duração inválido: "${duration}". Use algo como "30m", "1d" ou "12h".`);
+    throw new Error(
+      `Formato de duração inválido: "${duration}". Use algo como "30m", "1d" ou "12h".`,
+    );
   }
 
   const [, amount, unit] = match;

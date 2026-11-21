@@ -4,12 +4,20 @@ import { getTenantId } from "../../../shared/utils/get-tenant-id";
 import { getUserId } from "../../../shared/utils/get-user-id";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCreatePedidoDto } from "../dtos/create-pedido.dto";
-import { assertValidUpdateItemStatusDto } from "../dtos/update-item-status.dto";
 import { parseListPedidosFilters } from "../dtos/list-pedidos.dto";
-import { toPedidoCreatedResponse, toPedidoListItemResponse, toUpdateItemStatusResponse } from "../mappers/pedido.mapper";
+import { assertValidUpdateItemStatusDto } from "../dtos/update-item-status.dto";
+import {
+  toPedidoCreatedResponse,
+  toPedidoListItemResponse,
+  toUpdateItemStatusResponse,
+} from "../mappers/pedido.mapper";
 import { PedidoService } from "../services/pedido.service";
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const usuarioId = getUserId(req);
@@ -20,7 +28,12 @@ export async function create(req: Request, res: Response, next: NextFunction): P
     }
 
     const dto = assertValidCreatePedidoDto(req.body);
-    const pedido = await PedidoService.create(tenantId, usuarioId, comandaId, dto);
+    const pedido = await PedidoService.create(
+      tenantId,
+      usuarioId,
+      comandaId,
+      dto,
+    );
 
     res.status(201).json(toPedidoCreatedResponse(pedido));
   } catch (error) {
@@ -28,10 +41,16 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
-    const filters = parseListPedidosFilters(req.query as Record<string, unknown>);
+    const filters = parseListPedidosFilters(
+      req.query as Record<string, unknown>,
+    );
     const pedidos = await PedidoService.list(tenantId, filters);
 
     res.status(200).json(pedidos.map(toPedidoListItemResponse));
@@ -40,7 +59,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export async function updateItemStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateItemStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { itemId } = req.params;
@@ -50,7 +73,11 @@ export async function updateItemStatus(req: Request, res: Response, next: NextFu
     }
 
     const dto = assertValidUpdateItemStatusDto(req.body);
-    const { item, pedido } = await PedidoService.updateItemStatus(tenantId, itemId, dto.status);
+    const { item, pedido } = await PedidoService.updateItemStatus(
+      tenantId,
+      itemId,
+      dto.status,
+    );
 
     res.status(200).json(toUpdateItemStatusResponse(item, pedido));
   } catch (error) {
@@ -58,7 +85,11 @@ export async function updateItemStatus(req: Request, res: Response, next: NextFu
   }
 }
 
-export async function deleteItem(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function deleteItem(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const usuarioId = getUserId(req);
@@ -76,7 +107,11 @@ export async function deleteItem(req: Request, res: Response, next: NextFunction
   }
 }
 
-export async function deleteOwnPedido(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function deleteOwnPedido(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const usuarioId = getUserId(req);

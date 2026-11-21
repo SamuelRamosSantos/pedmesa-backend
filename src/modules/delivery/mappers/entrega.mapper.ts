@@ -15,7 +15,9 @@ export interface EntregaEstadoResponse {
   motivo_cancelamento: string | null;
 }
 
-export function toEntregaEstadoResponse(entrega: Entrega): EntregaEstadoResponse {
+export function toEntregaEstadoResponse(
+  entrega: Entrega,
+): EntregaEstadoResponse {
   return {
     id: entrega.id,
     numero_entrega: entrega.numeroEntrega,
@@ -47,7 +49,9 @@ export interface EntregaPainelResponse {
   status_preparo: StatusPreparo;
 }
 
-export function toEntregaPainelResponse(card: CardPainelEntrega): EntregaPainelResponse {
+export function toEntregaPainelResponse(
+  card: CardPainelEntrega,
+): EntregaPainelResponse {
   return {
     id: card.id,
     numero_entrega: card.numeroEntrega,

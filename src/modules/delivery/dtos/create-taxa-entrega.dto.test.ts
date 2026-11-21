@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { AppError } from "../../../shared/errors/app-error";
 import { assertValidCreateTaxaEntregaDto } from "./create-taxa-entrega.dto";
 
-const VALID_BODY = { cidade: " São Paulo ", bairro: "Bela Vista", valor: 7.5, tempo_estimado_min: 40 };
+const VALID_BODY = {
+  cidade: " São Paulo ",
+  bairro: "Bela Vista",
+  valor: 7.5,
+  tempo_estimado_min: 40,
+};
 
 describe("assertValidCreateTaxaEntregaDto", () => {
   it("aceita uma taxa válida, apara textos e liga a taxa por padrão", () => {
@@ -17,12 +22,26 @@ describe("assertValidCreateTaxaEntregaDto", () => {
 
   it("aceita taxa grátis (valor 0), sem tempo estimado e já desativada", () => {
     expect(
-      assertValidCreateTaxaEntregaDto({ cidade: "Santos", bairro: "Centro", valor: 0, tempo_estimado_min: null, ativo: false })
-    ).toEqual({ cidade: "Santos", bairro: "Centro", valor: 0, tempoEstimadoMin: null, ativo: false });
+      assertValidCreateTaxaEntregaDto({
+        cidade: "Santos",
+        bairro: "Centro",
+        valor: 0,
+        tempo_estimado_min: null,
+        ativo: false,
+      }),
+    ).toEqual({
+      cidade: "Santos",
+      bairro: "Centro",
+      valor: 0,
+      tempoEstimadoMin: null,
+      ativo: false,
+    });
   });
 
   it("ignora tenant_id vindo do corpo", () => {
-    expect(assertValidCreateTaxaEntregaDto({ ...VALID_BODY, tenant_id: "outro" })).not.toHaveProperty("tenant_id");
+    expect(
+      assertValidCreateTaxaEntregaDto({ ...VALID_BODY, tenant_id: "outro" }),
+    ).not.toHaveProperty("tenant_id");
   });
 
   it.each([
@@ -38,6 +57,8 @@ describe("assertValidCreateTaxaEntregaDto", () => {
     ["tempo acima de 24h", { tempo_estimado_min: 1441 }],
     ["ativo como texto", { ativo: "sim" }],
   ])("rejeita %s", (_caso, alteracao) => {
-    expect(() => assertValidCreateTaxaEntregaDto({ ...VALID_BODY, ...alteracao })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateTaxaEntregaDto({ ...VALID_BODY, ...alteracao }),
+    ).toThrow(AppError);
   });
 });

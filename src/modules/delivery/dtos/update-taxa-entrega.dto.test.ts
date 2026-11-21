@@ -5,13 +5,21 @@ import { assertValidUpdateTaxaEntregaDto } from "./update-taxa-entrega.dto";
 describe("assertValidUpdateTaxaEntregaDto", () => {
   it("valida só os campos enviados", () => {
     expect(assertValidUpdateTaxaEntregaDto({ valor: 9 })).toEqual({ valor: 9 });
-    expect(assertValidUpdateTaxaEntregaDto({ ativo: false })).toEqual({ ativo: false });
-    expect(assertValidUpdateTaxaEntregaDto({ bairro: " Pinheiros " })).toEqual({ bairro: "Pinheiros" });
+    expect(assertValidUpdateTaxaEntregaDto({ ativo: false })).toEqual({
+      ativo: false,
+    });
+    expect(assertValidUpdateTaxaEntregaDto({ bairro: " Pinheiros " })).toEqual({
+      bairro: "Pinheiros",
+    });
   });
 
   it("tempo_estimado_min: null remove a estimativa e ausente não altera", () => {
-    expect(assertValidUpdateTaxaEntregaDto({ tempo_estimado_min: null })).toEqual({ tempoEstimadoMin: null });
-    expect(assertValidUpdateTaxaEntregaDto({ valor: 5 })).not.toHaveProperty("tempoEstimadoMin");
+    expect(
+      assertValidUpdateTaxaEntregaDto({ tempo_estimado_min: null }),
+    ).toEqual({ tempoEstimadoMin: null });
+    expect(assertValidUpdateTaxaEntregaDto({ valor: 5 })).not.toHaveProperty(
+      "tempoEstimadoMin",
+    );
   });
 
   it.each([

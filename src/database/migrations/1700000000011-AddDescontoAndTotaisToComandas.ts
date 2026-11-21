@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInterface {
+export class AddDescontoAndTotaisToComandas1700000000011
+  implements MigrationInterface
+{
   name = "AddDescontoAndTotaisToComandas1700000000011";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -13,7 +15,7 @@ export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInt
         enum: ["percentual", "valor_fixo", "nenhum"],
         default: "'nenhum'",
         isNullable: false,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -25,7 +27,7 @@ export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInt
         scale: 2,
         default: 0,
         isNullable: false,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -36,7 +38,7 @@ export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInt
         precision: 10,
         scale: 2,
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -47,7 +49,7 @@ export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInt
         precision: 10,
         scale: 2,
         isNullable: true,
-      })
+      }),
     );
   }
 
@@ -56,6 +58,8 @@ export class AddDescontoAndTotaisToComandas1700000000011 implements MigrationInt
     await queryRunner.dropColumn("comandas", "subtotal");
     await queryRunner.dropColumn("comandas", "desconto_valor");
     await queryRunner.dropColumn("comandas", "desconto_tipo");
-    await queryRunner.query(`DROP TYPE IF EXISTS "comandas_desconto_tipo_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "comandas_desconto_tipo_enum"`,
+    );
   }
 }

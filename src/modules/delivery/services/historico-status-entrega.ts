@@ -16,7 +16,7 @@ export interface RegistroHistoricoStatusEntrega {
 // status, para que a mudança e o registro sejam gravados (ou desfeitos) juntos.
 export async function registrarHistoricoStatusEntrega(
   manager: EntityManager,
-  registro: RegistroHistoricoStatusEntrega
+  registro: RegistroHistoricoStatusEntrega,
 ): Promise<HistoricoStatusEntrega> {
   return manager.save(manager.create(HistoricoStatusEntrega, registro));
 }

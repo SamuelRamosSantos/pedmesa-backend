@@ -7,7 +7,10 @@ function getRequiredEnv(name: string): string {
   const value = process.env[name];
 
   if (!value) {
-    throw new AppError(`Variável de ambiente ${name} não configurada para armazenamento S3.`, 500);
+    throw new AppError(
+      `Variável de ambiente ${name} não configurada para armazenamento S3.`,
+      500,
+    );
   }
 
   return value;
@@ -20,7 +23,10 @@ export class S3StorageService implements StorageService {
 
   constructor() {
     this.bucket = getRequiredEnv("S3_BUCKET");
-    this.publicUrlBase = getRequiredEnv("S3_PUBLIC_URL_BASE").replace(/\/$/, "");
+    this.publicUrlBase = getRequiredEnv("S3_PUBLIC_URL_BASE").replace(
+      /\/$/,
+      "",
+    );
 
     this.client = new S3Client({
       region: process.env.S3_REGION ?? "auto",
@@ -33,7 +39,11 @@ export class S3StorageService implements StorageService {
     });
   }
 
-  async upload({ buffer, mimeType, extension }: UploadFileInput): Promise<string> {
+  async upload({
+    buffer,
+    mimeType,
+    extension,
+  }: UploadFileInput): Promise<string> {
     const key = `${randomUUID()}.${extension}`;
 
     await this.client.send(
@@ -42,7 +52,7 @@ export class S3StorageService implements StorageService {
         Key: key,
         Body: buffer,
         ContentType: mimeType,
-      })
+      }),
     );
 
     return `${this.publicUrlBase}/${key}`;

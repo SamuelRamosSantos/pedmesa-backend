@@ -14,7 +14,11 @@ import { Tenant } from "../../modules/tenants/entities/tenant.entity";
 
 const CIDADE = "São Paulo";
 
-const TAXAS_SEED: { bairro: string; valor: number; tempoEstimadoMin: number }[] = [
+const TAXAS_SEED: {
+  bairro: string;
+  valor: number;
+  tempoEstimadoMin: number;
+}[] = [
   { bairro: "Bela Vista", valor: 5, tempoEstimadoMin: 30 },
   { bairro: "Consolação", valor: 6, tempoEstimadoMin: 35 },
   { bairro: "Jardim Paulista", valor: 7.5, tempoEstimadoMin: 40 },
@@ -24,7 +28,11 @@ const TAXAS_SEED: { bairro: string; valor: number; tempoEstimadoMin: number }[] 
 
 const CLIENTES_SEED = [
   {
-    cliente: { nome: "Maria Souza", telefone: "(11) 98765-4321", observacoes: "Prefere troco em notas pequenas" },
+    cliente: {
+      nome: "Maria Souza",
+      telefone: "(11) 98765-4321",
+      observacoes: "Prefere troco em notas pequenas",
+    },
     endereco: {
       cep: "01310-100",
       logradouro: "Avenida Paulista",
@@ -37,7 +45,11 @@ const CLIENTES_SEED = [
     },
   },
   {
-    cliente: { nome: "João Pereira", telefone: "(11) 91234-5678", observacoes: null },
+    cliente: {
+      nome: "João Pereira",
+      telefone: "(11) 91234-5678",
+      observacoes: null,
+    },
     endereco: {
       cep: "05422-000",
       logradouro: "Rua dos Pinheiros",
@@ -50,7 +62,11 @@ const CLIENTES_SEED = [
     },
   },
   {
-    cliente: { nome: "Ana Lima", telefone: "(11) 3456-7890", observacoes: "Interfone quebrado, ligar ao chegar" },
+    cliente: {
+      nome: "Ana Lima",
+      telefone: "(11) 3456-7890",
+      observacoes: "Interfone quebrado, ligar ao chegar",
+    },
     endereco: {
       cep: "04101-000",
       logradouro: "Rua Domingos de Morais",
@@ -70,7 +86,10 @@ async function ativarDelivery(tenant: Tenant): Promise<void> {
     return;
   }
 
-  await AppDataSource.getRepository(Tenant).update({ id: tenant.id }, { deliveryAtivo: true });
+  await AppDataSource.getRepository(Tenant).update(
+    { id: tenant.id },
+    { deliveryAtivo: true },
+  );
   console.log("✅ Delivery ativado no tenant.");
 }
 
@@ -90,8 +109,12 @@ async function criarTaxas(tenantId: string): Promise<void> {
     }
 
     // save() (e não insert) para os hooks da entidade preencherem as colunas normalizadas.
-    await repository.save(repository.create({ tenantId, cidade: CIDADE, ...taxa }));
-    console.log(`✅ Taxa de entrega criada: ${taxa.bairro} — R$ ${taxa.valor.toFixed(2)}`);
+    await repository.save(
+      repository.create({ tenantId, cidade: CIDADE, ...taxa }),
+    );
+    console.log(
+      `✅ Taxa de entrega criada: ${taxa.bairro} — R$ ${taxa.valor.toFixed(2)}`,
+    );
   }
 }
 
@@ -101,23 +124,36 @@ async function criarClientesComEndereco(tenantId: string): Promise<void> {
 
   for (const seed of CLIENTES_SEED) {
     const dto = assertValidCreateClienteDto(seed.cliente);
-    let cliente = await clienteRepository.findOneBy({ tenantId, telefone: dto.telefone });
+    let cliente = await clienteRepository.findOneBy({
+      tenantId,
+      telefone: dto.telefone,
+    });
 
     if (cliente) {
       console.log(`ℹ️  Cliente "${dto.nome}" já existe.`);
     } else {
-      cliente = await clienteRepository.save(clienteRepository.create({ tenantId, ...dto }));
+      cliente = await clienteRepository.save(
+        clienteRepository.create({ tenantId, ...dto }),
+      );
       console.log(`✅ Cliente criado: ${dto.nome} (${dto.telefone})`);
     }
 
-    const possuiEndereco = (await enderecoRepository.countBy({ tenantId, clienteId: cliente.id })) > 0;
+    const possuiEndereco =
+      (await enderecoRepository.countBy({ tenantId, clienteId: cliente.id })) >
+      0;
 
     if (possuiEndereco) {
       continue;
     }
 
-    await EnderecoClienteService.criar(tenantId, cliente.id, assertValidCreateEnderecoClienteDto(seed.endereco));
-    console.log(`✅ Endereço principal criado para ${dto.nome}: ${seed.endereco.logradouro}, ${seed.endereco.numero}`);
+    await EnderecoClienteService.criar(
+      tenantId,
+      cliente.id,
+      assertValidCreateEnderecoClienteDto(seed.endereco),
+    );
+    console.log(
+      `✅ Endereço principal criado para ${dto.nome}: ${seed.endereco.logradouro}, ${seed.endereco.numero}`,
+    );
   }
 }
 

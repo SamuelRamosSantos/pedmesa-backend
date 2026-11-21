@@ -30,22 +30,41 @@ export async function lancarItensNaComanda(
   tenant: Tenant,
   comanda: Comanda,
   usuarioId: string,
-  dto: CreatePedidoDto
+  dto: CreatePedidoDto,
 ): Promise<LancamentoItensResultado> {
   if (comanda.status !== ComandaStatus.ABERTA) {
-    throw new AppError("Não é possível lançar itens em uma comanda fechada.", 400);
+    throw new AppError(
+      "Não é possível lançar itens em uma comanda fechada.",
+      400,
+    );
   }
 
   const produtoIds = [...new Set(dto.itens.map((item) => item.produtoId))];
-  const produtos = await manager.findBy(Product, { id: In(produtoIds), tenantId: tenant.id });
-  const produtosPorId = new Map(produtos.map((produto) => [produto.id, produto]));
+  const produtos = await manager.findBy(Product, {
+    id: In(produtoIds),
+    tenantId: tenant.id,
+  });
+  const produtosPorId = new Map(
+    produtos.map((produto) => [produto.id, produto]),
+  );
 
-  const integranteIds = [...new Set(dto.itens.map((item) => item.integranteId).filter((id): id is string => id !== null))];
+  const integranteIds = [
+    ...new Set(
+      dto.itens
+        .map((item) => item.integranteId)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
   const integrantesPorId = new Map<string, IntegranteComanda>();
 
   if (integranteIds.length > 0) {
-    const integrantes = await manager.findBy(IntegranteComanda, { id: In(integranteIds), comandaId: comanda.id });
-    integrantes.forEach((integrante) => integrantesPorId.set(integrante.id, integrante));
+    const integrantes = await manager.findBy(IntegranteComanda, {
+      id: In(integranteIds),
+      comandaId: comanda.id,
+    });
+    for (const integrante of integrantes) {
+      integrantesPorId.set(integrante.id, integrante);
+    }
   }
 
   const produtosDosItens = resolverProdutosDosItens(dto.itens, produtosPorId);
@@ -53,11 +72,19 @@ export async function lancarItensNaComanda(
   const itensValidados = dto.itens.map((item, index) => {
     const produto = produtosDosItens[index];
 
-    if (item.integranteId !== null && !integrantesPorId.has(item.integranteId)) {
-      throw new AppError(`O integrante informado no item ${index} não pertence a esta comanda.`, 400);
+    if (
+      item.integranteId !== null &&
+      !integrantesPorId.has(item.integranteId)
+    ) {
+      throw new AppError(
+        `O integrante informado no item ${index} não pertence a esta comanda.`,
+        400,
+      );
     }
 
-    const integrante = item.integranteId ? integrantesPorId.get(item.integranteId) ?? null : null;
+    const integrante = item.integranteId
+      ? (integrantesPorId.get(item.integranteId) ?? null)
+      : null;
 
     return { item, produto, integrante };
   });
@@ -67,7 +94,7 @@ export async function lancarItensNaComanda(
       comandaId: comanda.id,
       usuarioId,
       statusPreparo: StatusPreparo.PENDENTE,
-    })
+    }),
   );
 
   pedido.itens = await manager.save(
@@ -79,12 +106,17 @@ export async function lancarItensNaComanda(
         quantidade: item.quantidade,
         precoUnitario: produto.preco,
         observacao: item.observacao,
-        statusItem: resolveStatusItemInicial(produto.precisaPreparo, tenant.usaModuloCozinha),
-      })
-    )
+        statusItem: resolveStatusItemInicial(
+          produto.precisaPreparo,
+          tenant.usaModuloCozinha,
+        ),
+      }),
+    ),
   );
 
-  pedido.statusPreparo = calcularStatusPreparoPedido(pedido.itens.map((item) => item.statusItem));
+  pedido.statusPreparo = calcularStatusPreparoPedido(
+    pedido.itens.map((item) => item.statusItem),
+  );
   await manager.save(pedido);
 
   const itensImpressao = itensValidados.map(
@@ -95,7 +127,7 @@ export async function lancarItensNaComanda(
       subtotal: produto.preco * item.quantidade,
       integrante_nome: integrante?.nome ?? null,
       observacao: item.observacao,
-    })
+    }),
   );
 
   return { pedido, itensImpressao };

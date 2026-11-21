@@ -10,7 +10,10 @@ export function assertValidChangePasswordDto(body: unknown): ChangePasswordDto {
   const { nova_senha: novaSenha } = (body ?? {}) as Record<string, unknown>;
 
   if (typeof novaSenha !== "string" || novaSenha.length < SENHA_MIN_LENGTH) {
-    throw new AppError(`Senha deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`, 400);
+    throw new AppError(
+      `Senha deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`,
+      400,
+    );
   }
 
   return { novaSenha };

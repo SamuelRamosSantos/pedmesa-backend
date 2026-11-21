@@ -7,7 +7,9 @@ export interface AddPagamentoComandaDto {
   valor: number;
 }
 
-export function assertValidAddPagamentoComandaDto(body: unknown): AddPagamentoComandaDto {
+export function assertValidAddPagamentoComandaDto(
+  body: unknown,
+): AddPagamentoComandaDto {
   const { forma, valor } = (body ?? {}) as Record<string, unknown>;
 
   const formaValidada = validarFormaPagamento(forma, "forma");

@@ -16,21 +16,34 @@ export interface TaxaCandidata {
 export function resolverTaxa(
   taxas: readonly TaxaCandidata[],
   endereco: EnderecoFrete,
-  taxaPadrao: number | null
+  taxaPadrao: number | null,
 ): CotacaoFrete {
   const cidade = normalizarLocalidade(endereco.cidade);
   const bairro = normalizarLocalidade(endereco.bairro);
 
   const taxaDoBairro = taxas.find(
-    (taxa) => taxa.ativo && taxa.cidadeNormalizada === cidade && taxa.bairroNormalizado === bairro
+    (taxa) =>
+      taxa.ativo &&
+      taxa.cidadeNormalizada === cidade &&
+      taxa.bairroNormalizado === bairro,
   );
 
   if (taxaDoBairro) {
-    return { atendido: true, valor: taxaDoBairro.valor, tempoEstimadoMin: taxaDoBairro.tempoEstimadoMin, origem: "bairro" };
+    return {
+      atendido: true,
+      valor: taxaDoBairro.valor,
+      tempoEstimadoMin: taxaDoBairro.tempoEstimadoMin,
+      origem: "bairro",
+    };
   }
 
   if (taxaPadrao !== null) {
-    return { atendido: true, valor: taxaPadrao, tempoEstimadoMin: null, origem: "padrao" };
+    return {
+      atendido: true,
+      valor: taxaPadrao,
+      tempoEstimadoMin: null,
+      origem: "padrao",
+    };
   }
 
   return {

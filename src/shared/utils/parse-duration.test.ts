@@ -11,8 +11,12 @@ describe("parseDurationToMs", () => {
   });
 
   it("lança erro para formato desconhecido", () => {
-    expect(() => parseDurationToMs("1y")).toThrow(/Formato de duração inválido/);
-    expect(() => parseDurationToMs("abc")).toThrow(/Formato de duração inválido/);
+    expect(() => parseDurationToMs("1y")).toThrow(
+      /Formato de duração inválido/,
+    );
+    expect(() => parseDurationToMs("abc")).toThrow(
+      /Formato de duração inválido/,
+    );
     expect(() => parseDurationToMs("")).toThrow(/Formato de duração inválido/);
   });
 });

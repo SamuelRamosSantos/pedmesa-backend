@@ -2,7 +2,13 @@ import { Router } from "express";
 import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
 import { UserRole } from "../../usuarios/entities/user.entity";
-import { create, list, remove, update, updateDisponibilidade } from "../controllers/product.controller";
+import {
+  create,
+  list,
+  remove,
+  update,
+  updateDisponibilidade,
+} from "../controllers/product.controller";
 
 const productRoutes = Router();
 
@@ -12,13 +18,19 @@ productRoutes.post("/", rbacMiddleware([UserRole.ADMIN]), create);
 productRoutes.get(
   "/",
   // EXPEDICAO só lê o cardápio, para montar pedidos delivery (PED-113).
-  rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.COZINHA, UserRole.CAIXA, UserRole.EXPEDICAO]),
-  list
+  rbacMiddleware([
+    UserRole.ADMIN,
+    UserRole.GARCOM,
+    UserRole.COZINHA,
+    UserRole.CAIXA,
+    UserRole.EXPEDICAO,
+  ]),
+  list,
 );
 productRoutes.patch(
   "/:id/disponibilidade",
   rbacMiddleware([UserRole.ADMIN, UserRole.COZINHA]),
-  updateDisponibilidade
+  updateDisponibilidade,
 );
 productRoutes.put("/:id", rbacMiddleware([UserRole.ADMIN]), update);
 productRoutes.delete("/:id", rbacMiddleware([UserRole.ADMIN]), remove);

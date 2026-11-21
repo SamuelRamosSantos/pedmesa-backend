@@ -27,8 +27,12 @@ describe("resolverIntervaloPeriodo", () => {
 
   it("resolve 'customizado' a partir de data_inicio/data_fim informados", () => {
     const intervalo = resolverIntervaloPeriodo(
-      { periodo: "customizado", dataInicio: "2026-08-01", dataFim: "2026-08-10" },
-      AGORA
+      {
+        periodo: "customizado",
+        dataInicio: "2026-08-01",
+        dataFim: "2026-08-10",
+      },
+      AGORA,
     );
 
     expect(intervalo.inicio).toEqual(new Date(2026, 7, 1, 0, 0, 0, 0));
@@ -37,8 +41,12 @@ describe("resolverIntervaloPeriodo", () => {
 
   it("resolve 'customizado' com a mesma data para início e fim como um único dia", () => {
     const intervalo = resolverIntervaloPeriodo(
-      { periodo: "customizado", dataInicio: "2026-08-05", dataFim: "2026-08-05" },
-      AGORA
+      {
+        periodo: "customizado",
+        dataInicio: "2026-08-05",
+        dataFim: "2026-08-05",
+      },
+      AGORA,
     );
 
     expect(intervalo.inicio).toEqual(new Date(2026, 7, 5, 0, 0, 0, 0));

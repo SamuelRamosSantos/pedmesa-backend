@@ -51,23 +51,36 @@ export interface CardPainelEntrega {
 }
 
 // Terminal = não tem transição de saída (entregue, cancelado).
-export const STATUS_TERMINAIS: readonly StatusEntrega[] = Object.values(StatusEntrega).filter(
-  (status) => TRANSICOES_VALIDAS[status].length === 0
-);
+export const STATUS_TERMINAIS: readonly StatusEntrega[] = Object.values(
+  StatusEntrega,
+).filter((status) => TRANSICOES_VALIDAS[status].length === 0);
 
 // Desconto fixo maior que os itens só acontece se itens foram cancelados depois do
 // desconto; no painel ele é limitado ao valor dos itens (o fechamento recusaria esse caso).
-function descontoParaExibicao(tipo: DescontoTipo, valor: number, subtotal: number): { tipo: DescontoTipo; valor: number } {
-  return tipo === DescontoTipo.VALOR_FIXO ? { tipo, valor: Math.min(valor, subtotal) } : { tipo, valor };
+function descontoParaExibicao(
+  tipo: DescontoTipo,
+  valor: number,
+  subtotal: number,
+): { tipo: DescontoTipo; valor: number } {
+  return tipo === DescontoTipo.VALOR_FIXO
+    ? { tipo, valor: Math.min(valor, subtotal) }
+    : { tipo, valor };
 }
 
 // Monta o card do Kanban (PED-101) com os MESMOS cálculos do fechamento e da cotação:
 // total = itens ativos − desconto + taxa; troco recalculado sobre o total atual.
-export function montarCardPainel(linha: LinhaPainelEntrega, agora: Date): CardPainelEntrega {
+export function montarCardPainel(
+  linha: LinhaPainelEntrega,
+  agora: Date,
+): CardPainelEntrega {
   const { total_final: total } = calcularTotalComEntrega(
     linha.subtotalItensAtivos,
-    descontoParaExibicao(linha.descontoTipo, linha.descontoValor, linha.subtotalItensAtivos),
-    linha.taxaEntrega
+    descontoParaExibicao(
+      linha.descontoTipo,
+      linha.descontoValor,
+      linha.subtotalItensAtivos,
+    ),
+    linha.taxaEntrega,
   );
   const troco = calcularTroco({
     totalCents: toCents(total),

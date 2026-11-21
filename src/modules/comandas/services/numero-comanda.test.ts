@@ -12,8 +12,9 @@ describe("exigirNumeroDaMesa", () => {
     expect(() => exigirNumeroDaMesa(null)).toThrow(
       expect.objectContaining({
         statusCode: 400,
-        message: "Esta operação ainda não está disponível para pedidos de delivery.",
-      })
+        message:
+          "Esta operação ainda não está disponível para pedidos de delivery.",
+      }),
     );
   });
 });

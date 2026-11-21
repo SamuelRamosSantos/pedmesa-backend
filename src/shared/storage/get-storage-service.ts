@@ -9,7 +9,10 @@ let cachedService: StorageService | null = null;
 // configuradas em ambientes que usam disco local.
 export function getStorageService(): StorageService {
   if (!cachedService) {
-    cachedService = process.env.STORAGE_DRIVER === "s3" ? new S3StorageService() : new LocalDiskStorageService();
+    cachedService =
+      process.env.STORAGE_DRIVER === "s3"
+        ? new S3StorageService()
+        : new LocalDiskStorageService();
   }
 
   return cachedService;

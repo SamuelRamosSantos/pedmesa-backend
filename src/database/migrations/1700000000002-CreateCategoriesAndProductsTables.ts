@@ -1,6 +1,14 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableColumn,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreateCategoriesAndProductsTables1700000000002 implements MigrationInterface {
+export class CreateCategoriesAndProductsTables1700000000002
+  implements MigrationInterface
+{
   name = "CreateCategoriesAndProductsTables1700000000002";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -37,7 +45,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -48,7 +56,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createTable(
@@ -96,7 +104,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -107,7 +115,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -118,7 +126,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
         referencedTableName: "categorias",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -128,7 +136,7 @@ export class CreateCategoriesAndProductsTables1700000000002 implements Migration
         type: "int",
         default: 20,
         isNullable: false,
-      })
+      }),
     );
   }
 

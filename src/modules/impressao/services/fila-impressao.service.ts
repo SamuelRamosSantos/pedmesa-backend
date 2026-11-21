@@ -1,7 +1,10 @@
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { UpdateStatusFilaDto } from "../dtos/update-status-fila.dto";
-import { FilaImpressao, StatusFilaImpressao } from "../entities/fila-impressao.entity";
+import {
+  FilaImpressao,
+  StatusFilaImpressao,
+} from "../entities/fila-impressao.entity";
 
 export class FilaImpressaoService {
   static async listPendentes(tenantId: string): Promise<FilaImpressao[]> {
@@ -12,9 +15,15 @@ export class FilaImpressaoService {
     });
   }
 
-  static async updateStatus(tenantId: string, filaImpressaoId: string, dto: UpdateStatusFilaDto): Promise<FilaImpressao> {
+  static async updateStatus(
+    tenantId: string,
+    filaImpressaoId: string,
+    dto: UpdateStatusFilaDto,
+  ): Promise<FilaImpressao> {
     const repository = AppDataSource.getRepository(FilaImpressao);
-    const job = await repository.findOne({ where: { id: filaImpressaoId, tenantId } });
+    const job = await repository.findOne({
+      where: { id: filaImpressaoId, tenantId },
+    });
 
     if (!job) {
       throw new AppError("Job de impressão não encontrado.", 404);

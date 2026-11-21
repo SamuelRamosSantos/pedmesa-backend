@@ -1,9 +1,13 @@
 import "reflect-metadata";
-import { join } from "path";
+import { join } from "node:path";
 import { DataSource, DataSourceOptions } from "typeorm";
-import * as dotenv from "dotenv";
+import { carregarEnv } from "./env";
+import { assertBancoDeTeste } from "./test-database-guard";
 
-dotenv.config();
+carregarEnv();
+// Vale para a API, para a CLI de migrations e para o seed: em modo de teste,
+// nenhum desses caminhos consegue abrir conexão com um banco que não seja o de testes.
+assertBancoDeTeste(process.env);
 
 export const dataSourceOptions: DataSourceOptions = {
   type: "postgres",

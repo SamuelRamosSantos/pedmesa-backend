@@ -5,12 +5,19 @@ import { CreateEnderecoClienteDto } from "../dtos/create-endereco-cliente.dto";
 import { UpdateEnderecoClienteDto } from "../dtos/update-endereco-cliente.dto";
 import { Cliente } from "../entities/cliente.entity";
 import { EnderecoCliente } from "../entities/endereco-cliente.entity";
-import { deveSerPrincipal, proximoPrincipalAposRemocao } from "./endereco-principal";
+import {
+  deveSerPrincipal,
+  proximoPrincipalAposRemocao,
+} from "./endereco-principal";
 
 // Trava a linha do cliente até o fim da transação: operações simultâneas sobre os
 // endereços do mesmo cliente (troca de principal, exclusão) passam a rodar em fila, em
 // vez de uma delas esbarrar no índice único parcial de principal.
-async function travarCliente(manager: EntityManager, tenantId: string, clienteId: string): Promise<Cliente> {
+async function travarCliente(
+  manager: EntityManager,
+  tenantId: string,
+  clienteId: string,
+): Promise<Cliente> {
   const cliente = await manager
     .createQueryBuilder(Cliente, "cliente")
     .setLock("pessimistic_write")
@@ -28,7 +35,7 @@ async function travarCliente(manager: EntityManager, tenantId: string, clienteId
 async function buscarEnderecoDoCliente(
   manager: EntityManager,
   cliente: Cliente,
-  enderecoId: string
+  enderecoId: string,
 ): Promise<EnderecoCliente> {
   const endereco = await manager.findOneBy(EnderecoCliente, {
     id: enderecoId,
@@ -43,17 +50,24 @@ async function buscarEnderecoDoCliente(
   return endereco;
 }
 
-async function desmarcarPrincipalAtual(manager: EntityManager, cliente: Cliente): Promise<void> {
+async function desmarcarPrincipalAtual(
+  manager: EntityManager,
+  cliente: Cliente,
+): Promise<void> {
   await manager.update(
     EnderecoCliente,
     { clienteId: cliente.id, tenantId: cliente.tenantId, principal: true },
-    { principal: false }
+    { principal: false },
   );
 }
 
 // Desmarcar antes de marcar: o índice único parcial não admite dois principais nem por
 // um instante dentro da transação.
-async function marcarComoPrincipal(manager: EntityManager, cliente: Cliente, endereco: EnderecoCliente): Promise<void> {
+async function marcarComoPrincipal(
+  manager: EntityManager,
+  cliente: Cliente,
+  endereco: EnderecoCliente,
+): Promise<void> {
   if (endereco.principal) {
     return;
   }
@@ -68,10 +82,13 @@ export async function criarEnderecoNaTransacao(
   manager: EntityManager,
   tenantId: string,
   clienteId: string,
-  dto: CreateEnderecoClienteDto
+  dto: CreateEnderecoClienteDto,
 ): Promise<EnderecoCliente> {
   const cliente = await travarCliente(manager, tenantId, clienteId);
-  const quantidadeExistente = await manager.countBy(EnderecoCliente, { clienteId: cliente.id, tenantId });
+  const quantidadeExistente = await manager.countBy(EnderecoCliente, {
+    clienteId: cliente.id,
+    tenantId,
+  });
   const principal = deveSerPrincipal(dto.principal, quantidadeExistente);
 
   if (principal) {
@@ -84,28 +101,45 @@ export async function criarEnderecoNaTransacao(
       principal,
       clienteId: cliente.id,
       tenantId: cliente.tenantId,
-    })
+    }),
   );
 }
 
 export class EnderecoClienteService {
   // Principal primeiro, depois do mais recente para o mais antigo: a ordem em que o
   // formulário do delivery mostra as opções.
-  static async listar(tenantId: string, clienteId: string): Promise<EnderecoCliente[]> {
+  static async listar(
+    tenantId: string,
+    clienteId: string,
+  ): Promise<EnderecoCliente[]> {
     return AppDataSource.getRepository(EnderecoCliente).find({
       where: { tenantId, clienteId },
       order: { principal: "DESC", criadoEm: "DESC" },
     });
   }
 
-  static async criar(tenantId: string, clienteId: string, dto: CreateEnderecoClienteDto): Promise<EnderecoCliente> {
-    return AppDataSource.transaction((manager) => criarEnderecoNaTransacao(manager, tenantId, clienteId, dto));
+  static async criar(
+    tenantId: string,
+    clienteId: string,
+    dto: CreateEnderecoClienteDto,
+  ): Promise<EnderecoCliente> {
+    return AppDataSource.transaction((manager) =>
+      criarEnderecoNaTransacao(manager, tenantId, clienteId, dto),
+    );
   }
 
-  static async definirPrincipal(tenantId: string, clienteId: string, enderecoId: string): Promise<EnderecoCliente> {
+  static async definirPrincipal(
+    tenantId: string,
+    clienteId: string,
+    enderecoId: string,
+  ): Promise<EnderecoCliente> {
     return AppDataSource.transaction(async (manager) => {
       const cliente = await travarCliente(manager, tenantId, clienteId);
-      const endereco = await buscarEnderecoDoCliente(manager, cliente, enderecoId);
+      const endereco = await buscarEnderecoDoCliente(
+        manager,
+        cliente,
+        enderecoId,
+      );
 
       await marcarComoPrincipal(manager, cliente, endereco);
 
@@ -117,11 +151,15 @@ export class EnderecoClienteService {
     tenantId: string,
     clienteId: string,
     enderecoId: string,
-    dto: UpdateEnderecoClienteDto
+    dto: UpdateEnderecoClienteDto,
   ): Promise<EnderecoCliente> {
     return AppDataSource.transaction(async (manager) => {
       const cliente = await travarCliente(manager, tenantId, clienteId);
-      const endereco = await buscarEnderecoDoCliente(manager, cliente, enderecoId);
+      const endereco = await buscarEnderecoDoCliente(
+        manager,
+        cliente,
+        enderecoId,
+      );
       const { principal, ...campos } = dto;
 
       Object.assign(endereco, campos);
@@ -137,12 +175,23 @@ export class EnderecoClienteService {
   // Excluir o endereço principal promove outro (o mais recente), para o cliente nunca
   // ficar sem endereço pré-selecionado enquanto tiver algum. Entregas passadas não são
   // afetadas: guardam uma cópia do endereço.
-  static async remover(tenantId: string, clienteId: string, enderecoId: string): Promise<void> {
+  static async remover(
+    tenantId: string,
+    clienteId: string,
+    enderecoId: string,
+  ): Promise<void> {
     await AppDataSource.transaction(async (manager) => {
       const cliente = await travarCliente(manager, tenantId, clienteId);
-      const endereco = await buscarEnderecoDoCliente(manager, cliente, enderecoId);
+      const endereco = await buscarEnderecoDoCliente(
+        manager,
+        cliente,
+        enderecoId,
+      );
 
-      await manager.delete(EnderecoCliente, { id: endereco.id, tenantId: cliente.tenantId });
+      await manager.delete(EnderecoCliente, {
+        id: endereco.id,
+        tenantId: cliente.tenantId,
+      });
 
       if (!endereco.principal) {
         return;
@@ -155,7 +204,11 @@ export class EnderecoClienteService {
       const novoPrincipalId = proximoPrincipalAposRemocao(restantes);
 
       if (novoPrincipalId) {
-        await manager.update(EnderecoCliente, { id: novoPrincipalId, tenantId: cliente.tenantId }, { principal: true });
+        await manager.update(
+          EnderecoCliente,
+          { id: novoPrincipalId, tenantId: cliente.tenantId },
+          { principal: true },
+        );
       }
     });
   }

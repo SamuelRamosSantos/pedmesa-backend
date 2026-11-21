@@ -5,7 +5,10 @@ import { AppError } from "../../../shared/errors/app-error";
 // que dependem dele recusam delivery de forma explícita em vez de gravar dado inválido.
 export function exigirNumeroDaMesa(numeroComanda: number | null): number {
   if (numeroComanda === null) {
-    throw new AppError("Esta operação ainda não está disponível para pedidos de delivery.", 400);
+    throw new AppError(
+      "Esta operação ainda não está disponível para pedidos de delivery.",
+      400,
+    );
   }
 
   return numeroComanda;

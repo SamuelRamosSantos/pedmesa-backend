@@ -29,12 +29,21 @@ describe("assertValidCreateEnderecoClienteDto", () => {
   });
 
   it("principal ausente vira false e aceita true", () => {
-    expect(assertValidCreateEnderecoClienteDto(VALID_BODY).principal).toBe(false);
-    expect(assertValidCreateEnderecoClienteDto({ ...VALID_BODY, principal: true }).principal).toBe(true);
+    expect(assertValidCreateEnderecoClienteDto(VALID_BODY).principal).toBe(
+      false,
+    );
+    expect(
+      assertValidCreateEnderecoClienteDto({ ...VALID_BODY, principal: true })
+        .principal,
+    ).toBe(true);
   });
 
   it("ignora tenant_id e cliente_id vindos do corpo", () => {
-    const dto = assertValidCreateEnderecoClienteDto({ ...VALID_BODY, tenant_id: "x", cliente_id: "y" });
+    const dto = assertValidCreateEnderecoClienteDto({
+      ...VALID_BODY,
+      tenant_id: "x",
+      cliente_id: "y",
+    });
     expect(dto).not.toHaveProperty("tenant_id");
     expect(dto).not.toHaveProperty("cliente_id");
   });
@@ -51,6 +60,8 @@ describe("assertValidCreateEnderecoClienteDto", () => {
     ["principal como texto", { principal: "true" }],
     ["referencia que não é texto", { referencia: 10 }],
   ])("rejeita %s", (_caso, alteracao) => {
-    expect(() => assertValidCreateEnderecoClienteDto({ ...VALID_BODY, ...alteracao })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateEnderecoClienteDto({ ...VALID_BODY, ...alteracao }),
+    ).toThrow(AppError);
   });
 });

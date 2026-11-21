@@ -1,5 +1,9 @@
 import { fromCents, toCents } from "../../../shared/utils/money";
-import { calcularDesconto, DescontoInput, RateioIntegranteComDesconto } from "./desconto-calculator";
+import {
+  calcularDesconto,
+  DescontoInput,
+  RateioIntegranteComDesconto,
+} from "./desconto-calculator";
 
 export interface TotalComEntregaCalculado {
   subtotal: number;
@@ -15,12 +19,14 @@ export interface TotalComEntregaCalculado {
 export function calcularTotalComEntrega(
   subtotalItens: number,
   desconto: DescontoInput,
-  taxaEntrega: number
+  taxaEntrega: number,
 ): TotalComEntregaCalculado {
   const taxaEntregaCents = toCents(taxaEntrega);
 
   if (taxaEntregaCents < 0) {
-    throw new Error(`taxaEntrega não pode ser negativa (recebido: ${taxaEntrega}).`);
+    throw new Error(
+      `taxaEntrega não pode ser negativa (recebido: ${taxaEntrega}).`,
+    );
   }
 
   const descontoCalculado = calcularDesconto(subtotalItens, desconto);
@@ -29,7 +35,9 @@ export function calcularTotalComEntrega(
     subtotal: descontoCalculado.subtotal,
     desconto_aplicado: descontoCalculado.desconto_aplicado,
     taxa_entrega: fromCents(taxaEntregaCents),
-    total_final: fromCents(toCents(descontoCalculado.total_final) + taxaEntregaCents),
+    total_final: fromCents(
+      toCents(descontoCalculado.total_final) + taxaEntregaCents,
+    ),
   };
 }
 
@@ -37,7 +45,7 @@ export function calcularTotalComEntrega(
 // cliente), mantendo a soma dos total_a_pagar igual ao total_final.
 export function somarTaxaEntregaAoRateio(
   rateio: RateioIntegranteComDesconto[],
-  taxaEntrega: number
+  taxaEntrega: number,
 ): RateioIntegranteComDesconto[] {
   const taxaEntregaCents = toCents(taxaEntrega);
 
@@ -52,8 +60,12 @@ export function somarTaxaEntregaAoRateio(
       ? integrante
       : {
           ...integrante,
-          total_original: fromCents(toCents(integrante.total_original) + taxaEntregaCents),
-          total_a_pagar: fromCents(toCents(integrante.total_a_pagar) + taxaEntregaCents),
-        }
+          total_original: fromCents(
+            toCents(integrante.total_original) + taxaEntregaCents,
+          ),
+          total_a_pagar: fromCents(
+            toCents(integrante.total_a_pagar) + taxaEntregaCents,
+          ),
+        },
   );
 }

@@ -3,7 +3,11 @@ import { AppError } from "../../../shared/errors/app-error";
 import { getStorageService } from "../../../shared/storage/get-storage-service";
 import { getExtensionForImageMimeType } from "../utils/image-mime-type";
 
-export async function uploadImagem(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function uploadImagem(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     if (!req.file) {
       throw new AppError("Nenhum arquivo enviado.", 400);
@@ -12,7 +16,10 @@ export async function uploadImagem(req: Request, res: Response, next: NextFuncti
     const extension = getExtensionForImageMimeType(req.file.mimetype);
 
     if (!extension) {
-      throw new AppError("Tipo de arquivo não permitido. Envie um arquivo JPG, PNG ou WEBP.", 400);
+      throw new AppError(
+        "Tipo de arquivo não permitido. Envie um arquivo JPG, PNG ou WEBP.",
+        400,
+      );
     }
 
     const storageService = getStorageService();

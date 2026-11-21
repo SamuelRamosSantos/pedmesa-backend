@@ -5,8 +5,13 @@ import { CreateTaxaEntregaDto } from "../dtos/create-taxa-entrega.dto";
 import { UpdateTaxaEntregaDto } from "../dtos/update-taxa-entrega.dto";
 import { TaxaEntrega } from "../entities/taxa-entrega.entity";
 
-function erroBairroDuplicado(taxa: Pick<TaxaEntrega, "bairro" | "cidade">): AppError {
-  return new AppError(`Já existe uma taxa para o bairro "${taxa.bairro}" em ${taxa.cidade}.`, 409);
+function erroBairroDuplicado(
+  taxa: Pick<TaxaEntrega, "bairro" | "cidade">,
+): AppError {
+  return new AppError(
+    `Já existe uma taxa para o bairro "${taxa.bairro}" em ${taxa.cidade}.`,
+    409,
+  );
 }
 
 // Sempre save(), nunca update(): os hooks da entidade TaxaEntrega recalculam
@@ -31,12 +36,24 @@ export class TaxaEntregaService {
     });
   }
 
-  static async criar(tenantId: string, dto: CreateTaxaEntregaDto): Promise<TaxaEntrega> {
-    return salvar(AppDataSource.getRepository(TaxaEntrega).create({ tenantId, ...dto }));
+  static async criar(
+    tenantId: string,
+    dto: CreateTaxaEntregaDto,
+  ): Promise<TaxaEntrega> {
+    return salvar(
+      AppDataSource.getRepository(TaxaEntrega).create({ tenantId, ...dto }),
+    );
   }
 
-  static async atualizar(tenantId: string, taxaId: string, dto: UpdateTaxaEntregaDto): Promise<TaxaEntrega> {
-    const taxa = await AppDataSource.getRepository(TaxaEntrega).findOneBy({ id: taxaId, tenantId });
+  static async atualizar(
+    tenantId: string,
+    taxaId: string,
+    dto: UpdateTaxaEntregaDto,
+  ): Promise<TaxaEntrega> {
+    const taxa = await AppDataSource.getRepository(TaxaEntrega).findOneBy({
+      id: taxaId,
+      tenantId,
+    });
 
     if (!taxa) {
       throw new AppError("Taxa de entrega não encontrada.", 404);
@@ -49,7 +66,10 @@ export class TaxaEntregaService {
 
   // Permitido mesmo se a taxa já foi usada: cada entrega guarda uma cópia do valor cobrado.
   static async remover(tenantId: string, taxaId: string): Promise<void> {
-    const resultado = await AppDataSource.getRepository(TaxaEntrega).delete({ id: taxaId, tenantId });
+    const resultado = await AppDataSource.getRepository(TaxaEntrega).delete({
+      id: taxaId,
+      tenantId,
+    });
 
     if (resultado.affected === 0) {
       throw new AppError("Taxa de entrega não encontrada.", 404);

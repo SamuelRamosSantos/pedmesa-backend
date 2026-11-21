@@ -1,9 +1,19 @@
 import { In, ObjectLiteral, SelectQueryBuilder } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { fromCents, toCents } from "../../../shared/utils/money";
-import { Comanda, ComandaStatus, TipoAtendimento } from "../../comandas/entities/comanda.entity";
-import { FormaPagamento, PagamentoComanda } from "../../comandas/entities/pagamento-comanda.entity";
-import { ItemPedido, StatusItem } from "../../pedidos/entities/item-pedido.entity";
+import {
+  Comanda,
+  ComandaStatus,
+  TipoAtendimento,
+} from "../../comandas/entities/comanda.entity";
+import {
+  FormaPagamento,
+  PagamentoComanda,
+} from "../../comandas/entities/pagamento-comanda.entity";
+import {
+  ItemPedido,
+  StatusItem,
+} from "../../pedidos/entities/item-pedido.entity";
 import { identificadorDoAtendimento } from "./identificador-atendimento";
 import { IntervaloData } from "./periodo-resolver";
 
@@ -36,16 +46,18 @@ const LIMITE_PRODUTOS_MAIS_PEDIDOS = 5;
 // Filtro opcional ?tipo= do dashboard; sem ele, mesa e delivery entram juntos.
 function filtrarPorTipo<T extends ObjectLiteral>(
   consulta: SelectQueryBuilder<T>,
-  tipo: TipoAtendimento | undefined
+  tipo: TipoAtendimento | undefined,
 ): SelectQueryBuilder<T> {
-  return tipo === undefined ? consulta : consulta.andWhere("comanda.tipoAtendimento = :tipo", { tipo });
+  return tipo === undefined
+    ? consulta
+    : consulta.andWhere("comanda.tipoAtendimento = :tipo", { tipo });
 }
 
 export class DashboardService {
   static async getResumo(
     tenantId: string,
     intervalo: IntervaloData,
-    tipo: TipoAtendimento | undefined
+    tipo: TipoAtendimento | undefined,
   ): Promise<ResumoDashboard> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
@@ -70,7 +82,10 @@ export class DashboardService {
 
     const faturamentoCents = toCents(Number(bruto?.faturamento ?? 0));
     const comandasFechadas = Number(bruto?.quantidade ?? 0);
-    const ticketMedioCents = comandasFechadas > 0 ? Math.round(faturamentoCents / comandasFechadas) : 0;
+    const ticketMedioCents =
+      comandasFechadas > 0
+        ? Math.round(faturamentoCents / comandasFechadas)
+        : 0;
 
     return {
       faturamento: fromCents(faturamentoCents),
@@ -83,7 +98,7 @@ export class DashboardService {
   static async getProdutosMaisPedidos(
     tenantId: string,
     intervalo: IntervaloData,
-    tipo: TipoAtendimento | undefined
+    tipo: TipoAtendimento | undefined,
   ): Promise<ProdutoMaisPedido[]> {
     const itemRepository = AppDataSource.getRepository(ItemPedido);
 
@@ -97,7 +112,9 @@ export class DashboardService {
       .where("comanda.tenantId = :tenantId", { tenantId })
       .andWhere("comanda.status = :status", { status: ComandaStatus.FECHADA })
       .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo)
-      .andWhere("item.statusItem != :cancelado", { cancelado: StatusItem.CANCELADO });
+      .andWhere("item.statusItem != :cancelado", {
+        cancelado: StatusItem.CANCELADO,
+      });
 
     const linhas = await filtrarPorTipo(consulta, tipo)
       .groupBy("produto.id")
@@ -115,7 +132,7 @@ export class DashboardService {
   static async getHistoricoComandas(
     tenantId: string,
     intervalo: IntervaloData,
-    tipo: TipoAtendimento | undefined
+    tipo: TipoAtendimento | undefined,
   ): Promise<HistoricoComandaLinha[]> {
     const comandaRepository = AppDataSource.getRepository(Comanda);
 
@@ -128,7 +145,9 @@ export class DashboardService {
       .andWhere("comanda.totalFinal IS NOT NULL")
       .andWhere("comanda.fechadaEm BETWEEN :inicio AND :fim", intervalo);
 
-    const comandas = await filtrarPorTipo(consulta, tipo).orderBy("comanda.fechadaEm", "DESC").getMany();
+    const comandas = await filtrarPorTipo(consulta, tipo)
+      .orderBy("comanda.fechadaEm", "DESC")
+      .getMany();
 
     if (comandas.length === 0) {
       return [];
@@ -141,7 +160,9 @@ export class DashboardService {
 
     const formasPorComandaId = new Map<string, Set<FormaPagamento>>();
     pagamentos.forEach((pagamento) => {
-      const formas = formasPorComandaId.get(pagamento.comandaId) ?? new Set<FormaPagamento>();
+      const formas =
+        formasPorComandaId.get(pagamento.comandaId) ??
+        new Set<FormaPagamento>();
       formas.add(pagamento.forma);
       formasPorComandaId.set(pagamento.comandaId, formas);
     });
@@ -153,7 +174,7 @@ export class DashboardService {
       identificador: identificadorDoAtendimento(
         comanda.tipoAtendimento,
         comanda.numeroComanda,
-        comanda.entrega?.numeroEntrega ?? null
+        comanda.entrega?.numeroEntrega ?? null,
       ),
       valor: comanda.totalFinal as number,
       formasPagamento: Array.from(formasPorComandaId.get(comanda.id) ?? []),

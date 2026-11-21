@@ -21,14 +21,20 @@ export interface TrocoCalculado {
 function assertCentavosInteiros(valor: number, campo: string): void {
   if (!Number.isInteger(valor) || valor < 0) {
     // Erro de programação: os chamadores devem converter reais com toCents antes.
-    throw new Error(`${campo} deve ser um inteiro de centavos não negativo (recebido: ${valor}).`);
+    throw new Error(
+      `${campo} deve ser um inteiro de centavos não negativo (recebido: ${valor}).`,
+    );
   }
 }
 
 // Troco que o entregador precisa levar. Não persiste nada: é recalculado sempre que o
 // total muda. Com troco_para menor que o total, devolve suficiente: false e troco 0;
 // quem decide se isso bloqueia (criação) ou só sinaliza (painel, ticket) é o chamador.
-export function calcularTroco({ totalCents, formaPrevista, trocoParaCents }: CalcularTrocoParams): TrocoCalculado {
+export function calcularTroco({
+  totalCents,
+  formaPrevista,
+  trocoParaCents,
+}: CalcularTrocoParams): TrocoCalculado {
   assertCentavosInteiros(totalCents, "totalCents");
 
   if (trocoParaCents === null) {
@@ -38,7 +44,10 @@ export function calcularTroco({ totalCents, formaPrevista, trocoParaCents }: Cal
   assertCentavosInteiros(trocoParaCents, "trocoParaCents");
 
   if (formaPrevista !== FormaPagamento.DINHEIRO) {
-    throw new AppError("Troco só pode ser informado para pagamento em dinheiro.", 400);
+    throw new AppError(
+      "Troco só pode ser informado para pagamento em dinheiro.",
+      400,
+    );
   }
 
   if (trocoParaCents < totalCents) {
@@ -50,24 +59,26 @@ export function calcularTroco({ totalCents, formaPrevista, trocoParaCents }: Cal
 
 // Regras extras da criação do pedido: troco insuficiente e troco acima do limite são
 // recusados. Em leituras posteriores use calcularTroco, que apenas sinaliza.
-export function assertTrocoValidoNaCriacao(params: CalcularTrocoParams): TrocoCalculado {
+export function assertTrocoValidoNaCriacao(
+  params: CalcularTrocoParams,
+): TrocoCalculado {
   const troco = calcularTroco(params);
 
   if (!troco.suficiente) {
     throw new AppError(
       `O valor para troco (R$ ${fromCents(params.trocoParaCents ?? 0).toFixed(2)}) é menor que o total do pedido (R$ ${fromCents(
-        params.totalCents
+        params.totalCents,
       ).toFixed(2)}).`,
-      400
+      400,
     );
   }
 
   if (troco.trocoCents > TROCO_MAXIMO_CENTS) {
     throw new AppError(
       `O troco calculado (R$ ${fromCents(troco.trocoCents).toFixed(2)}) passa do limite de R$ ${fromCents(
-        TROCO_MAXIMO_CENTS
+        TROCO_MAXIMO_CENTS,
       ).toFixed(2)}. Confira o valor informado para troco.`,
-      400
+      400,
     );
   }
 

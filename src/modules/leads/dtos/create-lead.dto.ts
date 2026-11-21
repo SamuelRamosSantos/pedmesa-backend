@@ -31,15 +31,25 @@ export function assertValidCreateLeadDto(body: unknown): CreateLeadDto {
     throw new AppError("E-mail inválido.", 400);
   }
 
-  if (typeof whatsapp !== "string" || apenasDigitos(whatsapp).length < 10 || apenasDigitos(whatsapp).length > 11) {
+  if (
+    typeof whatsapp !== "string" ||
+    apenasDigitos(whatsapp).length < 10 ||
+    apenasDigitos(whatsapp).length > 11
+  ) {
     throw new AppError("WhatsApp inválido — informe DDD + número.", 400);
   }
 
-  if (typeof nomeEstabelecimento !== "string" || nomeEstabelecimento.trim().length === 0) {
+  if (
+    typeof nomeEstabelecimento !== "string" ||
+    nomeEstabelecimento.trim().length === 0
+  ) {
     throw new AppError("Nome do estabelecimento é obrigatório.", 400);
   }
 
-  if (typeof cpfCnpj !== "string" || ![11, 14].includes(apenasDigitos(cpfCnpj).length)) {
+  if (
+    typeof cpfCnpj !== "string" ||
+    ![11, 14].includes(apenasDigitos(cpfCnpj).length)
+  ) {
     throw new AppError("CPF/CNPJ inválido.", 400);
   }
 

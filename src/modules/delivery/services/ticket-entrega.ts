@@ -29,13 +29,16 @@ export function montarJobEntrega(
   entrega: EntregaParaTicket,
   cliente: { nome: string; telefone: string },
   calculado: ExtratoCalculado,
-  geradoEm: Date
+  geradoEm: Date,
 ): EntregaJobPayload {
-  const totalCents = toCents(calculado.resumo_financeiro.valor_total_com_entrega);
+  const totalCents = toCents(
+    calculado.resumo_financeiro.valor_total_com_entrega,
+  );
   const troco = calcularTroco({
     totalCents,
     formaPrevista: entrega.formaPagamentoPrevista,
-    trocoParaCents: entrega.trocoPara === null ? null : toCents(entrega.trocoPara),
+    trocoParaCents:
+      entrega.trocoPara === null ? null : toCents(entrega.trocoPara),
   });
 
   return {

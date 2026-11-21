@@ -26,7 +26,9 @@ export interface ClienteResponse {
   enderecos: EnderecoClienteResponse[];
 }
 
-export function toEnderecoClienteResponse(endereco: EnderecoCliente): EnderecoClienteResponse {
+export function toEnderecoClienteResponse(
+  endereco: EnderecoCliente,
+): EnderecoClienteResponse {
   return {
     id: endereco.id,
     cep: endereco.cep,
@@ -42,7 +44,10 @@ export function toEnderecoClienteResponse(endereco: EnderecoCliente): EnderecoCl
   };
 }
 
-export function toClienteResponse(cliente: Cliente, enderecos: EnderecoCliente[]): ClienteResponse {
+export function toClienteResponse(
+  cliente: Cliente,
+  enderecos: EnderecoCliente[],
+): ClienteResponse {
   return {
     id: cliente.id,
     nome: cliente.nome,

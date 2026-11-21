@@ -3,7 +3,11 @@ import { verifySuperAdminToken } from "../../modules/auth/utils/jwt.util";
 import { AppError } from "../errors/app-error";
 import { SUPER_ADMIN_COOKIE_NAME } from "../utils/auth-cookies";
 
-export function superAdminAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export function superAdminAuthMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   const token = req.cookies?.[SUPER_ADMIN_COOKIE_NAME];
 
   if (!token) {

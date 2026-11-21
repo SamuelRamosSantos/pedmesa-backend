@@ -16,10 +16,9 @@ export const UPLOADS_DIR = resolve(process.env.UPLOADS_DIR ?? "uploads");
 // independente de onde o arquivo realmente está gravado no disco.
 export const UPLOADS_URL_PREFIX = "/uploads";
 
-const PUBLIC_URL_BASE = (process.env.PUBLIC_URL_BASE ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(
-  /\/$/,
-  ""
-);
+const PUBLIC_URL_BASE = (
+  process.env.PUBLIC_URL_BASE ?? `http://localhost:${process.env.PORT ?? 3000}`
+).replace(/\/$/, "");
 
 export class LocalDiskStorageService implements StorageService {
   async upload({ buffer, extension }: UploadFileInput): Promise<string> {

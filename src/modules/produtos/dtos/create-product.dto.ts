@@ -34,7 +34,11 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     throw new AppError("Preço deve ser um número maior que zero.", 400);
   }
 
-  if (descricao !== undefined && descricao !== null && typeof descricao !== "string") {
+  if (
+    descricao !== undefined &&
+    descricao !== null &&
+    typeof descricao !== "string"
+  ) {
     throw new AppError("Descrição inválida.", 400);
   }
 
@@ -46,7 +50,11 @@ export function assertValidCreateProductDto(body: unknown): CreateProductDto {
     throw new AppError("Campo precisa_preparo deve ser booleano.", 400);
   }
 
-  if (imagemUrl !== undefined && imagemUrl !== null && typeof imagemUrl !== "string") {
+  if (
+    imagemUrl !== undefined &&
+    imagemUrl !== null &&
+    typeof imagemUrl !== "string"
+  ) {
     throw new AppError("Campo imagem_url inválido.", 400);
   }
 

@@ -1,4 +1,7 @@
-import { FormaPagamento, PagamentoComanda } from "../entities/pagamento-comanda.entity";
+import {
+  FormaPagamento,
+  PagamentoComanda,
+} from "../entities/pagamento-comanda.entity";
 
 export interface PagamentoComandaResponse {
   id: string;
@@ -7,7 +10,9 @@ export interface PagamentoComandaResponse {
   criado_em: Date;
 }
 
-export function toPagamentoComandaResponse(pagamento: PagamentoComanda): PagamentoComandaResponse {
+export function toPagamentoComandaResponse(
+  pagamento: PagamentoComanda,
+): PagamentoComandaResponse {
   return {
     id: pagamento.id,
     forma: pagamento.forma,

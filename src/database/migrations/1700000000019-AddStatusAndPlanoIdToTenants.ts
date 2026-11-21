@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddStatusAndPlanoIdToTenants1700000000019 implements MigrationInterface {
+export class AddStatusAndPlanoIdToTenants1700000000019
+  implements MigrationInterface
+{
   name = "AddStatusAndPlanoIdToTenants1700000000019";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -13,7 +15,7 @@ export class AddStatusAndPlanoIdToTenants1700000000019 implements MigrationInter
         enum: ["ativo", "suspenso", "cancelado"],
         default: "'ativo'",
         isNullable: false,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -22,7 +24,7 @@ export class AddStatusAndPlanoIdToTenants1700000000019 implements MigrationInter
         name: "plano_id",
         type: "uuid",
         isNullable: true,
-      })
+      }),
     );
   }
 

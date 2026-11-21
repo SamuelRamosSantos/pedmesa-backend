@@ -5,7 +5,13 @@ import { assertValidTransicaoEntregaDto } from "./transicao-entrega.dto";
 
 describe("assertValidTransicaoEntregaDto", () => {
   it("aceita status, versão e motivo (aparado)", () => {
-    expect(assertValidTransicaoEntregaDto({ status: "cancelado", versao: 3, motivo: "  Cliente desistiu  " })).toEqual({
+    expect(
+      assertValidTransicaoEntregaDto({
+        status: "cancelado",
+        versao: 3,
+        motivo: "  Cliente desistiu  ",
+      }),
+    ).toEqual({
       status: StatusEntrega.CANCELADO,
       versao: 3,
       motivo: "Cliente desistiu",
@@ -13,8 +19,16 @@ describe("assertValidTransicaoEntregaDto", () => {
   });
 
   it("motivo ausente ou em branco vira null", () => {
-    expect(assertValidTransicaoEntregaDto({ status: "em_rota", versao: 1 }).motivo).toBeNull();
-    expect(assertValidTransicaoEntregaDto({ status: "em_rota", versao: 1, motivo: " " }).motivo).toBeNull();
+    expect(
+      assertValidTransicaoEntregaDto({ status: "em_rota", versao: 1 }).motivo,
+    ).toBeNull();
+    expect(
+      assertValidTransicaoEntregaDto({
+        status: "em_rota",
+        versao: 1,
+        motivo: " ",
+      }).motivo,
+    ).toBeNull();
   });
 
   it.each([
@@ -24,7 +38,10 @@ describe("assertValidTransicaoEntregaDto", () => {
     ["versão zero", { status: "em_rota", versao: 0 }],
     ["versão fracionada", { status: "em_rota", versao: 1.5 }],
     ["versão como texto", { status: "em_rota", versao: "1" }],
-    ["motivo longo demais", { status: "cancelado", versao: 1, motivo: "a".repeat(256) }],
+    [
+      "motivo longo demais",
+      { status: "cancelado", versao: 1, motivo: "a".repeat(256) },
+    ],
   ])("rejeita %s", (_caso, body) => {
     expect(() => assertValidTransicaoEntregaDto(body)).toThrow(AppError);
   });

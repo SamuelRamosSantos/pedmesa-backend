@@ -10,7 +10,11 @@ import { assertValidUpdateUserDto } from "../dtos/update-user.dto";
 import { toUserResponse } from "../mappers/user.mapper";
 import { UserService } from "../services/user.service";
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateUserDto(req.body);
@@ -22,7 +26,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const users = await UserService.list(tenantId);
@@ -33,7 +41,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function update(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const actingUserId = getUserId(req);
@@ -52,7 +64,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;
@@ -70,7 +86,11 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function updateAtivo(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateAtivo(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const actingUserId = getUserId(req);
@@ -81,7 +101,12 @@ export async function updateAtivo(req: Request, res: Response, next: NextFunctio
     }
 
     const dto = assertValidUpdateAtivoDto(req.body);
-    const user = await UserService.updateAtivo(tenantId, id, actingUserId, dto.ativo);
+    const user = await UserService.updateAtivo(
+      tenantId,
+      id,
+      actingUserId,
+      dto.ativo,
+    );
 
     res.status(200).json(toUserResponse(user));
   } catch (error) {

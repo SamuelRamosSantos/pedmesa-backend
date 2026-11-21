@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Comanda } from "./comanda.entity";
 
 @Entity("integrantes_comanda")
@@ -9,7 +15,11 @@ export class IntegranteComanda {
   @Column({ name: "comanda_id", type: "uuid" })
   comandaId!: string;
 
-  @ManyToOne(() => Comanda, (comanda) => comanda.integrantes, { onDelete: "CASCADE" })
+  @ManyToOne(
+    () => Comanda,
+    (comanda) => comanda.integrantes,
+    { onDelete: "CASCADE" },
+  )
   @JoinColumn({ name: "comanda_id" })
   comanda!: Comanda;
 

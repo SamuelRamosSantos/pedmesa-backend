@@ -9,7 +9,9 @@ export interface ImpressoraResponse {
   criado_em: Date;
 }
 
-export function toImpressoraResponse(impressora: Impressora): ImpressoraResponse {
+export function toImpressoraResponse(
+  impressora: Impressora,
+): ImpressoraResponse {
   return {
     id: impressora.id,
     nome: impressora.nome,

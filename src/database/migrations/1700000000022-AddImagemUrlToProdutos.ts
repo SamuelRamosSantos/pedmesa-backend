@@ -11,7 +11,7 @@ export class AddImagemUrlToProdutos1700000000022 implements MigrationInterface {
         type: "varchar",
         length: "1024",
         isNullable: true,
-      })
+      }),
     );
   }
 

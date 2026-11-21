@@ -8,7 +8,12 @@ export interface EnderecoFrete {
 }
 
 export type CotacaoFrete =
-  | { atendido: true; valor: number; tempoEstimadoMin: number | null; origem: "bairro" | "padrao" }
+  | {
+      atendido: true;
+      valor: number;
+      tempoEstimadoMin: number | null;
+      origem: "bairro" | "padrao";
+    }
   | { atendido: false; motivo: string };
 
 export interface CalculadoraFrete {

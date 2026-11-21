@@ -12,7 +12,10 @@ function parseStatus(status: unknown): ComandaStatus {
   }
 
   if (status !== ComandaStatus.ABERTA && status !== ComandaStatus.FECHADA) {
-    throw new AppError("O parâmetro status deve ser 'aberta' ou 'fechada'.", 400);
+    throw new AppError(
+      "O parâmetro status deve ser 'aberta' ou 'fechada'.",
+      400,
+    );
   }
 
   return status;
@@ -31,7 +34,9 @@ function parseTipoAtendimento(tipo: unknown): TipoAtendimento {
   return tipo;
 }
 
-export function parseListComandasFilters(query: Record<string, unknown>): ListComandasFilters {
+export function parseListComandasFilters(
+  query: Record<string, unknown>,
+): ListComandasFilters {
   return {
     status: parseStatus(query.status),
     tipoAtendimento: parseTipoAtendimento(query.tipo),

@@ -6,14 +6,33 @@ export interface IntervaloData {
 }
 
 function inicioDoDia(data: Date): Date {
-  return new Date(data.getFullYear(), data.getMonth(), data.getDate(), 0, 0, 0, 0);
+  return new Date(
+    data.getFullYear(),
+    data.getMonth(),
+    data.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
 }
 
 function fimDoDia(data: Date): Date {
-  return new Date(data.getFullYear(), data.getMonth(), data.getDate(), 23, 59, 59, 999);
+  return new Date(
+    data.getFullYear(),
+    data.getMonth(),
+    data.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
 }
 
-export function resolverIntervaloPeriodo(dto: DashboardFiltroDto, agora: Date = new Date()): IntervaloData {
+export function resolverIntervaloPeriodo(
+  dto: DashboardFiltroDto,
+  agora: Date = new Date(),
+): IntervaloData {
   if (dto.periodo === "customizado") {
     return {
       inicio: inicioDoDia(new Date(`${dto.dataInicio}T00:00:00`)),

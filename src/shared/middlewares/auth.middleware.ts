@@ -6,7 +6,11 @@ import { TENANT_COOKIE_NAME } from "../utils/auth-cookies";
 
 const METODOS_DE_ESCRITA = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
-export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
+export function authMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   const token = req.cookies?.[TENANT_COOKIE_NAME];
 
   if (!token) {
@@ -38,7 +42,10 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
         metodo: req.method,
         rota: req.originalUrl,
       }).catch((error) => {
-        console.error("[AUDIT LOG] Falha ao registrar ação durante impersonation:", error);
+        console.error(
+          "[AUDIT LOG] Falha ao registrar ação durante impersonation:",
+          error,
+        );
       });
     }
 

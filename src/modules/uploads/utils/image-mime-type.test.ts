@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getExtensionForImageMimeType, isAllowedImageMimeType } from "./image-mime-type";
+import {
+  getExtensionForImageMimeType,
+  isAllowedImageMimeType,
+} from "./image-mime-type";
 
 describe("image-mime-type", () => {
   it("mapeia os tipos de imagem permitidos para a extensão correta", () => {

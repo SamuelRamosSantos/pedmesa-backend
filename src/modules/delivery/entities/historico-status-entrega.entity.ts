@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { User } from "../../usuarios/entities/user.entity";
 import { Entrega, StatusEntrega } from "./entrega.entity";
 
@@ -36,7 +43,12 @@ export class HistoricoStatusEntrega {
   })
   statusAnterior!: StatusEntrega | null;
 
-  @Column({ name: "status_novo", type: "enum", enum: StatusEntrega, enumName: "entregas_status_enum" })
+  @Column({
+    name: "status_novo",
+    type: "enum",
+    enum: StatusEntrega,
+    enumName: "entregas_status_enum",
+  })
   statusNovo!: StatusEntrega;
 
   @Column({ name: "usuario_id", type: "uuid", nullable: true })

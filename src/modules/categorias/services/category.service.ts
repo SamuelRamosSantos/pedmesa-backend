@@ -3,7 +3,10 @@ import { CreateCategoryDto } from "../dtos/create-category.dto";
 import { Category } from "../entities/category.entity";
 
 export class CategoryService {
-  static async create(tenantId: string, dto: CreateCategoryDto): Promise<Category> {
+  static async create(
+    tenantId: string,
+    dto: CreateCategoryDto,
+  ): Promise<Category> {
     const repository = AppDataSource.getRepository(Category);
 
     const category = repository.create({

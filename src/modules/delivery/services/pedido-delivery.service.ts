@@ -6,16 +6,27 @@ import { fromCents } from "../../../shared/utils/money";
 import { Cliente } from "../../clientes/entities/cliente.entity";
 import { EnderecoCliente } from "../../clientes/entities/endereco-cliente.entity";
 import { criarEnderecoNaTransacao } from "../../clientes/services/endereco-cliente.service";
-import { Comanda, ComandaStatus, TipoAtendimento } from "../../comandas/entities/comanda.entity";
+import {
+  Comanda,
+  ComandaStatus,
+  TipoAtendimento,
+} from "../../comandas/entities/comanda.entity";
 import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
 import { PrintQueue } from "../../impressao/queue/print-queue";
 import { lancarItensNaComanda } from "../../pedidos/services/lancamento-itens";
 import { Tenant } from "../../tenants/entities/tenant.entity";
-import { CriarPedidoDeliveryDto, EnderecoNovo } from "../dtos/criar-pedido-delivery.dto";
+import {
+  CriarPedidoDeliveryDto,
+  EnderecoNovo,
+} from "../dtos/criar-pedido-delivery.dto";
 import { Entrega, StatusEntrega } from "../entities/entrega.entity";
-import { CotacaoPedido } from "./cotacao-pedido";
 import { cotarPedidoDelivery } from "./cotacao.service";
-import { assertCotacaoPermiteCriacao, calcularPrevisaoEntrega, statusInicialDaEntrega } from "./criacao-pedido-regras";
+import { CotacaoPedido } from "./cotacao-pedido";
+import {
+  assertCotacaoPermiteCriacao,
+  calcularPrevisaoEntrega,
+  statusInicialDaEntrega,
+} from "./criacao-pedido-regras";
 import { dataDaNumeracao } from "./data-numeracao";
 import { registrarHistoricoStatusEntrega } from "./historico-status-entrega";
 import { proximoNumeroEntrega } from "./numeracao-entrega";
@@ -32,14 +43,18 @@ async function resolverEnderecoDeEntrega(
   manager: EntityManager,
   tenantId: string,
   clienteExistente: Cliente | null,
-  dto: CriarPedidoDeliveryDto
+  dto: CriarPedidoDeliveryDto,
 ): Promise<EnderecoNovo> {
   if (dto.endereco.tipo === "novo") {
     return dto.endereco.endereco;
   }
 
   const salvo = clienteExistente
-    ? await manager.findOneBy(EnderecoCliente, { id: dto.endereco.enderecoId, clienteId: clienteExistente.id, tenantId })
+    ? await manager.findOneBy(EnderecoCliente, {
+        id: dto.endereco.enderecoId,
+        clienteId: clienteExistente.id,
+        tenantId,
+      })
     : null;
 
   if (!salvo) {
@@ -64,13 +79,21 @@ async function resolverEnderecoDeEntrega(
 export async function criarPedidoDelivery(
   tenantId: string,
   usuarioId: string,
-  dto: CriarPedidoDeliveryDto
+  dto: CriarPedidoDeliveryDto,
 ): Promise<PedidoDeliveryCriado> {
   const agora = new Date();
 
   const criado = await AppDataSource.transaction(async (manager) => {
-    const clienteExistente = await manager.findOneBy(Cliente, { tenantId, telefone: dto.cliente.telefone });
-    const endereco = await resolverEnderecoDeEntrega(manager, tenantId, clienteExistente, dto);
+    const clienteExistente = await manager.findOneBy(Cliente, {
+      tenantId,
+      telefone: dto.cliente.telefone,
+    });
+    const endereco = await resolverEnderecoDeEntrega(
+      manager,
+      tenantId,
+      clienteExistente,
+      dto,
+    );
 
     // A taxa vem sempre daqui (servidor); nada do corpo da requisição entra no valor.
     const cotacao = await cotarPedidoDelivery(manager, tenantId, {
@@ -79,28 +102,62 @@ export async function criarPedidoDelivery(
       formaPagamento: dto.formaPagamento,
       trocoParaCents: dto.trocoParaCents,
     });
-    assertCotacaoPermiteCriacao(cotacao, dto.formaPagamento, dto.trocoParaCents);
+    assertCotacaoPermiteCriacao(
+      cotacao,
+      dto.formaPagamento,
+      dto.trocoParaCents,
+    );
 
     // ---- a partir daqui, gravações ----
-    const cliente = clienteExistente ?? (await manager.save(manager.create(Cliente, { tenantId, ...dto.cliente })));
+    const cliente =
+      clienteExistente ??
+      (await manager.save(
+        manager.create(Cliente, { tenantId, ...dto.cliente }),
+      ));
 
     if (dto.endereco.tipo === "novo" && dto.endereco.salvarNoCadastro) {
-      await criarEnderecoNaTransacao(manager, tenantId, cliente.id, { ...dto.endereco.endereco, principal: false });
+      await criarEnderecoNaTransacao(manager, tenantId, cliente.id, {
+        ...dto.endereco.endereco,
+        principal: false,
+      });
     }
 
     const tenant = await manager.findOneByOrFail(Tenant, { id: tenantId });
     const comanda = await manager.save(
-      manager.create(Comanda, { tenantId, tipoAtendimento: TipoAtendimento.DELIVERY, numeroComanda: null, status: ComandaStatus.ABERTA })
+      manager.create(Comanda, {
+        tenantId,
+        tipoAtendimento: TipoAtendimento.DELIVERY,
+        numeroComanda: null,
+        status: ComandaStatus.ABERTA,
+      }),
     );
     // Um integrante com o nome do cliente: extrato, itens e fechamento funcionam como na mesa.
-    const integrante = await manager.save(manager.create(IntegranteComanda, { comandaId: comanda.id, nome: cliente.nome }));
+    const integrante = await manager.save(
+      manager.create(IntegranteComanda, {
+        comandaId: comanda.id,
+        nome: cliente.nome,
+      }),
+    );
 
-    const { pedido, itensImpressao } = await lancarItensNaComanda(manager, tenant, comanda, usuarioId, {
-      itens: dto.itens.map((item) => ({ ...item, integranteId: integrante.id })),
-    });
+    const { pedido, itensImpressao } = await lancarItensNaComanda(
+      manager,
+      tenant,
+      comanda,
+      usuarioId,
+      {
+        itens: dto.itens.map((item) => ({
+          ...item,
+          integranteId: integrante.id,
+        })),
+      },
+    );
 
     const dataNumeracao = dataDaNumeracao(agora);
-    const numeroEntrega = await proximoNumeroEntrega(manager, tenantId, dataNumeracao);
+    const numeroEntrega = await proximoNumeroEntrega(
+      manager,
+      tenantId,
+      dataNumeracao,
+    );
     const statusInicial = statusInicialDaEntrega(pedido.statusPreparo);
 
     const entrega = await manager.save(
@@ -120,10 +177,14 @@ export async function criarPedidoDelivery(
         enderecoReferencia: endereco.referencia,
         taxaEntrega: cotacao.taxaEntrega ?? 0,
         formaPagamentoPrevista: dto.formaPagamento,
-        trocoPara: dto.trocoParaCents === null ? null : fromCents(dto.trocoParaCents),
+        trocoPara:
+          dto.trocoParaCents === null ? null : fromCents(dto.trocoParaCents),
         statusEntrega: statusInicial,
-        previsaoEntregaEm: calcularPrevisaoEntrega(agora, cotacao.tempoEstimadoMin),
-      })
+        previsaoEntregaEm: calcularPrevisaoEntrega(
+          agora,
+          cotacao.tempoEstimadoMin,
+        ),
+      }),
     );
 
     await registrarHistoricoStatusEntrega(manager, {
@@ -135,11 +196,21 @@ export async function criarPedidoDelivery(
       motivo: null,
     });
 
-    return { entrega, cotacao, comandaId: comanda.id, pedidoId: pedido.id, pedidoCriadoEm: pedido.criadoEm, itensImpressao };
+    return {
+      entrega,
+      cotacao,
+      comandaId: comanda.id,
+      pedidoId: pedido.id,
+      pedidoCriadoEm: pedido.criadoEm,
+      itensImpressao,
+    };
   }).catch((error: unknown) => {
     // Dois pedidos simultâneos para um telefone novo: o segundo esbarra na unique do cliente.
     if (isUniqueViolation(error)) {
-      throw new AppError("Outro pedido acabou de cadastrar este cliente. Envie o pedido novamente.", 409);
+      throw new AppError(
+        "Outro pedido acabou de cadastrar este cliente. Envie o pedido novamente.",
+        409,
+      );
     }
     throw error;
   });

@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { User } from "../../usuarios/entities/user.entity";
 import { Comanda } from "./comanda.entity";
 
@@ -21,7 +28,11 @@ export class PagamentoComanda {
   @JoinColumn({ name: "comanda_id" })
   comanda!: Comanda;
 
-  @Column({ type: "enum", enum: FormaPagamento, enumName: "pagamentos_comanda_forma_enum" })
+  @Column({
+    type: "enum",
+    enum: FormaPagamento,
+    enumName: "pagamentos_comanda_forma_enum",
+  })
   forma!: FormaPagamento;
 
   @Column({

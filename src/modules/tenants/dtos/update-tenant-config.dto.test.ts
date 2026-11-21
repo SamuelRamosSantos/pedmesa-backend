@@ -4,7 +4,9 @@ import { assertValidUpdateTenantConfigDto } from "./update-tenant-config.dto";
 
 describe("assertValidUpdateTenantConfigDto", () => {
   it("aceita update parcial só com nome_fantasia", () => {
-    const dto = assertValidUpdateTenantConfigDto({ nome_fantasia: "Lanchonete Nova" });
+    const dto = assertValidUpdateTenantConfigDto({
+      nome_fantasia: "Lanchonete Nova",
+    });
 
     expect(dto).toEqual({ nomeFantasia: "Lanchonete Nova" });
   });
@@ -78,43 +80,78 @@ describe("assertValidUpdateTenantConfigDto", () => {
   });
 
   it("rejeita nome_fantasia vazio", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ nome_fantasia: "   " })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ nome_fantasia: "   " }),
+    ).toThrow(AppError);
   });
 
   it("rejeita e-mail inválido", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ email_empresa: "nao-e-email" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ email_proprietario: "nao-e-email" })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ email_empresa: "nao-e-email" }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ email_proprietario: "nao-e-email" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita usa_modulo_cozinha não booleano", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ usa_modulo_cozinha: "sim" })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ usa_modulo_cozinha: "sim" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita quantidade_comandas não positiva", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: 0 })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: -5 })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ quantidade_comandas: 1.5 })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: 0 }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: -5 }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ quantidade_comandas: 1.5 }),
+    ).toThrow(AppError);
   });
 
   it("rejeita estado que não seja uma sigla de UF de 2 letras", () => {
-    expect(() => assertValidUpdateTenantConfigDto({ estado: "Paraná" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ estado: "P" })).toThrow(AppError);
-    expect(() => assertValidUpdateTenantConfigDto({ estado: 123 })).toThrow(AppError);
+    expect(() =>
+      assertValidUpdateTenantConfigDto({ estado: "Paraná" }),
+    ).toThrow(AppError);
+    expect(() => assertValidUpdateTenantConfigDto({ estado: "P" })).toThrow(
+      AppError,
+    );
+    expect(() => assertValidUpdateTenantConfigDto({ estado: 123 })).toThrow(
+      AppError,
+    );
   });
 
   describe("configuração de delivery (PED-91)", () => {
     it("aceita os três campos de delivery", () => {
       expect(
-        assertValidUpdateTenantConfigDto({ delivery_ativo: true, taxa_entrega_padrao: 8.5, pedido_minimo_delivery: 30 })
-      ).toEqual({ deliveryAtivo: true, taxaEntregaPadrao: 8.5, pedidoMinimoDelivery: 30 });
+        assertValidUpdateTenantConfigDto({
+          delivery_ativo: true,
+          taxa_entrega_padrao: 8.5,
+          pedido_minimo_delivery: 30,
+        }),
+      ).toEqual({
+        deliveryAtivo: true,
+        taxaEntregaPadrao: 8.5,
+        pedidoMinimoDelivery: 30,
+      });
     });
 
     it("taxa_entrega_padrao: null significa não atender bairros fora da lista", () => {
-      expect(assertValidUpdateTenantConfigDto({ taxa_entrega_padrao: null })).toEqual({ taxaEntregaPadrao: null });
+      expect(
+        assertValidUpdateTenantConfigDto({ taxa_entrega_padrao: null }),
+      ).toEqual({ taxaEntregaPadrao: null });
     });
 
     it("aceita zero (frete grátis e sem pedido mínimo)", () => {
-      expect(assertValidUpdateTenantConfigDto({ taxa_entrega_padrao: 0, pedido_minimo_delivery: 0 })).toEqual({
+      expect(
+        assertValidUpdateTenantConfigDto({
+          taxa_entrega_padrao: 0,
+          pedido_minimo_delivery: 0,
+        }),
+      ).toEqual({
         taxaEntregaPadrao: 0,
         pedidoMinimoDelivery: 0,
       });

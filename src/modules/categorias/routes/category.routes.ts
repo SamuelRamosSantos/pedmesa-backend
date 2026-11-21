@@ -10,6 +10,15 @@ categoryRoutes.use(authMiddleware);
 
 categoryRoutes.post("/", rbacMiddleware([UserRole.ADMIN]), create);
 // EXPEDICAO só lê o cardápio, para montar pedidos delivery (PED-113).
-categoryRoutes.get("/", rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM, UserRole.CAIXA, UserRole.EXPEDICAO]), list);
+categoryRoutes.get(
+  "/",
+  rbacMiddleware([
+    UserRole.ADMIN,
+    UserRole.GARCOM,
+    UserRole.CAIXA,
+    UserRole.EXPEDICAO,
+  ]),
+  list,
+);
 
 export default categoryRoutes;

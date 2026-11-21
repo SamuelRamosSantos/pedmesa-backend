@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { IntegranteComanda } from "../../comandas/entities/integrante-comanda.entity";
 import { Product } from "../../produtos/entities/product.entity";
 import { Pedido } from "./pedido.entity";
@@ -19,7 +25,11 @@ export class ItemPedido {
   @Column({ name: "pedido_id", type: "uuid" })
   pedidoId!: string;
 
-  @ManyToOne(() => Pedido, (pedido) => pedido.itens, { onDelete: "CASCADE" })
+  @ManyToOne(
+    () => Pedido,
+    (pedido) => pedido.itens,
+    { onDelete: "CASCADE" },
+  )
   @JoinColumn({ name: "pedido_id" })
   pedido!: Pedido;
 

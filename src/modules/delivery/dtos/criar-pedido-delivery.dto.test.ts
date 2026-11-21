@@ -5,7 +5,14 @@ import { assertValidCriarPedidoDeliveryDto } from "./criar-pedido-delivery.dto";
 
 const PRODUTO = "3f1c2a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b";
 const ENDERECO_ID = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
-const ENDERECO = { cep: "01310-100", logradouro: "Av. Paulista", numero: "1000", bairro: "Bela Vista", cidade: "São Paulo", uf: "sp" };
+const ENDERECO = {
+  cep: "01310-100",
+  logradouro: "Av. Paulista",
+  numero: "1000",
+  bairro: "Bela Vista",
+  cidade: "São Paulo",
+  uf: "sp",
+};
 const BASE = {
   cliente: { nome: "Maria", telefone: "(11) 98765-4321" },
   endereco: ENDERECO,
@@ -16,7 +23,9 @@ const BASE = {
 
 describe("assertValidCriarPedidoDeliveryDto", () => {
   it("aceita endereço novo, normaliza cliente/endereço e converte troco para centavos", () => {
-    expect(assertValidCriarPedidoDeliveryDto({ ...BASE, salvar_endereco: true })).toEqual({
+    expect(
+      assertValidCriarPedidoDeliveryDto({ ...BASE, salvar_endereco: true }),
+    ).toEqual({
       cliente: { nome: "Maria", telefone: "11987654321", observacoes: null },
       endereco: {
         tipo: "novo",
@@ -32,7 +41,14 @@ describe("assertValidCriarPedidoDeliveryDto", () => {
           referencia: null,
         },
       },
-      itens: [{ produtoId: PRODUTO, integranteId: null, quantidade: 2, observacao: "sem cebola" }],
+      itens: [
+        {
+          produtoId: PRODUTO,
+          integranteId: null,
+          quantidade: 2,
+          observacao: "sem cebola",
+        },
+      ],
       formaPagamento: FormaPagamento.DINHEIRO,
       trocoParaCents: 5_000,
     });
@@ -40,12 +56,20 @@ describe("assertValidCriarPedidoDeliveryDto", () => {
 
   it("salvar_endereco ausente vira false", () => {
     const dto = assertValidCriarPedidoDeliveryDto(BASE);
-    expect(dto.endereco).toMatchObject({ tipo: "novo", salvarNoCadastro: false });
+    expect(dto.endereco).toMatchObject({
+      tipo: "novo",
+      salvarNoCadastro: false,
+    });
   });
 
   it("aceita endereço salvo pelo id", () => {
     const { endereco: _e, ...semEndereco } = BASE;
-    expect(assertValidCriarPedidoDeliveryDto({ ...semEndereco, endereco_id: ENDERECO_ID }).endereco).toEqual({
+    expect(
+      assertValidCriarPedidoDeliveryDto({
+        ...semEndereco,
+        endereco_id: ENDERECO_ID,
+      }).endereco,
+    ).toEqual({
       tipo: "salvo",
       enderecoId: ENDERECO_ID,
     });
@@ -54,7 +78,9 @@ describe("assertValidCriarPedidoDeliveryDto", () => {
   it("ignora integrante_id, taxa_entrega, total e tenant_id do corpo", () => {
     const dto = assertValidCriarPedidoDeliveryDto({
       ...BASE,
-      itens: [{ produto_id: PRODUTO, quantidade: 1, integrante_id: ENDERECO_ID }],
+      itens: [
+        { produto_id: PRODUTO, quantidade: 1, integrante_id: ENDERECO_ID },
+      ],
       taxa_entrega: 0,
       total: 1,
       tenant_id: "x",
@@ -76,6 +102,8 @@ describe("assertValidCriarPedidoDeliveryDto", () => {
     ["forma de pagamento inválida", { forma_pagamento: "boleto" }],
     ["troco negativo", { troco_para: -5 }],
   ])("rejeita %s", (_caso, alteracao) => {
-    expect(() => assertValidCriarPedidoDeliveryDto({ ...BASE, ...alteracao })).toThrow(AppError);
+    expect(() =>
+      assertValidCriarPedidoDeliveryDto({ ...BASE, ...alteracao }),
+    ).toThrow(AppError);
   });
 });

@@ -11,7 +11,7 @@ export class AddFotoUrlToUsuarios1700000000023 implements MigrationInterface {
         type: "varchar",
         length: "1024",
         isNullable: true,
-      })
+      }),
     );
   }
 

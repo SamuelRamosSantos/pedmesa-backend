@@ -1,5 +1,12 @@
-import { FilaImpressao, StatusFilaImpressao, TipoFilaImpressao } from "../entities/fila-impressao.entity";
-import { DadosEntregaTicket, PrintJobItemPayload } from "../types/print-job.types";
+import {
+  FilaImpressao,
+  StatusFilaImpressao,
+  TipoFilaImpressao,
+} from "../entities/fila-impressao.entity";
+import {
+  DadosEntregaTicket,
+  PrintJobItemPayload,
+} from "../types/print-job.types";
 
 // Formato consumido pelo pedmesa-print-agent (GET /impressao/pendentes). Ao mudar este
 // contrato, atualize o poller.js e os formatters do agente no mesmo commit.
@@ -17,7 +24,9 @@ export interface FilaImpressaoResponse {
   criado_em: Date;
 }
 
-export function toFilaImpressaoResponse(job: FilaImpressao): FilaImpressaoResponse {
+export function toFilaImpressaoResponse(
+  job: FilaImpressao,
+): FilaImpressaoResponse {
   return {
     id: job.id,
     tipo: job.tipo,

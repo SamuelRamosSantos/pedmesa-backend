@@ -1,4 +1,12 @@
-import { MigrationInterface, QueryRunner, Table, TableCheck, TableForeignKey, TableIndex, TableUnique } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableCheck,
+  TableForeignKey,
+  TableIndex,
+  TableUnique,
+} from "typeorm";
 
 // PED-89: trilha append-only das transições de status da entrega.
 //
@@ -13,34 +21,56 @@ const UNIQUE_ENTREGAS_ID_TENANT = "ux_entregas_id_tenant";
 const FUNCAO_APPEND_ONLY = "fn_historico_status_entrega_append_only";
 const TRIGGER_APPEND_ONLY = "tg_historico_status_entrega_append_only";
 
-export class CreateHistoricoStatusEntrega1700000000029 implements MigrationInterface {
+export class CreateHistoricoStatusEntrega1700000000029
+  implements MigrationInterface
+{
   name = "CreateHistoricoStatusEntrega1700000000029";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createUniqueConstraint(
       "entregas",
-      new TableUnique({ name: UNIQUE_ENTREGAS_ID_TENANT, columnNames: ["id", "tenant_id"] })
+      new TableUnique({
+        name: UNIQUE_ENTREGAS_ID_TENANT,
+        columnNames: ["id", "tenant_id"],
+      }),
     );
 
     await queryRunner.createTable(
       new Table({
         name: "historico_status_entrega",
         columns: [
-          { name: "id", type: "uuid", isPrimary: true, default: "uuid_generate_v4()" },
+          {
+            name: "id",
+            type: "uuid",
+            isPrimary: true,
+            default: "uuid_generate_v4()",
+          },
           { name: "tenant_id", type: "uuid", isNullable: false },
           { name: "entrega_id", type: "uuid", isNullable: false },
           {
             name: "status_anterior",
             type: "enum",
             enumName: "entregas_status_enum",
-            enum: ["em_producao", "pronto_para_envio", "em_rota", "entregue", "cancelado"],
+            enum: [
+              "em_producao",
+              "pronto_para_envio",
+              "em_rota",
+              "entregue",
+              "cancelado",
+            ],
             isNullable: true,
           },
           {
             name: "status_novo",
             type: "enum",
             enumName: "entregas_status_enum",
-            enum: ["em_producao", "pronto_para_envio", "em_rota", "entregue", "cancelado"],
+            enum: [
+              "em_producao",
+              "pronto_para_envio",
+              "em_rota",
+              "entregue",
+              "cancelado",
+            ],
             isNullable: false,
           },
           { name: "usuario_id", type: "uuid", isNullable: true },
@@ -54,7 +84,7 @@ export class CreateHistoricoStatusEntrega1700000000029 implements MigrationInter
           }),
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKeys("historico_status_entrega", [
@@ -76,7 +106,10 @@ export class CreateHistoricoStatusEntrega1700000000029 implements MigrationInter
 
     await queryRunner.createIndex(
       "historico_status_entrega",
-      new TableIndex({ name: "ix_historico_status_entrega_entrega_criado", columnNames: ["entrega_id", "criado_em"] })
+      new TableIndex({
+        name: "ix_historico_status_entrega_entrega_criado",
+        columnNames: ["entrega_id", "criado_em"],
+      }),
     );
 
     await queryRunner.query(`
@@ -103,6 +136,9 @@ export class CreateHistoricoStatusEntrega1700000000029 implements MigrationInter
     // continua em uso pela tabela entregas.
     await queryRunner.query(`DROP TABLE "historico_status_entrega"`);
     await queryRunner.query(`DROP FUNCTION "${FUNCAO_APPEND_ONLY}"()`);
-    await queryRunner.dropUniqueConstraint("entregas", UNIQUE_ENTREGAS_ID_TENANT);
+    await queryRunner.dropUniqueConstraint(
+      "entregas",
+      UNIQUE_ENTREGAS_ID_TENANT,
+    );
   }
 }

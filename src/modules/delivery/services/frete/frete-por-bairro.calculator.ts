@@ -3,7 +3,11 @@ import { AppError } from "../../../../shared/errors/app-error";
 import { Tenant } from "../../../tenants/entities/tenant.entity";
 import { TaxaEntrega } from "../../entities/taxa-entrega.entity";
 import { normalizarLocalidade } from "../localidade-normalizer";
-import { CalculadoraFrete, CotacaoFrete, EnderecoFrete } from "./calculadora-frete";
+import {
+  CalculadoraFrete,
+  CotacaoFrete,
+  EnderecoFrete,
+} from "./calculadora-frete";
 import { resolverTaxa } from "./resolver-taxa";
 
 // Frete por bairro (ADR-001). Só busca os dados; a decisão fica em resolverTaxa (pura).
@@ -11,8 +15,14 @@ import { resolverTaxa } from "./resolver-taxa";
 export class FretePorBairroCalculator implements CalculadoraFrete {
   constructor(private readonly manager: EntityManager) {}
 
-  async cotar(tenantId: string, endereco: EnderecoFrete): Promise<CotacaoFrete> {
-    const tenant = await this.manager.findOne(Tenant, { select: { id: true, taxaEntregaPadrao: true }, where: { id: tenantId } });
+  async cotar(
+    tenantId: string,
+    endereco: EnderecoFrete,
+  ): Promise<CotacaoFrete> {
+    const tenant = await this.manager.findOne(Tenant, {
+      select: { id: true, taxaEntregaPadrao: true },
+      where: { id: tenantId },
+    });
 
     if (!tenant) {
       throw new AppError("Tenant não encontrado.", 404);

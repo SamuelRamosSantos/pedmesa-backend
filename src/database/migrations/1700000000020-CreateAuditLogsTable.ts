@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
 export class CreateAuditLogsTable1700000000020 implements MigrationInterface {
   name = "CreateAuditLogsTable1700000000020";
@@ -48,7 +53,7 @@ export class CreateAuditLogsTable1700000000020 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -59,12 +64,15 @@ export class CreateAuditLogsTable1700000000020 implements MigrationInterface {
         referencedTableName: "super_admins",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("audit_logs", "fk_audit_logs_super_admin_id");
+    await queryRunner.dropForeignKey(
+      "audit_logs",
+      "fk_audit_logs_super_admin_id",
+    );
     await queryRunner.dropTable("audit_logs");
   }
 }

@@ -1,19 +1,29 @@
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { Pedido } from "../../pedidos/entities/pedido.entity";
-import { AcaoPosCommit, executarAcoesPosCommit } from "../../pedidos/services/preparo-atualizado.port";
+import {
+  AcaoPosCommit,
+  executarAcoesPosCommit,
+} from "../../pedidos/services/preparo-atualizado.port";
 import { TransicaoEntregaDto } from "../dtos/transicao-entrega.dto";
 import { Entrega, StatusEntrega } from "../entities/entrega.entity";
 import { toEntregaEstadoResponse } from "../mappers/entrega.mapper";
-import { cancelarEntregaNaTransacao, concluirEntregaNaTransacao } from "./encerramento-entrega";
+import {
+  cancelarEntregaNaTransacao,
+  concluirEntregaNaTransacao,
+} from "./encerramento-entrega";
 import { assertTransicaoEntregaValida } from "./entrega-status-transition";
 import { registrarHistoricoStatusEntrega } from "./historico-status-entrega";
 import { enfileirarTicketEntrega } from "./ticket-entrega.service";
 
 function erroDeConcorrencia(atual: Entrega): AppError {
-  return new AppError("Esta entrega foi atualizada por outra pessoa. Confira o estado atual e tente de novo.", 409, {
-    entrega: toEntregaEstadoResponse(atual),
-  });
+  return new AppError(
+    "Esta entrega foi atualizada por outra pessoa. Confira o estado atual e tente de novo.",
+    409,
+    {
+      entrega: toEntregaEstadoResponse(atual),
+    },
+  );
 }
 
 // PATCH /delivery/entregas/:id/status (PED-99). Optimistic locking: o operador envia a
@@ -24,12 +34,15 @@ export async function transicionarEntrega(
   tenantId: string,
   entregaId: string,
   usuarioId: string,
-  dto: TransicaoEntregaDto
+  dto: TransicaoEntregaDto,
 ): Promise<Entrega> {
   const acoesPosCommit: AcaoPosCommit[] = [];
 
   const entregaAtualizada = await AppDataSource.transaction(async (manager) => {
-    const entrega = await manager.findOneBy(Entrega, { id: entregaId, tenantId });
+    const entrega = await manager.findOneBy(Entrega, {
+      id: entregaId,
+      tenantId,
+    });
 
     if (!entrega) {
       throw new AppError("Entrega não encontrada.", 404);
@@ -39,7 +52,10 @@ export async function transicionarEntrega(
       throw erroDeConcorrencia(entrega);
     }
 
-    const pedidos = await manager.find(Pedido, { select: { id: true, statusPreparo: true }, where: { comandaId: entrega.comandaId } });
+    const pedidos = await manager.find(Pedido, {
+      select: { id: true, statusPreparo: true },
+      where: { comandaId: entrega.comandaId },
+    });
     assertTransicaoEntregaValida(entrega.statusEntrega, dto.status, {
       statusPreparoDosPedidos: pedidos.map((pedido) => pedido.statusPreparo),
       motivo: dto.motivo,
@@ -54,7 +70,9 @@ export async function transicionarEntrega(
         versao: () => "versao + 1",
         ...(dto.status === StatusEntrega.EM_ROTA ? { saiuEm: agora } : {}),
         ...(dto.status === StatusEntrega.ENTREGUE ? { entregueEm: agora } : {}),
-        ...(dto.status === StatusEntrega.CANCELADO ? { motivoCancelamento: dto.motivo } : {}),
+        ...(dto.status === StatusEntrega.CANCELADO
+          ? { motivoCancelamento: dto.motivo }
+          : {}),
       })
       .where("id = :id", { id: entrega.id })
       .andWhere("tenant_id = :tenantId", { tenantId })
@@ -63,7 +81,9 @@ export async function transicionarEntrega(
 
     // Outro operador gravou entre a leitura e o UPDATE.
     if (resultado.affected === 0) {
-      throw erroDeConcorrencia(await manager.findOneByOrFail(Entrega, { id: entrega.id, tenantId }));
+      throw erroDeConcorrencia(
+        await manager.findOneByOrFail(Entrega, { id: entrega.id, tenantId }),
+      );
     }
 
     await registrarHistoricoStatusEntrega(manager, {
@@ -85,7 +105,10 @@ export async function transicionarEntrega(
 
     // Cupom do motoboy só ao ficar pronta vindo da produção; no retorno da rota o cupom
     // já está com o entregador (para isso existe a reimpressão).
-    if (entrega.statusEntrega === StatusEntrega.EM_PRODUCAO && dto.status === StatusEntrega.PRONTO_PARA_ENVIO) {
+    if (
+      entrega.statusEntrega === StatusEntrega.EM_PRODUCAO &&
+      dto.status === StatusEntrega.PRONTO_PARA_ENVIO
+    ) {
       acoesPosCommit.push(() => enfileirarTicketEntrega(tenantId, entrega.id));
     }
 

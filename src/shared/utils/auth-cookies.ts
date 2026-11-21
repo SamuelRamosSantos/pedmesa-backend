@@ -33,12 +33,28 @@ function clearCookieOptions(): CookieOptions {
   return { httpOnly: true, secure: isProduction, sameSite: "lax", path: "/" };
 }
 
-export function setTenantAuthCookie(res: Response, token: string, expiresIn: string): void {
-  res.cookie(TENANT_COOKIE_NAME, token, baseCookieOptions(parseDurationToMs(expiresIn)));
+export function setTenantAuthCookie(
+  res: Response,
+  token: string,
+  expiresIn: string,
+): void {
+  res.cookie(
+    TENANT_COOKIE_NAME,
+    token,
+    baseCookieOptions(parseDurationToMs(expiresIn)),
+  );
 }
 
-export function setSuperAdminAuthCookie(res: Response, token: string, expiresIn: string): void {
-  res.cookie(SUPER_ADMIN_COOKIE_NAME, token, baseCookieOptions(parseDurationToMs(expiresIn)));
+export function setSuperAdminAuthCookie(
+  res: Response,
+  token: string,
+  expiresIn: string,
+): void {
+  res.cookie(
+    SUPER_ADMIN_COOKIE_NAME,
+    token,
+    baseCookieOptions(parseDurationToMs(expiresIn)),
+  );
 }
 
 export function clearTenantAuthCookie(res: Response): void {

@@ -45,7 +45,7 @@ export class CreateSuperAdminsTable1700000000018 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
   }
 

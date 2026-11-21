@@ -12,15 +12,23 @@ export interface ListPedidosFilters {
   status?: StatusPreparo;
 }
 
-export function parseListPedidosFilters(query: Record<string, unknown>): ListPedidosFilters {
+export function parseListPedidosFilters(
+  query: Record<string, unknown>,
+): ListPedidosFilters {
   const { status } = query;
 
   if (status === undefined) {
     return {};
   }
 
-  if (typeof status !== "string" || !STATUS_VALIDOS.includes(status as StatusPreparo)) {
-    throw new AppError(`O parâmetro status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`, 400);
+  if (
+    typeof status !== "string" ||
+    !STATUS_VALIDOS.includes(status as StatusPreparo)
+  ) {
+    throw new AppError(
+      `O parâmetro status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`,
+      400,
+    );
   }
 
   return { status: status as StatusPreparo };

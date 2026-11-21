@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 export enum TenantStatus {
   ATIVO = "ativo",
@@ -34,25 +39,60 @@ export class Tenant {
   @Column({ name: "quantidade_comandas", type: "int", default: 20 })
   quantidadeComandas!: number;
 
-  @Column({ name: "razao_social", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "razao_social",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   razaoSocial!: string | null;
 
-  @Column({ name: "inscricao_estadual", type: "varchar", length: 30, nullable: true })
+  @Column({
+    name: "inscricao_estadual",
+    type: "varchar",
+    length: 30,
+    nullable: true,
+  })
   inscricaoEstadual!: string | null;
 
-  @Column({ name: "ramo_atividade", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "ramo_atividade",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   ramoAtividade!: string | null;
 
-  @Column({ name: "nome_proprietario", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "nome_proprietario",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   nomeProprietario!: string | null;
 
-  @Column({ name: "cpf_proprietario", type: "varchar", length: 20, nullable: true })
+  @Column({
+    name: "cpf_proprietario",
+    type: "varchar",
+    length: 20,
+    nullable: true,
+  })
   cpfProprietario!: string | null;
 
-  @Column({ name: "email_empresa", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "email_empresa",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   emailEmpresa!: string | null;
 
-  @Column({ name: "email_proprietario", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "email_proprietario",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   emailProprietario!: string | null;
 
   @Column({ name: "usa_modulo_cozinha", type: "boolean", default: true })
@@ -88,7 +128,8 @@ export class Tenant {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+      from: (value: string | null) =>
+        value === null ? null : Number.parseFloat(value),
     },
   })
   taxaEntregaPadrao!: number | null;
@@ -106,7 +147,13 @@ export class Tenant {
   })
   pedidoMinimoDelivery!: number;
 
-  @Column({ name: "token_agente", type: "varchar", length: 64, nullable: true, unique: true })
+  @Column({
+    name: "token_agente",
+    type: "varchar",
+    length: 64,
+    nullable: true,
+    unique: true,
+  })
   tokenAgente!: string | null;
 
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })

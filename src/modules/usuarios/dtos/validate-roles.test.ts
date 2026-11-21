@@ -10,11 +10,16 @@ describe("assertValidRoles", () => {
 
   it("aceita o papel expedicao sozinho e combinado com outros", () => {
     expect(assertValidRoles(["expedicao"])).toEqual([UserRole.EXPEDICAO]);
-    expect(assertValidRoles(["admin", "expedicao"])).toEqual([UserRole.ADMIN, UserRole.EXPEDICAO]);
+    expect(assertValidRoles(["admin", "expedicao"])).toEqual([
+      UserRole.ADMIN,
+      UserRole.EXPEDICAO,
+    ]);
   });
 
   it("remove papéis repetidos", () => {
-    expect(assertValidRoles(["expedicao", "expedicao"])).toEqual([UserRole.EXPEDICAO]);
+    expect(assertValidRoles(["expedicao", "expedicao"])).toEqual([
+      UserRole.EXPEDICAO,
+    ]);
   });
 
   it.each([

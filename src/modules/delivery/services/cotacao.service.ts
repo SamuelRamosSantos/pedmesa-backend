@@ -5,7 +5,11 @@ import { resolverProdutosDosItens } from "../../pedidos/services/produtos-dos-it
 import { Product } from "../../produtos/entities/product.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { CotacaoDeliveryDto } from "../dtos/cotacao-delivery.dto";
-import { CotacaoPedido, montarCotacaoPedido, somarSubtotalCents } from "./cotacao-pedido";
+import {
+  CotacaoPedido,
+  montarCotacaoPedido,
+  somarSubtotalCents,
+} from "./cotacao-pedido";
 import { CalculadoraFrete, criarCalculadoraFrete } from "./frete";
 
 // Cota um pedido delivery com os preços do banco e o frete da estratégia configurada.
@@ -16,7 +20,7 @@ export async function cotarPedidoDelivery(
   manager: EntityManager,
   tenantId: string,
   dto: CotacaoDeliveryDto,
-  calculadora: CalculadoraFrete = criarCalculadoraFrete(manager)
+  calculadora: CalculadoraFrete = criarCalculadoraFrete(manager),
 ): Promise<CotacaoPedido> {
   const tenant = await manager.findOne(Tenant, {
     select: { id: true, deliveryAtivo: true, pedidoMinimoDelivery: true },
@@ -28,15 +32,27 @@ export async function cotarPedidoDelivery(
   }
 
   if (!tenant.deliveryAtivo) {
-    throw new AppError("O delivery está desativado neste estabelecimento.", 400);
+    throw new AppError(
+      "O delivery está desativado neste estabelecimento.",
+      400,
+    );
   }
 
   const produtoIds = [...new Set(dto.itens.map((item) => item.produtoId))];
-  const produtos = await manager.findBy(Product, { id: In(produtoIds), tenantId });
-  const produtosDosItens = resolverProdutosDosItens(dto.itens, new Map(produtos.map((produto) => [produto.id, produto])));
+  const produtos = await manager.findBy(Product, {
+    id: In(produtoIds),
+    tenantId,
+  });
+  const produtosDosItens = resolverProdutosDosItens(
+    dto.itens,
+    new Map(produtos.map((produto) => [produto.id, produto])),
+  );
 
   const subtotalCents = somarSubtotalCents(
-    dto.itens.map((item, index) => ({ quantidade: item.quantidade, precoUnitario: produtosDosItens[index].preco }))
+    dto.itens.map((item, index) => ({
+      quantidade: item.quantidade,
+      precoUnitario: produtosDosItens[index].preco,
+    })),
   );
 
   return montarCotacaoPedido({

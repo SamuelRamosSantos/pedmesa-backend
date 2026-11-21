@@ -3,7 +3,10 @@ import { Impressora } from "../entities/impressora.entity";
 import { construirComandosEscPos } from "../formatters/escpos-commands";
 
 export class ImpressaoService {
-  static async imprimir(texto: string, impressoras: Impressora[]): Promise<void> {
+  static async imprimir(
+    texto: string,
+    impressoras: Impressora[],
+  ): Promise<void> {
     if (impressoras.length === 0) {
       return;
     }
@@ -11,7 +14,12 @@ export class ImpressaoService {
     const comandos = construirComandosEscPos(texto);
 
     await Promise.all(
-      impressoras.map((impressora) => enviarParaImpressora({ ip: impressora.ip, porta: impressora.porta }, comandos))
+      impressoras.map((impressora) =>
+        enviarParaImpressora(
+          { ip: impressora.ip, porta: impressora.porta },
+          comandos,
+        ),
+      ),
     );
   }
 }

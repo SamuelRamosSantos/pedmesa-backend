@@ -51,32 +51,70 @@ describe("montarCardPainel", () => {
   });
 
   it("troco recalculado: itens aumentaram e o troco para não cobre mais", () => {
-    const card = montarCardPainel({ ...LINHA, subtotalItensAtivos: 58.35 }, AGORA);
-    expect(card).toMatchObject({ total: 65.85, troco: 0, trocoSuficiente: false });
+    const card = montarCardPainel(
+      { ...LINHA, subtotalItensAtivos: 58.35 },
+      AGORA,
+    );
+    expect(card).toMatchObject({
+      total: 65.85,
+      troco: 0,
+      trocoSuficiente: false,
+    });
   });
 
   it("aplica desconto do caixa sobre os itens (taxa inteira)", () => {
-    const card = montarCardPainel({ ...LINHA, descontoTipo: DescontoTipo.PERCENTUAL, descontoValor: 10, trocoPara: null }, AGORA);
+    const card = montarCardPainel(
+      {
+        ...LINHA,
+        descontoTipo: DescontoTipo.PERCENTUAL,
+        descontoValor: 10,
+        trocoPara: null,
+      },
+      AGORA,
+    );
     expect(card.total).toBe(42.51);
   });
 
   it("desconto fixo maior que os itens (itens cancelados depois) não quebra: limita aos itens", () => {
-    const card = montarCardPainel({ ...LINHA, descontoTipo: DescontoTipo.VALOR_FIXO, descontoValor: 100, trocoPara: null }, AGORA);
+    const card = montarCardPainel(
+      {
+        ...LINHA,
+        descontoTipo: DescontoTipo.VALOR_FIXO,
+        descontoValor: 100,
+        trocoPara: null,
+      },
+      AGORA,
+    );
     expect(card.total).toBe(7.5);
   });
 
   it("atrasado só depois da previsão e enquanto a entrega não terminou", () => {
     const depois = new Date("2026-10-11T19:30:00Z");
     expect(montarCardPainel(LINHA, depois).atrasado).toBe(true);
-    expect(montarCardPainel({ ...LINHA, statusEntrega: StatusEntrega.ENTREGUE }, depois).atrasado).toBe(false);
-    expect(montarCardPainel({ ...LINHA, previsaoEntregaEm: null }, depois).atrasado).toBe(false);
+    expect(
+      montarCardPainel(
+        { ...LINHA, statusEntrega: StatusEntrega.ENTREGUE },
+        depois,
+      ).atrasado,
+    ).toBe(false);
+    expect(
+      montarCardPainel({ ...LINHA, previsaoEntregaEm: null }, depois).atrasado,
+    ).toBe(false);
   });
 
   it("endereço sem complemento", () => {
-    expect(montarCardPainel({ ...LINHA, enderecoComplemento: null }, AGORA).enderecoResumido).toBe("Av. Paulista, 1000");
+    expect(
+      montarCardPainel({ ...LINHA, enderecoComplemento: null }, AGORA)
+        .enderecoResumido,
+    ).toBe("Av. Paulista, 1000");
   });
 
   it("preparo agregado: tudo pronto vira pronto", () => {
-    expect(montarCardPainel({ ...LINHA, statusDosItens: [StatusItem.PRONTO, StatusItem.PRONTO] }, AGORA).statusPreparo).toBe(StatusPreparo.PRONTO);
+    expect(
+      montarCardPainel(
+        { ...LINHA, statusDosItens: [StatusItem.PRONTO, StatusItem.PRONTO] },
+        AGORA,
+      ).statusPreparo,
+    ).toBe(StatusPreparo.PRONTO);
   });
 });

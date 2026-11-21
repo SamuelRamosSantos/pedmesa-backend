@@ -3,7 +3,9 @@ import { PrintJobItemPayload } from "../types/print-job.types";
 
 // Itens de um extrato no formato dos cupons (pré-conta e entrega): primeiro os
 // individuais de cada integrante, depois os compartilhados.
-export function itensDoExtratoParaImpressao(calculado: ExtratoCalculado): PrintJobItemPayload[] {
+export function itensDoExtratoParaImpressao(
+  calculado: ExtratoCalculado,
+): PrintJobItemPayload[] {
   return [
     ...calculado.divisao_por_integrante.flatMap((integrante) =>
       integrante.itens_individuais.map(
@@ -14,8 +16,8 @@ export function itensDoExtratoParaImpressao(calculado: ExtratoCalculado): PrintJ
           subtotal: item.subtotal,
           integrante_nome: integrante.nome,
           observacao: null,
-        })
-      )
+        }),
+      ),
     ),
     ...calculado.itens_compartilhados.map(
       (item): PrintJobItemPayload => ({
@@ -25,7 +27,7 @@ export function itensDoExtratoParaImpressao(calculado: ExtratoCalculado): PrintJ
         subtotal: item.subtotal,
         integrante_nome: null,
         observacao: null,
-      })
+      }),
     ),
   ];
 }
