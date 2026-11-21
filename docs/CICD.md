@@ -1,65 +1,114 @@
 # CI/CD — pedmesa-backend
 
-## 1. Visão geral dos workflows
+## 1. Visão geral
 
-| Arquivo                    | Quando roda                                                  | O que faz                                                                  |
-| -------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| `.github/workflows/ci.yml` | Pull Request para `main` ou `prod`, `workflow_call` e manual | Jobs **Qualidade**, **Testes** e **Commits**                               |
-| `.github/dependabot.yml`   | Agenda do Dependabot                                         | PRs de npm (semanal, minor e patch agrupados) e de GitHub Actions (mensal) |
-
-O CI não roda em `push`: o merge na `main` já passou pelo CI do PR, e um deploy futuro chama o `ci.yml` por `workflow_call`. Isso evita execução duplicada.
+| Arquivo                             | Quando roda                                                                        | O que faz                                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `.github/workflows/ci.yml`          | Pull Request para `main` ou `prod`, chamado pelo deploy (`workflow_call`) e manual | Jobs **Qualidade**, **Testes** e **Commits**                                                                 |
+| `.github/workflows/deploy.yml`      | push em `main` (homologação) ou `prod` (produção), e manual                        | CI → imagem no GHCR → deploy no Coolify → `/ready` → verificação de segurança                                |
+| `.github/dependabot.yml`            | agenda do Dependabot                                                               | npm (semanal, minor e patch agrupados), GitHub Actions (mensal) e imagem Docker (semanal, sem major do Node) |
+| `Dockerfile` + `entrypoint.sh`      | build da imagem                                                                    | Node 26, usuário `node`, `HEALTHCHECK` em `/health`, migrations antes de subir a API                         |
+| `scripts/check-security-headers.sh` | job **Segurança** do deploy, ou manual                                             | confere os cabeçalhos de segurança, compressão e IP privado (PED-120)                                        |
 
 ### Jobs do `ci.yml`
 
-| Job           | Passos                                                                                                                             |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Qualidade** | `npm ci`, `npm run check` (tsc do código e dos testes, Biome com `--error-on-warnings`) e `npm run build`                          |
-| **Testes**    | Postgres 16 como serviço (`pedmesa_test`), `npm ci` e `npm test` (unitários e integração; o setup global aplica migrations e seed) |
-| **Commits**   | Commitlint em todos os commits do PR (pulado nos PRs do Dependabot)                                                                |
+| Job           | Passos                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| **Qualidade** | `npm ci`, `npm run check` (tsc do código e dos testes, Biome com `--error-on-warnings`) e `npm run build` |
+| **Testes**    | Postgres 16 como serviço (`pedmesa_test`), `npm ci` e `npm test` (unitários e integração)                 |
+| **Commits**   | Commitlint em todos os commits do PR (pulado nos PRs do Dependabot)                                       |
 
-Os nomes dos jobs (**Qualidade**, **Testes** e **Commits**) são os nomes dos checks exigidos na proteção de branch; não os renomeie sem atualizar a proteção.
+Os nomes **Qualidade**, **Testes** e **Commits** são os checks exigidos na proteção de branch: não os renomeie sem atualizar a proteção.
+
+### Jobs do `deploy.yml`
+
+```mermaid
+flowchart LR
+    A["Ambiente<br/>(main = homologacao, prod = producao)"] --> E
+    C["CI (ci.yml)"] --> E["Entregar<br/>build e push no GHCR<br/>deploy no Coolify<br/>espera o deploy<br/>confere /ready"]
+    E --> S["Segurança<br/>check-security-headers.sh"]
+```
+
+- A imagem vai para `ghcr.io/samuelramossantos/pedmesa-backend` com as tags `<ambiente>` (`homologacao` ou `producao`), `sha-<commit>` e, em produção, `latest`.
+- O Coolify puxa a tag do ambiente; o job espera o deploy chegar a `finished` (falha se o Coolify reportar `failed`) e confere o `/ready` por até 2,5 minutos.
+- O job **Segurança** roda em modo `report` (só lista os problemas no resumo do job) até a PED-59, a PED-64 e a PED-69 estarem concluídas. Depois, crie a variável de repositório `CHECK_MODE=enforce` para o pipeline falhar em qualquer regressão.
 
 ## 2. Ambientes
 
-| Ambiente    | Branch | Endereço                         | Publicação |
-| ----------- | ------ | -------------------------------- | ---------- |
-| Homologação | `main` | `https://api-dev.pedmesa.com.br` | Coolify    |
-| Produção    | `prod` | `https://api.pedmesa.com.br`     | Coolify    |
+| Ambiente      | Branch | Endereço                         | Banco                  | Imagens (R2)                                     |
+| ------------- | ------ | -------------------------------- | ---------------------- | ------------------------------------------------ |
+| `homologacao` | `main` | `https://api-dev.pedmesa.com.br` | Postgres de dev na VPS | `pedmesa-imagens-dev` / `cdn-dev.pedmesa.com.br` |
+| `producao`    | `prod` | `https://api.pedmesa.com.br`     | Postgres de produção   | `pedmesa-imagens` / `cdn.pedmesa.com.br`         |
 
-O deploy automatizado (imagem no GHCR com tags `<ambiente>`, `latest` e `sha-<commit>`, deploy pelo Coolify e verificação de `/ready`) está planejado na **PED-119**, depois do Dockerfile da **PED-117**. A verificação de cabeçalhos de segurança pós-deploy é a **PED-120**.
+As **migrations rodam no start do container** (`entrypoint.sh`): o deploy nunca sobe código novo sobre um banco sem as colunas que ele espera. Se uma migration falhar, o container para e o Coolify mantém a versão anterior no ar.
 
-## 3. Configuração manual no GitHub
+## 3. Configuração manual (uma vez)
 
-Feita uma vez por repositório, em _Settings_:
+### 3.1 Coolify — para cada aplicação (API de homologação e de produção)
 
-1. **Branches → Branch protection rules** para `main` e `prod`:
-   - exigir Pull Request antes do merge;
-   - exigir os status checks **Qualidade**, **Testes** e **Commits**;
-   - exigir revisão dos code owners (`CODEOWNERS`: `* @SamuelRamosSantos`).
-2. **Code security:** ativar _Dependabot alerts_ e _Dependabot security updates_.
-3. **Environments** (quando o deploy da PED-119 entrar): `homologacao` e `producao`, com _Required reviewers_ em produção. As variáveis de deploy são _Environment variables_ (`vars.*`) e os tokens são _Environment secrets_; um valor cadastrado no lugar errado não é lido pelo workflow.
+1. **Trocar o build pack:** _Configuration_ > _General_ > _Build Pack_ = **Docker Image**; imagem `ghcr.io/samuelramossantos/pedmesa-backend`, tag `homologacao` (ou `producao`). Porta exposta: **3000**. O Nixpacks deixa de ser usado.
+2. **Credencial do GHCR (imagens privadas):** no GitHub, crie um token clássico só com `read:packages` (_Settings_ > _Developer settings_ > _Personal access tokens_). No servidor do Coolify, faça login no registry uma vez:
 
-## 4. `/health` e `/ready`
+   ```bash
+   docker login ghcr.io -u SamuelRamosSantos   # senha = o token read:packages
+   ```
+3. **Variáveis de ambiente** da API: as do `.env.example` (banco, JWT, CORS, rate limit e as `R2_*` do bucket do ambiente). Sem as `R2_*`, a API não sobe.
+4. **Health check:** pode ficar ligado no Coolify em `/health`, porta 3000 (a imagem também declara o seu `HEALTHCHECK`).
+5. **Desligar o deploy automático por push no Coolify:** quem dispara o deploy agora é o GitHub Actions.
+6. **Anotar o UUID da aplicação:** aparece na URL da aplicação no painel do Coolify.
+7. **Token de API do Coolify:** _Keys & Tokens_ > _API tokens_ > criar um token com permissão de **deploy**. Um token serve para todas as aplicações.
 
-| Rota          | Responde                                                  | Uso                                       |
-| ------------- | --------------------------------------------------------- | ----------------------------------------- |
-| `GET /health` | 200 enquanto o processo está de pé; não consulta o banco  | liveness (healthcheck do container)       |
-| `GET /ready`  | 200 com `SELECT 1` no banco; 503 se o banco não responder | readiness (fim do deploy e monitoramento) |
+### 3.2 GitHub — em cada repositório
 
-## 5. Rodar o CI localmente
+1. **Environments** (_Settings_ > _Environments_): criar `homologacao` e `producao`. Em produção, opcionalmente _Required reviewers_ (o deploy espera a sua aprovação).
+2. **Em cada environment:**
+
+   | Tipo     | Nome               | Exemplo (homologação)               |
+   | -------- | ------------------ | ----------------------------------- |
+   | Variable | `COOLIFY_URL`      | `https://coolify.seudominio.com.br` |
+   | Variable | `COOLIFY_APP_UUID` | UUID da aplicação no Coolify        |
+   | Variable | `APP_URL`          | `https://api-dev.pedmesa.com.br`    |
+   | Secret   | `COOLIFY_TOKEN`    | token de API do Coolify             |
+
+   `vars.*` são **Variables** e `secrets.*` são **Secrets**: um valor cadastrado no lugar errado não é lido. Sem essas variáveis, o deploy só publica a imagem e avisa que nada foi implantado.
+3. **Branch protection** (_Settings_ > _Branches_) em `main` e `prod`: Pull Request obrigatório, status checks **Qualidade**, **Testes** e **Commits**, e revisão dos code owners (`* @SamuelRamosSantos`).
+4. **Code security:** ativar _Dependabot alerts_ e _Dependabot security updates_.
+5. **Variável de repositório `CHECK_MODE`:** deixar sem (modo `report`) até a PED-59/64/69; depois, `enforce`.
+
+## 4. Rodar a imagem localmente
 
 ```bash
-npm ci
-npm run check
-npm run build
-docker compose -f docker-compose.test.yml up -d
-npm test
-docker compose -f docker-compose.test.yml down
+docker build -t pedmesa-api:local .
+docker run --rm -p 3000:3000 --env-file .env pedmesa-api:local
 ```
 
-## 6. Problemas comuns
+Com o `.env` de desenvolvimento, o container aplica as migrations no banco de dev da VPS antes de subir. Para não tocar nele, aponte para o banco de testes do `docker-compose.test.yml` (`DB_HOST=host.docker.internal`, `DB_PORT=5433`).
+
+## 5. `/health` e `/ready`
+
+| Rota          | Responde                                                  | Uso                                             |
+| ------------- | --------------------------------------------------------- | ----------------------------------------------- |
+| `GET /health` | 200 enquanto o processo está de pé; não consulta o banco  | liveness (`HEALTHCHECK` da imagem e do Coolify) |
+| `GET /ready`  | 200 com `SELECT 1` no banco; 503 se o banco não responder | readiness (fim do deploy)                       |
+
+## 6. Rollback
+
+Toda imagem publicada fica com a tag `sha-<commit>`. Para voltar uma versão: no Coolify, troque a tag da aplicação para o `sha-<commit>` anterior e faça _Redeploy_; ou rode o `deploy.yml` manualmente a partir de um commit anterior. Atenção: migrations já aplicadas não são desfeitas pelo rollback da imagem.
+
+## 7. Verificação de segurança à mão
+
+```bash
+bash scripts/check-security-headers.sh https://api.pedmesa.com.br api
+CHECK_MODE=enforce bash scripts/check-security-headers.sh https://api.pedmesa.com.br api   # sai com 1 se houver problema
+```
+
+Os domínios passam pelo proxy da Cloudflare (`Server: cloudflare`): cabeçalhos, compressão e o `Server` também dependem da configuração da Cloudflare, não só da API.
+
+## 8. Problemas comuns
 
 - **Testes recusam rodar com `[trava de testes]`:** o `DB_NAME` não termina em `_test`, o `DB_HOST` não é local ou falta o `.env.test`. É proposital; veja o README.
 - **Vitest falha com `Cannot read properties of undefined (reading 'config')` no Windows:** o terminal está num caminho com a letra do drive minúscula (`d:/...`, comum no Git Bash). Rode pelo PowerShell ou a partir de `D:\...`.
-- **Job Commits falha:** alguma mensagem do PR está fora de `tipo(escopo): [PED-<ID>] descrição` ou passa de 100 caracteres. Corrija com `git commit --amend` (último commit) ou reescrevendo os commits da branch.
-- **Job Qualidade falha só no CI:** rode `npm run check` localmente; o hook `pre-commit` só formata os arquivos do stage, não roda o `tsc`.
+- **Job Commits falha:** alguma mensagem do PR está fora de `tipo(escopo): [PED-<ID>] descrição` ou passa de 100 caracteres.
+- **Deploy publica a imagem mas avisa que nada foi implantado:** faltam `COOLIFY_URL`, `COOLIFY_APP_UUID` ou `COOLIFY_TOKEN` no environment.
+- **Coolify não consegue puxar a imagem (`unauthorized`):** falta o `docker login ghcr.io` no servidor, ou o token não tem `read:packages`.
+- **Container reinicia em loop logo depois do deploy:** veja o log no Coolify. Causas comuns: variável `R2_*` faltando (a API recusa subir) ou migration falhando no `entrypoint.sh`.

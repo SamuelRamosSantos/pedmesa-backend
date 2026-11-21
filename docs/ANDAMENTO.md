@@ -27,6 +27,7 @@
 - Fila de impressão por TCP e pelo agente desktop, com tickets de cozinha, pré-conta e entrega.
 - Upload de imagens no Cloudflare R2 por tenant (PED-45), rate limit, dashboard, usuários, configurações do tenant e leads.
 - Organização do repositório: Biome, Husky + Commitlint, guardrails de IA (`.agents/`), documentação em `docs/`, suíte de integração com banco `_test`, `/ready`, CI e Dependabot.
+- Entrega contínua (PED-117 a PED-121): imagens Docker não-root com Node 26 nos três repositórios, migrations no start da API, deploy por GitHub Actions + GHCR + Coolify, verificação de segurança pós-deploy (modo report) e Dependabot também para Docker.
 
 ## 3. Em andamento (fora da `main`)
 
@@ -34,7 +35,6 @@
 
 ## 4. Planejado
 
-- PED-117 a PED-121: Dockerfile do backend, padronização dos Dockerfiles do front, pipeline de deploy no Coolify e verificação de segurança pós-deploy (o Dependabot, PED-121, já entrou).
 - PED-59, PED-64 e PED-69: cabeçalhos de segurança, redução de exposição de informações e mitigação do BREACH.
 - PED-54 e PED-71: hardening manual do SSH e da rede do servidor.
 - PED-114: padronizar o fuso horário entre Node e Postgres.
@@ -47,7 +47,6 @@
 
 ## 6. Impacto previsto na arquitetura
 
-- O PED-117 e o PED-119 trazem Dockerfile, imagem no GHCR e deploy automatizado; o PED-120 adiciona a checagem de cabeçalhos no pipeline.
 - O PED-59 adiciona o `helmet` à API.
 
 ## 7. Documentos relacionados

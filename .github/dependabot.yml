@@ -22,4 +22,15 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  # O ecossistema docker entra junto com o Dockerfile da API (PED-117).
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # As majors ímpares do Node não são LTS; a troca de major é manual.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
