@@ -48,6 +48,20 @@ validar_configuracao() {
     erro "COOLIFY_URL deve ser só o endereço do painel do Coolify (ex.: https://coolify.exemplo.com), sem caminho nem parâmetros. Valor atual: $COOLIFY_URL"
     exit 1
   fi
+
+  # Engano comum: colar a URL do "Deploy Webhook" do Coolify no lugar do UUID.
+  # Nesse caso o UUID é extraído da própria URL, com um aviso para corrigir.
+  if printf '%s' "$COOLIFY_APP_UUID" | grep -qE '[?&]uuid='; then
+    local extraido
+    extraido="$(printf '%s' "$COOLIFY_APP_UUID" | sed -E 's/.*[?&]uuid=([^&]+).*/\1/')"
+    echo "::warning title=COOLIFY_APP_UUID com a URL do webhook::A variável tem a URL inteira do Deploy Webhook. Usando o UUID '$extraido'; corrija a variável para conter só ele."
+    COOLIFY_APP_UUID="$extraido"
+  fi
+
+  if ! printf '%s' "$COOLIFY_APP_UUID" | grep -qE '^[A-Za-z0-9]+$'; then
+    erro "COOLIFY_APP_UUID deve ser só o UUID da aplicação no Coolify (letras e números, ex.: f1ey1p82cb6xiqgflrmpwnme), que aparece na URL da aplicação no painel. Valor atual: $COOLIFY_APP_UUID"
+    exit 1
+  fi
 }
 
 # Faz a chamada à API do Coolify. Deixa o status em $STATUS e o corpo em $CORPO.
@@ -116,6 +130,17 @@ aguardar() {
 
   for tentativa in $(seq 1 60); do
     chamar GET "/api/v1/deployments/${deployment}"
+
+    if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+      # Disparar exige a permissão "deploy"; consultar o andamento exige "read".
+      # Sem ela não adianta repetir: segue, e a etapa "Verificar no ar" confere
+      # se a versão nova subiu.
+      local aviso="O token consegue disparar o deploy, mas não consultar o andamento (HTTP $STATUS). Gere o token do Coolify com as permissões 'read' e 'deploy' para o pipeline acompanhar o deploy e mostrar o log quando falhar. Seguindo: a etapa 'Verificar no ar' confere o resultado."
+      echo "::warning title=Token do Coolify sem permissão de leitura::$aviso"
+      resumo "### ⚠️ Deploy disparado sem acompanhamento"$'\n\n'"$aviso"
+      echo "acompanhado=nao" >> "${GITHUB_OUTPUT:-/dev/null}"
+      exit 0
+    fi
 
     if [ "$STATUS" != "200" ]; then
       echo "Tentativa $tentativa: não consegui consultar o deploy ($(explicar_status "$STATUS"))."

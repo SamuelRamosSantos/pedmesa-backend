@@ -61,7 +61,7 @@ As **migrations rodam no start do container** (`entrypoint.sh`): o deploy nunca 
 4. **Health check:** pode ficar ligado no Coolify em `/health`, porta 3000 (a imagem também declara o seu `HEALTHCHECK`).
 5. **Desligar o deploy automático por push no Coolify:** quem dispara o deploy agora é o GitHub Actions.
 6. **Anotar o UUID da aplicação:** aparece na URL da aplicação no painel do Coolify.
-7. **Token de API do Coolify:** _Keys & Tokens_ > _API tokens_ > criar um token com permissão de **deploy**. Um token serve para todas as aplicações.
+7. **Token de API do Coolify:** _Keys & Tokens_ > _API tokens_ > criar um token com as permissões **`read`** e **`deploy`**: `deploy` dispara o deploy e `read` deixa o pipeline acompanhar o andamento e mostrar o log do Coolify quando falhar. Sem `read`, o deploy é disparado, mas sem acompanhamento (o pipeline avisa e confia na etapa **Verificar no ar**). Um token serve para todas as aplicações.
 
 ### 3.2 GitHub — em cada repositório
 
@@ -117,6 +117,8 @@ Os domínios passam pelo proxy da Cloudflare (`Server: cloudflare`): cabeçalhos
 - **Deploy publica a imagem mas avisa que nada foi implantado:** faltam `COOLIFY_URL`, `COOLIFY_APP_UUID` ou `COOLIFY_TOKEN` no environment.
 - **`Método não aceito (405)`:** o Coolify só aceita `POST` em `/api/v1/deploy` (é o que o script usa); se aparecer, o `COOLIFY_URL` não aponta para o painel do Coolify.
 - **`COOLIFY_URL deve ser só o endereço do painel`:** cadastre só `https://seu-coolify`, sem `/api/v1` nem parâmetros.
+- **`Token do Coolify sem permissão de leitura`:** o token tem só `deploy`; gere um com `read` e `deploy` e atualize o secret `COOLIFY_TOKEN`.
+- **`COOLIFY_APP_UUID com a URL do webhook`:** a variável recebeu a URL do _Deploy Webhook_; o pipeline extrai o UUID, mas corrija a variável para conter só ele.
 - **`a versão no ar é X, esperada Y`:** o Coolify terminou, mas o container antigo continua rodando; confira se a aplicação está como _Docker Image_ com a tag do ambiente.
 - **Coolify não consegue puxar a imagem (`unauthorized`):** falta o `docker login ghcr.io` no servidor, ou o token não tem `read:packages`.
 - **Container reinicia em loop logo depois do deploy:** veja o log no Coolify. Causas comuns: variável `R2_*` faltando (a API recusa subir) ou migration falhando no `entrypoint.sh`.
