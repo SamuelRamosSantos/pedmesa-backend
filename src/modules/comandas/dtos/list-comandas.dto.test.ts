@@ -5,11 +5,16 @@ import { parseListComandasFilters } from "./list-comandas.dto";
 
 describe("parseListComandasFilters", () => {
   it("sem parâmetros: comandas abertas de mesa", () => {
-    expect(parseListComandasFilters({})).toEqual({ status: ComandaStatus.ABERTA, tipoAtendimento: TipoAtendimento.MESA });
+    expect(parseListComandasFilters({})).toEqual({
+      status: ComandaStatus.ABERTA,
+      tipoAtendimento: TipoAtendimento.MESA,
+    });
   });
 
   it("aceita tipo delivery e status fechada", () => {
-    expect(parseListComandasFilters({ status: "fechada", tipo: "delivery" })).toEqual({
+    expect(
+      parseListComandasFilters({ status: "fechada", tipo: "delivery" }),
+    ).toEqual({
       status: ComandaStatus.FECHADA,
       tipoAtendimento: TipoAtendimento.DELIVERY,
     });

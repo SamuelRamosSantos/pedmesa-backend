@@ -11,7 +11,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -21,7 +21,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "20",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -31,7 +31,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -41,7 +41,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "255",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -51,7 +51,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "2",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -61,7 +61,7 @@ export class AddEnderecoToTenants1700000000014 implements MigrationInterface {
         type: "varchar",
         length: "9",
         isNullable: true,
-      })
+      }),
     );
   }
 

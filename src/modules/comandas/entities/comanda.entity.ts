@@ -55,7 +55,12 @@ export class Comanda {
   @Column({ name: "numero_comanda", type: "int", nullable: true })
   numeroComanda!: number | null;
 
-  @Column({ type: "enum", enum: ComandaStatus, enumName: "comandas_status_enum", default: ComandaStatus.ABERTA })
+  @Column({
+    type: "enum",
+    enum: ComandaStatus,
+    enumName: "comandas_status_enum",
+    default: ComandaStatus.ABERTA,
+  })
   status!: ComandaStatus;
 
   @Column({ name: "comanda_pai_id", type: "uuid", nullable: true })
@@ -101,7 +106,8 @@ export class Comanda {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+      from: (value: string | null) =>
+        value === null ? null : Number.parseFloat(value),
     },
   })
   subtotal!: number | null;
@@ -114,17 +120,24 @@ export class Comanda {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+      from: (value: string | null) =>
+        value === null ? null : Number.parseFloat(value),
     },
   })
   totalFinal!: number | null;
 
-  @OneToMany(() => IntegranteComanda, (integrante) => integrante.comanda)
+  @OneToMany(
+    () => IntegranteComanda,
+    (integrante) => integrante.comanda,
+  )
   integrantes!: IntegranteComanda[];
 
   // Lado inverso do 1:1 com a entrega (ADR-001): só existe em comandas de delivery e só
   // vem preenchido quando a consulta faz o join (KDS e dashboard, PED-103). Relation<>
   // evita a referência circular de metadata entre as duas entidades.
-  @OneToOne(() => Entrega, (entrega) => entrega.comanda)
+  @OneToOne(
+    () => Entrega,
+    (entrega) => entrega.comanda,
+  )
   entrega?: Relation<Entrega> | null;
 }

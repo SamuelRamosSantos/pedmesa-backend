@@ -11,9 +11,9 @@
 // acumulados em mock-printer-received.bin, na mesma pasta deste script.
 // Apague o .bin/.log entre execuções se quiser recomeçar do zero.
 
-const net = require("net");
-const fs = require("fs");
-const path = require("path");
+const net = require("node:net");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const PORTA = Number(process.argv[2]) || 19100;
 const OUT_BIN = path.join(__dirname, "mock-printer-received.bin");
@@ -25,7 +25,10 @@ const server = net.createServer((socket) => {
   socket.on("end", () => {
     const dados = Buffer.concat(partes);
     fs.appendFileSync(OUT_BIN, dados);
-    fs.appendFileSync(OUT_LOG, `--- job recebido (${dados.length} bytes) em ${new Date().toISOString()} ---\n`);
+    fs.appendFileSync(
+      OUT_LOG,
+      `--- job recebido (${dados.length} bytes) em ${new Date().toISOString()} ---\n`,
+    );
     console.log(`[MOCK PRINTER] recebido ${dados.length} bytes`);
   });
 });

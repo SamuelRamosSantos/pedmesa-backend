@@ -8,9 +8,15 @@ const CODIGO_PAIS_BRASIL = "55";
 export function normalizarTelefone(valor: string): string | null {
   let digitos = apenasDigitos(valor);
 
-  if ((digitos.length === 12 || digitos.length === 13) && digitos.startsWith(CODIGO_PAIS_BRASIL)) {
+  if (
+    (digitos.length === 12 || digitos.length === 13) &&
+    digitos.startsWith(CODIGO_PAIS_BRASIL)
+  ) {
     digitos = digitos.slice(CODIGO_PAIS_BRASIL.length);
-  } else if ((digitos.length === 11 || digitos.length === 12) && digitos.startsWith("0")) {
+  } else if (
+    (digitos.length === 11 || digitos.length === 12) &&
+    digitos.startsWith("0")
+  ) {
     digitos = digitos.slice(1);
   }
 

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { avaliarFechamento, podeCancelarComandaZerada } from "./fechamento-calculator";
+import {
+  avaliarFechamento,
+  podeCancelarComandaZerada,
+} from "./fechamento-calculator";
 
 describe("avaliarFechamento", () => {
   it("considera suficiente quando o pagamento é exatamente igual ao total da comanda", () => {
@@ -12,7 +15,10 @@ describe("avaliarFechamento", () => {
   });
 
   it("soma múltiplas formas de pagamento", () => {
-    const resultado = avaliarFechamento(75.0, [{ valor: 40.0 }, { valor: 35.0 }]);
+    const resultado = avaliarFechamento(75.0, [
+      { valor: 40.0 },
+      { valor: 35.0 },
+    ]);
 
     expect(resultado.totalPagoCents).toBe(7500);
     expect(resultado.suficiente).toBe(true);

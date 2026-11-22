@@ -1,5 +1,9 @@
 import { AppError } from "../../../shared/errors/app-error";
-import { validarNomeCliente, validarObservacoesCliente, validarTelefoneCliente } from "./cliente-input.validator";
+import {
+  validarNomeCliente,
+  validarObservacoesCliente,
+  validarTelefoneCliente,
+} from "./cliente-input.validator";
 
 export interface UpdateClienteDto {
   nome?: string;
@@ -26,7 +30,10 @@ export function assertValidUpdateClienteDto(body: unknown): UpdateClienteDto {
   }
 
   if (Object.keys(dto).length === 0) {
-    throw new AppError("Informe ao menos um campo para atualizar: nome, telefone ou observacoes.", 400);
+    throw new AppError(
+      "Informe ao menos um campo para atualizar: nome, telefone ou observacoes.",
+      400,
+    );
   }
 
   return dto;

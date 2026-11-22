@@ -1,5 +1,9 @@
 import { AppError } from "../../../shared/errors/app-error";
-import { assertValidIp, assertValidNome, assertValidPorta } from "./impressora-input.validator";
+import {
+  assertValidIp,
+  assertValidNome,
+  assertValidPorta,
+} from "./impressora-input.validator";
 
 export interface UpdateImpressoraDto {
   nome?: string;
@@ -8,7 +12,9 @@ export interface UpdateImpressoraDto {
   ativo?: boolean;
 }
 
-export function assertValidUpdateImpressoraDto(body: unknown): UpdateImpressoraDto {
+export function assertValidUpdateImpressoraDto(
+  body: unknown,
+): UpdateImpressoraDto {
   const { nome, ip, porta, ativo } = (body ?? {}) as Record<string, unknown>;
 
   const dto: UpdateImpressoraDto = {};

@@ -13,7 +13,10 @@ export interface ExtratoCarregado {
 }
 
 // Taxa de entrega da comanda: 0 para mesa; para delivery, o snapshot gravado na entrega.
-async function buscarTaxaEntrega(manager: EntityManager, comanda: Comanda): Promise<number> {
+async function buscarTaxaEntrega(
+  manager: EntityManager,
+  comanda: Comanda,
+): Promise<number> {
   if (comanda.tipoAtendimento !== TipoAtendimento.DELIVERY) {
     return 0;
   }
@@ -38,7 +41,7 @@ async function buscarTaxaEntrega(manager: EntityManager, comanda: Comanda): Prom
 export async function carregarExtrato(
   manager: EntityManager,
   tenantId: string,
-  comandaId: string
+  comandaId: string,
 ): Promise<ExtratoCarregado> {
   const comanda = await manager.findOne(Comanda, {
     where: { id: comandaId, tenantId },
@@ -65,7 +68,10 @@ export async function carregarExtrato(
       integranteId: item.integranteId,
       statusItem: item.statusItem,
     })),
-    integrantes: comanda.integrantes.map((integrante) => ({ id: integrante.id, nome: integrante.nome })),
+    integrantes: comanda.integrantes.map((integrante) => ({
+      id: integrante.id,
+      nome: integrante.nome,
+    })),
     taxaEntrega: await buscarTaxaEntrega(manager, comanda),
   });
 

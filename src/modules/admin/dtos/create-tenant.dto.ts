@@ -37,7 +37,10 @@ export function assertValidCreateTenantDto(body: unknown): CreateTenantDto {
   }
 
   if (typeof adminSenha !== "string" || adminSenha.length < SENHA_MIN_LENGTH) {
-    throw new AppError(`Senha do administrador deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`, 400);
+    throw new AppError(
+      `Senha do administrador deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`,
+      400,
+    );
   }
 
   return {

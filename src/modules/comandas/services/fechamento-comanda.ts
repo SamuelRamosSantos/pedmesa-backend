@@ -2,11 +2,21 @@ import { EntityManager } from "typeorm";
 import { AppError } from "../../../shared/errors/app-error";
 import { fromCents } from "../../../shared/utils/money";
 import { FecharComandaDto } from "../dtos/fechar-comanda.dto";
-import { Comanda, ComandaStatus, DescontoTipo } from "../entities/comanda.entity";
-import { ratearDescontoPorIntegrante, RateioIntegranteComDesconto } from "./desconto-calculator";
+import {
+  Comanda,
+  ComandaStatus,
+  DescontoTipo,
+} from "../entities/comanda.entity";
+import {
+  RateioIntegranteComDesconto,
+  ratearDescontoPorIntegrante,
+} from "./desconto-calculator";
 import { carregarExtrato } from "./extrato-loader";
 import { avaliarFechamento } from "./fechamento-calculator";
-import { calcularTotalComEntrega, somarTaxaEntregaAoRateio } from "./total-com-entrega-calculator";
+import {
+  calcularTotalComEntrega,
+  somarTaxaEntregaAoRateio,
+} from "./total-com-entrega-calculator";
 
 export interface FechamentoResultado {
   comanda: Comanda;
@@ -35,7 +45,7 @@ export interface FecharComandaParams {
 // - Lê o extrato pelo `manager`, então enxerga pagamentos gravados antes, na mesma transação.
 export async function fecharComandaNaTransacao(
   manager: EntityManager,
-  { tenantId, comandaId, dto, actorPodeConcederDesconto }: FecharComandaParams
+  { tenantId, comandaId, dto, actorPodeConcederDesconto }: FecharComandaParams,
 ): Promise<FechamentoResultado> {
   await manager
     .createQueryBuilder(Comanda, "comanda")
@@ -44,14 +54,21 @@ export async function fecharComandaNaTransacao(
     .andWhere("comanda.tenantId = :tenantId", { tenantId })
     .getOne();
 
-  const { comanda, calculado, pagamentos } = await carregarExtrato(manager, tenantId, comandaId);
+  const { comanda, calculado, pagamentos } = await carregarExtrato(
+    manager,
+    tenantId,
+    comandaId,
+  );
 
   if (comanda.status !== ComandaStatus.ABERTA) {
     throw new AppError("Esta comanda já está fechada.", 400);
   }
 
   if (pagamentos.length === 0) {
-    throw new AppError("É necessário registrar ao menos um pagamento antes de fechar a comanda.", 400);
+    throw new AppError(
+      "É necessário registrar ao menos um pagamento antes de fechar a comanda.",
+      400,
+    );
   }
 
   if (dto.descontoTipo !== DescontoTipo.NENHUM && !actorPodeConcederDesconto) {
@@ -62,20 +79,20 @@ export async function fecharComandaNaTransacao(
   const totais = calcularTotalComEntrega(
     calculado.resumo_financeiro.valor_total_comanda,
     { tipo: dto.descontoTipo, valor: dto.descontoValor },
-    calculado.resumo_financeiro.taxa_entrega
+    calculado.resumo_financeiro.taxa_entrega,
   );
 
   const avaliacao = avaliarFechamento(
     totais.total_final,
-    pagamentos.map((pagamento) => ({ valor: pagamento.valor }))
+    pagamentos.map((pagamento) => ({ valor: pagamento.valor })),
   );
 
   if (!avaliacao.suficiente) {
     throw new AppError(
       `Valor pago (R$ ${fromCents(avaliacao.totalPagoCents).toFixed(2)}) é insuficiente para quitar a comanda (total: R$ ${fromCents(
-        avaliacao.totalComandaCents
+        avaliacao.totalComandaCents,
       ).toFixed(2)}).`,
-      400
+      400,
     );
   }
 
@@ -86,9 +103,9 @@ export async function fecharComandaNaTransacao(
         nome: integrante.nome,
         totalAPagar: integrante.total_a_pagar,
       })),
-      totais.desconto_aplicado
+      totais.desconto_aplicado,
     ),
-    totais.taxa_entrega
+    totais.taxa_entrega,
   );
 
   // Grava só as colunas do fechamento (sem a relação integrantes carregada no extrato).
@@ -102,10 +119,13 @@ export async function fecharComandaNaTransacao(
       descontoValor: dto.descontoValor,
       subtotal: totais.subtotal,
       totalFinal: totais.total_final,
-    }
+    },
   );
 
-  const comandaFechada = await manager.findOneByOrFail(Comanda, { id: comanda.id, tenantId });
+  const comandaFechada = await manager.findOneByOrFail(Comanda, {
+    id: comanda.id,
+    tenantId,
+  });
 
   return {
     comanda: comandaFechada,

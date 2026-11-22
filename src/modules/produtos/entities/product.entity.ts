@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Category } from "../../categorias/entities/category.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 
@@ -46,4 +52,7 @@ export class Product {
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
+
+  @Column({ name: "imagem_url", type: "varchar", length: 1024, nullable: true })
+  imagemUrl!: string | null;
 }

@@ -11,15 +11,26 @@ export interface TransicaoEntregaDto {
   motivo: string | null;
 }
 
-export function assertValidTransicaoEntregaDto(body: unknown): TransicaoEntregaDto {
+export function assertValidTransicaoEntregaDto(
+  body: unknown,
+): TransicaoEntregaDto {
   const { status, versao, motivo } = (body ?? {}) as Record<string, unknown>;
 
-  if (typeof status !== "string" || !STATUS_VALIDOS.includes(status as StatusEntrega)) {
-    throw new AppError(`status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`, 400);
+  if (
+    typeof status !== "string" ||
+    !STATUS_VALIDOS.includes(status as StatusEntrega)
+  ) {
+    throw new AppError(
+      `status deve ser um dos seguintes: ${STATUS_VALIDOS.join(", ")}.`,
+      400,
+    );
   }
 
   if (typeof versao !== "number" || !Number.isInteger(versao) || versao < 1) {
-    throw new AppError("versao é obrigatória: envie a versão da entrega que está na tela.", 400);
+    throw new AppError(
+      "versao é obrigatória: envie a versão da entrega que está na tela.",
+      400,
+    );
   }
 
   return {

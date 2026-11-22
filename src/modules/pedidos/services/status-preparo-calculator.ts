@@ -1,8 +1,12 @@
 import { StatusItem } from "../entities/item-pedido.entity";
 import { StatusPreparo } from "../entities/pedido.entity";
 
-export function calcularStatusPreparoPedido(statusDosItens: StatusItem[]): StatusPreparo {
-  const itensAtivos = statusDosItens.filter((status) => status !== StatusItem.CANCELADO);
+export function calcularStatusPreparoPedido(
+  statusDosItens: StatusItem[],
+): StatusPreparo {
+  const itensAtivos = statusDosItens.filter(
+    (status) => status !== StatusItem.CANCELADO,
+  );
 
   if (itensAtivos.length === 0) {
     return StatusPreparo.ENTREGUE;
@@ -12,7 +16,12 @@ export function calcularStatusPreparoPedido(statusDosItens: StatusItem[]): Statu
     return StatusPreparo.ENTREGUE;
   }
 
-  if (itensAtivos.every((status) => status === StatusItem.PRONTO || status === StatusItem.ENTREGUE)) {
+  if (
+    itensAtivos.every(
+      (status) =>
+        status === StatusItem.PRONTO || status === StatusItem.ENTREGUE,
+    )
+  ) {
     return StatusPreparo.PRONTO;
   }
 

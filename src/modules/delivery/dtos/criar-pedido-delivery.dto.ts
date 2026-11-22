@@ -2,12 +2,21 @@ import { AppError } from "../../../shared/errors/app-error";
 import { isUuid } from "../../../shared/utils/is-uuid";
 import { toCents } from "../../../shared/utils/money";
 import { validarValorReais } from "../../../shared/utils/validar-valor-reais";
-import { CreateClienteDto, assertValidCreateClienteDto } from "../../clientes/dtos/create-cliente.dto";
-import { assertValidCreateEnderecoClienteDto, CreateEnderecoClienteDto } from "../../clientes/dtos/create-endereco-cliente.dto";
+import {
+  assertValidCreateClienteDto,
+  CreateClienteDto,
+} from "../../clientes/dtos/create-cliente.dto";
+import {
+  assertValidCreateEnderecoClienteDto,
+  CreateEnderecoClienteDto,
+} from "../../clientes/dtos/create-endereco-cliente.dto";
 import { validarBooleano } from "../../clientes/dtos/endereco-input.validator";
 import { validarFormaPagamento } from "../../comandas/dtos/forma-pagamento.validator";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
-import { assertValidCreatePedidoDto, CreatePedidoItemInput } from "../../pedidos/dtos/create-pedido.dto";
+import {
+  assertValidCreatePedidoDto,
+  CreatePedidoItemInput,
+} from "../../pedidos/dtos/create-pedido.dto";
 
 export type EnderecoNovo = Omit<CreateEnderecoClienteDto, "principal">;
 
@@ -24,12 +33,19 @@ export interface CriarPedidoDeliveryDto {
   trocoParaCents: number | null;
 }
 
-function validarEndereco(enderecoId: unknown, endereco: unknown, salvarEndereco: unknown): EnderecoDoPedido {
+function validarEndereco(
+  enderecoId: unknown,
+  endereco: unknown,
+  salvarEndereco: unknown,
+): EnderecoDoPedido {
   const temId = enderecoId !== undefined && enderecoId !== null;
   const temNovo = endereco !== undefined && endereco !== null;
 
   if (temId === temNovo) {
-    throw new AppError("Informe endereco_id (endereço salvo do cliente) ou endereco (endereço novo), um dos dois.", 400);
+    throw new AppError(
+      "Informe endereco_id (endereço salvo do cliente) ou endereco (endereço novo), um dos dois.",
+      400,
+    );
   }
 
   if (temId) {
@@ -39,12 +55,16 @@ function validarEndereco(enderecoId: unknown, endereco: unknown, salvarEndereco:
     return { tipo: "salvo", enderecoId };
   }
 
-  const { principal: _ignorado, ...enderecoNovo } = assertValidCreateEnderecoClienteDto(endereco);
+  const { principal: _ignorado, ...enderecoNovo } =
+    assertValidCreateEnderecoClienteDto(endereco);
 
   return {
     tipo: "novo",
     endereco: enderecoNovo,
-    salvarNoCadastro: salvarEndereco === undefined ? false : validarBooleano(salvarEndereco, "salvar_endereco"),
+    salvarNoCadastro:
+      salvarEndereco === undefined
+        ? false
+        : validarBooleano(salvarEndereco, "salvar_endereco"),
   };
 }
 
@@ -52,7 +72,9 @@ function validarEndereco(enderecoId: unknown, endereco: unknown, salvarEndereco:
 // pagamento e "troco para". Preço, taxa, total e status são calculados no servidor; campos
 // como taxa_entrega, total ou tenant_id no corpo são ignorados. integrante_id dos itens
 // também é ignorado: no delivery os itens são do cliente.
-export function assertValidCriarPedidoDeliveryDto(body: unknown): CriarPedidoDeliveryDto {
+export function assertValidCriarPedidoDeliveryDto(
+  body: unknown,
+): CriarPedidoDeliveryDto {
   const {
     cliente,
     endereco_id: enderecoId,
@@ -70,8 +92,14 @@ export function assertValidCriarPedidoDeliveryDto(body: unknown): CriarPedidoDel
   return {
     cliente: assertValidCreateClienteDto(cliente),
     endereco: validarEndereco(enderecoId, endereco, salvarEndereco),
-    itens: assertValidCreatePedidoDto({ itens }).itens.map((item) => ({ ...item, integranteId: null })),
+    itens: assertValidCreatePedidoDto({ itens }).itens.map((item) => ({
+      ...item,
+      integranteId: null,
+    })),
     formaPagamento: validarFormaPagamento(formaPagamento, "forma_pagamento"),
-    trocoParaCents: trocoPara === undefined || trocoPara === null ? null : toCents(validarValorReais(trocoPara, "troco_para")),
+    trocoParaCents:
+      trocoPara === undefined || trocoPara === null
+        ? null
+        : toCents(validarValorReais(trocoPara, "troco_para")),
   };
 }

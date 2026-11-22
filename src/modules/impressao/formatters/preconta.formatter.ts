@@ -1,11 +1,16 @@
-import { PreContaJobPayload, PrintJobItemPayload } from "../types/print-job.types";
+import {
+  PreContaJobPayload,
+  PrintJobItemPayload,
+} from "../types/print-job.types";
 import { formatarMoeda } from "./formatacao";
 
 const LARGURA_CUPOM = "================================";
 const SEPARADOR_ITEM = "--------------------------------";
 
 function formatarCabecalho(job: PreContaJobPayload): string {
-  const horario = job.gerado_em.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const horario = job.gerado_em.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
 
   return [
     "[ESC/POS] INIT",
@@ -20,9 +25,15 @@ function formatarCabecalho(job: PreContaJobPayload): string {
 }
 
 function formatarItem(item: PrintJobItemPayload): string {
-  const linhas = [`${item.quantidade}x ${item.produto_nome} - ${formatarMoeda(item.subtotal)}`];
+  const linhas = [
+    `${item.quantidade}x ${item.produto_nome} - ${formatarMoeda(item.subtotal)}`,
+  ];
 
-  linhas.push(item.integrante_nome ? `  Para: ${item.integrante_nome}` : "  [COMPARTILHADO]");
+  linhas.push(
+    item.integrante_nome
+      ? `  Para: ${item.integrante_nome}`
+      : "  [COMPARTILHADO]",
+  );
 
   return linhas.join("\n");
 }

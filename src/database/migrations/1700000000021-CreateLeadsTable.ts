@@ -51,7 +51,7 @@ export class CreateLeadsTable1700000000021 implements MigrationInterface {
           },
         ],
       }),
-      true
+      true,
     );
   }
 

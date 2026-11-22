@@ -5,3 +5,13 @@ dist/
 .DS_Store
 scripts/dev/mock-printer-received.bin
 .claude/
+coverage/
+.env.test
+
+# Pasta do antigo driver de disco (removido na PED-45); pode existir em máquinas de dev
+/uploads/
+
+# Agentes de IA (arquivos locais)
+.agents/PLAN.md
+.mcp.json
+mcp_config.json

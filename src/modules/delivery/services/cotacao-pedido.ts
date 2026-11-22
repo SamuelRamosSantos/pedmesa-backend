@@ -9,7 +9,10 @@ export interface ItemCotado {
 }
 
 export function somarSubtotalCents(itens: readonly ItemCotado[]): number {
-  return itens.reduce((soma, item) => soma + toCents(item.precoUnitario) * item.quantidade, 0);
+  return itens.reduce(
+    (soma, item) => soma + toCents(item.precoUnitario) * item.quantidade,
+    0,
+  );
 }
 
 export interface MontarCotacaoParams {
@@ -50,7 +53,11 @@ export function montarCotacaoPedido({
 }: MontarCotacaoParams): CotacaoPedido {
   const taxaCents = frete.atendido ? toCents(frete.valor) : 0;
   const totalCents = subtotalCents + taxaCents;
-  const troco = calcularTroco({ totalCents, formaPrevista: formaPagamento, trocoParaCents });
+  const troco = calcularTroco({
+    totalCents,
+    formaPrevista: formaPagamento,
+    trocoParaCents,
+  });
 
   return {
     atendido: frete.atendido,

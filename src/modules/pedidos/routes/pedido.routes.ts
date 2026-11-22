@@ -5,6 +5,10 @@ import { create } from "../controllers/pedido.controller";
 
 const pedidoRoutes = Router({ mergeParams: true });
 
-pedidoRoutes.post("/", rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM]), create);
+pedidoRoutes.post(
+  "/",
+  rbacMiddleware([UserRole.ADMIN, UserRole.GARCOM]),
+  create,
+);
 
 export default pedidoRoutes;

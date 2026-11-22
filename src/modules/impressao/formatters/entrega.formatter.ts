@@ -1,5 +1,13 @@
-import { EntregaJobPayload, PrintJobItemPayload } from "../types/print-job.types";
-import { formatarCep, formatarMoeda, formatarTelefone, identificacaoDoPedido } from "./formatacao";
+import {
+  EntregaJobPayload,
+  PrintJobItemPayload,
+} from "../types/print-job.types";
+import {
+  formatarCep,
+  formatarMoeda,
+  formatarTelefone,
+  identificacaoDoPedido,
+} from "./formatacao";
 
 // Cupom do motoboy (PED-102). Portado 1:1 em pedmesa-print-agent/src/print/entrega-formatter.js:
 // ao mudar aqui, mude lá no mesmo commit.
@@ -15,7 +23,9 @@ const ROTULO_FORMA_PAGAMENTO: Record<string, string> = {
 };
 
 function formatarItem(item: PrintJobItemPayload): string {
-  const linhas = [`${item.quantidade}x ${item.produto_nome} - ${formatarMoeda(item.subtotal)}`];
+  const linhas = [
+    `${item.quantidade}x ${item.produto_nome} - ${formatarMoeda(item.subtotal)}`,
+  ];
 
   if (item.observacao) {
     linhas.push(`  Obs: ${item.observacao}`);
@@ -43,7 +53,9 @@ function formatarEndereco(job: EntregaJobPayload): string[] {
 
 function formatarPagamento(job: EntregaJobPayload): string[] {
   const { dados } = job;
-  const linhas = [`Pagamento: ${ROTULO_FORMA_PAGAMENTO[dados.forma_pagamento] ?? dados.forma_pagamento}`];
+  const linhas = [
+    `Pagamento: ${ROTULO_FORMA_PAGAMENTO[dados.forma_pagamento] ?? dados.forma_pagamento}`,
+  ];
 
   if (dados.troco_para !== null) {
     linhas.push(`Troco para: ${formatarMoeda(dados.troco_para)}`);
@@ -54,7 +66,9 @@ function formatarPagamento(job: EntregaJobPayload): string[] {
 }
 
 export function formatarEntrega(job: EntregaJobPayload): string {
-  const horario = job.gerado_em.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const horario = job.gerado_em.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
   const { dados } = job;
 
   return [

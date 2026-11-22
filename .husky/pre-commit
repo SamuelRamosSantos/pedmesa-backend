@@ -1,0 +1,4 @@
+# Formata e corrige (correções seguras) só os arquivos do stage e os devolve ao stage.
+# Erro de lint sem correção automática interrompe o commit.
+npx @biomejs/biome check --write --staged --no-errors-on-unmatched
+git update-index --again

@@ -18,17 +18,25 @@ export type AcaoPosCommit = () => Promise<void>;
 // Roda dentro da transação de quem mudou o preparo, com o mesmo `manager`: se o handler
 // falhar, a mudança do item também é desfeita. Não deve ter efeitos externos; devolve-os
 // como ações para depois do commit.
-export type PreparoAtualizadoHandler = (manager: EntityManager, evento: PreparoAtualizado) => Promise<AcaoPosCommit[]>;
+export type PreparoAtualizadoHandler = (
+  manager: EntityManager,
+  evento: PreparoAtualizado,
+) => Promise<AcaoPosCommit[]>;
 
 const handlers: PreparoAtualizadoHandler[] = [];
 
-export function registrarPreparoAtualizadoHandler(handler: PreparoAtualizadoHandler): void {
+export function registrarPreparoAtualizadoHandler(
+  handler: PreparoAtualizadoHandler,
+): void {
   if (!handlers.includes(handler)) {
     handlers.push(handler);
   }
 }
 
-export async function notificarPreparoAtualizado(manager: EntityManager, evento: PreparoAtualizado): Promise<AcaoPosCommit[]> {
+export async function notificarPreparoAtualizado(
+  manager: EntityManager,
+  evento: PreparoAtualizado,
+): Promise<AcaoPosCommit[]> {
   const acoes: AcaoPosCommit[] = [];
 
   for (const handler of handlers) {
@@ -40,7 +48,9 @@ export async function notificarPreparoAtualizado(manager: EntityManager, evento:
 
 // Depois do commit a mudança já valeu: uma falha aqui (ex.: impressora fora) é registrada
 // no log, mas não transforma a resposta em erro.
-export async function executarAcoesPosCommit(acoes: AcaoPosCommit[]): Promise<void> {
+export async function executarAcoesPosCommit(
+  acoes: AcaoPosCommit[],
+): Promise<void> {
   for (const acao of acoes) {
     try {
       await acao();

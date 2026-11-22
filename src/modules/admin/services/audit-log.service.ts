@@ -20,7 +20,7 @@ export class AuditLogService {
         usuarioId: params.usuarioId,
         metodo: params.metodo,
         rota: params.rota,
-      })
+      }),
     );
   }
 }

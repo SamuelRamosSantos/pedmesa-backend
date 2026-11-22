@@ -12,6 +12,7 @@ export interface CreateUserDto {
   roles: UserRole[];
   podeExcluirItemFechamento: boolean;
   podeConcederDesconto: boolean;
+  fotoUrl: string | null;
 }
 
 export function assertValidCreateUserDto(body: unknown): CreateUserDto {
@@ -22,6 +23,7 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     roles,
     pode_excluir_item_fechamento: podeExcluirItemFechamento,
     pode_conceder_desconto: podeConcederDesconto,
+    foto_url: fotoUrl,
   } = (body ?? {}) as Record<string, unknown>;
 
   if (typeof nome !== "string" || nome.trim().length === 0) {
@@ -33,15 +35,35 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
   }
 
   if (typeof senha !== "string" || senha.length < SENHA_MIN_LENGTH) {
-    throw new AppError(`Senha deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`, 400);
+    throw new AppError(
+      `Senha deve ter ao menos ${SENHA_MIN_LENGTH} caracteres.`,
+      400,
+    );
   }
 
-  if (podeExcluirItemFechamento !== undefined && typeof podeExcluirItemFechamento !== "boolean") {
-    throw new AppError("Campo pode_excluir_item_fechamento deve ser booleano.", 400);
+  if (
+    podeExcluirItemFechamento !== undefined &&
+    typeof podeExcluirItemFechamento !== "boolean"
+  ) {
+    throw new AppError(
+      "Campo pode_excluir_item_fechamento deve ser booleano.",
+      400,
+    );
   }
 
-  if (podeConcederDesconto !== undefined && typeof podeConcederDesconto !== "boolean") {
+  if (
+    podeConcederDesconto !== undefined &&
+    typeof podeConcederDesconto !== "boolean"
+  ) {
     throw new AppError("Campo pode_conceder_desconto deve ser booleano.", 400);
+  }
+
+  if (
+    fotoUrl !== undefined &&
+    fotoUrl !== null &&
+    typeof fotoUrl !== "string"
+  ) {
+    throw new AppError("Campo foto_url inválido.", 400);
   }
 
   return {
@@ -49,7 +71,12 @@ export function assertValidCreateUserDto(body: unknown): CreateUserDto {
     email: email.trim().toLowerCase(),
     senha,
     roles: assertValidRoles(roles),
-    podeExcluirItemFechamento: typeof podeExcluirItemFechamento === "boolean" ? podeExcluirItemFechamento : false,
-    podeConcederDesconto: typeof podeConcederDesconto === "boolean" ? podeConcederDesconto : false,
+    podeExcluirItemFechamento:
+      typeof podeExcluirItemFechamento === "boolean"
+        ? podeExcluirItemFechamento
+        : false,
+    podeConcederDesconto:
+      typeof podeConcederDesconto === "boolean" ? podeConcederDesconto : false,
+    fotoUrl: typeof fotoUrl === "string" ? fotoUrl : null,
   };
 }

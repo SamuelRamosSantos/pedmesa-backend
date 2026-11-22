@@ -6,7 +6,9 @@ export interface ListProductsFilters {
   disponivel?: boolean;
 }
 
-export function parseListProductsFilters(query: Record<string, unknown>): ListProductsFilters {
+export function parseListProductsFilters(
+  query: Record<string, unknown>,
+): ListProductsFilters {
   const filters: ListProductsFilters = {};
 
   if (query.categoria_id !== undefined) {
@@ -22,7 +24,10 @@ export function parseListProductsFilters(query: Record<string, unknown>): ListPr
     } else if (query.disponivel === "false") {
       filters.disponivel = false;
     } else {
-      throw new AppError("O parâmetro disponivel deve ser 'true' ou 'false'.", 400);
+      throw new AppError(
+        "O parâmetro disponivel deve ser 'true' ou 'false'.",
+        400,
+      );
     }
   }
 

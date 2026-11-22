@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatarCep, formatarMoeda, formatarTelefone, identificacaoDoPedido } from "./formatacao";
+import {
+  formatarCep,
+  formatarMoeda,
+  formatarTelefone,
+  identificacaoDoPedido,
+} from "./formatacao";
 
 describe("formatacao dos cupons", () => {
   it("formata moeda com vírgula", () => {

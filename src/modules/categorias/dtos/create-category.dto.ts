@@ -6,7 +6,10 @@ export interface CreateCategoryDto {
 }
 
 export function assertValidCreateCategoryDto(body: unknown): CreateCategoryDto {
-  const { nome, ordem_exibicao: ordemExibicao } = (body ?? {}) as Record<string, unknown>;
+  const { nome, ordem_exibicao: ordemExibicao } = (body ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   if (typeof nome !== "string" || nome.trim().length === 0) {
     throw new AppError("Nome da categoria é obrigatório.", 400);
@@ -14,9 +17,14 @@ export function assertValidCreateCategoryDto(body: unknown): CreateCategoryDto {
 
   if (
     ordemExibicao !== undefined &&
-    (typeof ordemExibicao !== "number" || !Number.isInteger(ordemExibicao) || ordemExibicao < 0)
+    (typeof ordemExibicao !== "number" ||
+      !Number.isInteger(ordemExibicao) ||
+      ordemExibicao < 0)
   ) {
-    throw new AppError("Ordem de exibição deve ser um número inteiro não negativo.", 400);
+    throw new AppError(
+      "Ordem de exibição deve ser um número inteiro não negativo.",
+      400,
+    );
   }
 
   return {

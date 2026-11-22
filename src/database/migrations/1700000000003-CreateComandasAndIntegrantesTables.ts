@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreateComandasAndIntegrantesTables1700000000003 implements MigrationInterface {
+export class CreateComandasAndIntegrantesTables1700000000003
+  implements MigrationInterface
+{
   name = "CreateComandasAndIntegrantesTables1700000000003";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -48,7 +55,7 @@ export class CreateComandasAndIntegrantesTables1700000000003 implements Migratio
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -59,7 +66,7 @@ export class CreateComandasAndIntegrantesTables1700000000003 implements Migratio
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -70,14 +77,14 @@ export class CreateComandasAndIntegrantesTables1700000000003 implements Migratio
         referencedTableName: "comandas",
         referencedColumnNames: ["id"],
         onDelete: "SET NULL",
-      })
+      }),
     );
 
     // Garante, a nível de banco, que não existam duas comandas abertas com o mesmo
     // número dentro do mesmo tenant, fechando a janela de corrida entre a validação
     // da aplicação e a inserção concorrente.
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "ux_comandas_tenant_numero_aberta" ON "comandas" ("tenant_id", "numero_comanda") WHERE "status" = 'aberta'`
+      `CREATE UNIQUE INDEX "ux_comandas_tenant_numero_aberta" ON "comandas" ("tenant_id", "numero_comanda") WHERE "status" = 'aberta'`,
     );
 
     await queryRunner.createTable(
@@ -103,7 +110,7 @@ export class CreateComandasAndIntegrantesTables1700000000003 implements Migratio
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -114,12 +121,15 @@ export class CreateComandasAndIntegrantesTables1700000000003 implements Migratio
         referencedTableName: "comandas",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("integrantes_comanda", "fk_integrantes_comanda_comanda_id");
+    await queryRunner.dropForeignKey(
+      "integrantes_comanda",
+      "fk_integrantes_comanda_comanda_id",
+    );
     await queryRunner.dropTable("integrantes_comanda");
 
     await queryRunner.dropForeignKey("comandas", "fk_comandas_comanda_pai_id");

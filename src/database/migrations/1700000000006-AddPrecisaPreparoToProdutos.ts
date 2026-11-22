@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddPrecisaPreparoToProdutos1700000000006 implements MigrationInterface {
+export class AddPrecisaPreparoToProdutos1700000000006
+  implements MigrationInterface
+{
   name = "AddPrecisaPreparoToProdutos1700000000006";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +13,7 @@ export class AddPrecisaPreparoToProdutos1700000000006 implements MigrationInterf
         type: "boolean",
         default: true,
         isNullable: false,
-      })
+      }),
     );
   }
 

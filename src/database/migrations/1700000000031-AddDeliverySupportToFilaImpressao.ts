@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, TableCheck, TableColumn } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableCheck,
+  TableColumn,
+} from "typeorm";
 
 // PED-96/PED-102: impressão de pedidos delivery.
 // - tipo 'entrega' (cupom do motoboy);
@@ -11,18 +16,32 @@ import { MigrationInterface, QueryRunner, TableCheck, TableColumn } from "typeor
 // porque o TypeORM recusa esse ajuste no modo "all" (ver migration 030).
 const CHECK_IDENTIFICACAO = "ck_fila_impressao_identificacao";
 
-export class AddDeliverySupportToFilaImpressao1700000000031 implements MigrationInterface {
+export class AddDeliverySupportToFilaImpressao1700000000031
+  implements MigrationInterface
+{
   name = "AddDeliverySupportToFilaImpressao1700000000031";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TYPE "fila_impressao_tipo_enum" ADD VALUE IF NOT EXISTS 'entrega'`);
+    await queryRunner.query(
+      `ALTER TYPE "fila_impressao_tipo_enum" ADD VALUE IF NOT EXISTS 'entrega'`,
+    );
 
     // SQL direto: changeColumn pode recriar a coluna no Postgres (ver skill dev-workflow).
-    await queryRunner.query(`ALTER TABLE "fila_impressao" ALTER COLUMN "numero_comanda" DROP NOT NULL`);
+    await queryRunner.query(
+      `ALTER TABLE "fila_impressao" ALTER COLUMN "numero_comanda" DROP NOT NULL`,
+    );
 
     await queryRunner.addColumns("fila_impressao", [
-      new TableColumn({ name: "numero_entrega", type: "int", isNullable: true }),
-      new TableColumn({ name: "dados_entrega", type: "jsonb", isNullable: true }),
+      new TableColumn({
+        name: "numero_entrega",
+        type: "int",
+        isNullable: true,
+      }),
+      new TableColumn({
+        name: "dados_entrega",
+        type: "jsonb",
+        isNullable: true,
+      }),
     ]);
 
     await queryRunner.createCheckConstraint(
@@ -30,7 +49,7 @@ export class AddDeliverySupportToFilaImpressao1700000000031 implements Migration
       new TableCheck({
         name: CHECK_IDENTIFICACAO,
         expression: `"numero_comanda" IS NOT NULL OR "numero_entrega" IS NOT NULL`,
-      })
+      }),
     );
   }
 
@@ -38,18 +57,26 @@ export class AddDeliverySupportToFilaImpressao1700000000031 implements Migration
   // anterior. Reverter recusa se houver jobs de delivery, para não apagar dados.
   public async down(queryRunner: QueryRunner): Promise<void> {
     const [{ total }] = await queryRunner.query(
-      `SELECT COUNT(*)::int AS total FROM "fila_impressao" WHERE "numero_comanda" IS NULL OR "tipo"::text = 'entrega'`
+      `SELECT COUNT(*)::int AS total FROM "fila_impressao" WHERE "numero_comanda" IS NULL OR "tipo"::text = 'entrega'`,
     );
 
     if (total > 0) {
       throw new Error(
         `Não é possível reverter AddDeliverySupportToFilaImpressao: existem ${total} job(s) de delivery em fila_impressao. ` +
-          "Remova-os antes de reverter."
+          "Remova-os antes de reverter.",
       );
     }
 
-    await queryRunner.dropCheckConstraint("fila_impressao", CHECK_IDENTIFICACAO);
-    await queryRunner.dropColumns("fila_impressao", ["dados_entrega", "numero_entrega"]);
-    await queryRunner.query(`ALTER TABLE "fila_impressao" ALTER COLUMN "numero_comanda" SET NOT NULL`);
+    await queryRunner.dropCheckConstraint(
+      "fila_impressao",
+      CHECK_IDENTIFICACAO,
+    );
+    await queryRunner.dropColumns("fila_impressao", [
+      "dados_entrega",
+      "numero_entrega",
+    ]);
+    await queryRunner.query(
+      `ALTER TABLE "fila_impressao" ALTER COLUMN "numero_comanda" SET NOT NULL`,
+    );
   }
 }

@@ -1,4 +1,8 @@
-import { validarNomeCliente, validarObservacoesCliente, validarTelefoneCliente } from "./cliente-input.validator";
+import {
+  validarNomeCliente,
+  validarObservacoesCliente,
+  validarTelefoneCliente,
+} from "./cliente-input.validator";
 
 export interface CreateClienteDto {
   nome: string;
@@ -7,7 +11,10 @@ export interface CreateClienteDto {
 }
 
 export function assertValidCreateClienteDto(body: unknown): CreateClienteDto {
-  const { nome, telefone, observacoes } = (body ?? {}) as Record<string, unknown>;
+  const { nome, telefone, observacoes } = (body ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   return {
     nome: validarNomeCliente(nome),

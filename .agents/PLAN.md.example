@@ -1,0 +1,119 @@
+# PLAN — Modelo de Planejamento de Tarefa
+
+> Modelo do plano de execução exigido pelo protocolo em `.agents/AGENTS.md`.
+> **Como usar:** copie este arquivo para `.agents/PLAN.md` (ignorado pelo Git) e preencha-o para cada nova tarefa, **antes** de alterar qualquer código.
+> O plano é aprovado **uma única vez**. Depois da aprovação, todas as subtarefas são executadas em sequência, com `npm run check` e testes ao longo do caminho, e a tarefa termina com **um único commit**. A IA nunca executa escrita no Git.
+> Este modelo (`PLAN.md.example`) é versionado e deve permanecer em branco.
+
+---
+
+## 1. Tarefa
+
+| Campo | Valor |
+|---|---|
+| Chave Jira | `PED-<ID>` |
+| Título | _título da issue_ |
+| Tipo | Tarefa, História, Subtarefa ou Bug |
+| Épico | `PED-<ID_DO_EPICO>` (define a branch) |
+| Repositório | `pedmesa-backend` |
+| Branch | `PED-<ID_DO_EPICO>-<titulo-do-epico-em-slug>` |
+| Status no Jira | _A fazer, Em andamento ou Feito_ |
+
+## 2. Entendimento da demanda
+
+_Resumo objetivo, em poucas linhas, do que a tarefa pede e do problema que resolve._
+
+### Critérios de aceite (copiados do Jira)
+
+- [ ] _critério 1_
+- [ ] _critério 2_
+
+### Contexto consultado
+
+- Requisitos: `docs/REQUISITOS.md` (_RF-xx, RN-xx_)
+- Arquitetura: `docs/ARQUITETURA.md` (seções: _x_)
+- ADRs: `docs/adr/` (_se houver_)
+
+### Premissas, riscos e dúvidas em aberto
+
+- _premissa ou dúvida que precisa de resposta do desenvolvedor antes da aprovação_
+
+---
+
+## 3. Arquivos previstos
+
+| Ação | Arquivo | Motivo |
+|---|---|---|
+| Criar | `src/...` | _por quê_ |
+| Editar | `src/...` | _por quê_ |
+| Editar | `README.md`, `docs/...` | _documentação em dia, quando houver mudança de comportamento_ |
+
+---
+
+## 4. Fases e subtarefas
+
+Legenda: `[ ]` a fazer, `[~]` em execução, `[x]` concluída.
+
+### Fase 1 — _nome da fase_
+
+- [ ] **1.1** _subtarefa_
+  - **Arquivos:** `src/...`
+  - **Entrega:** _resultado verificável_
+  - **Verificação:** _`npm run check`, `npm test`, chamada HTTP..._
+- [ ] **1.2** _subtarefa_
+  - **Arquivos:** `src/...`
+  - **Entrega:** _resultado verificável_
+  - **Verificação:** _..._
+
+### Fase 2 — _nome da fase_
+
+- [ ] **2.1** _subtarefa_
+  - **Arquivos:** `src/...`
+  - **Entrega:** _resultado verificável_
+  - **Verificação:** _..._
+
+### Fase final — Documentação
+
+- [ ] **F.1** Atualizar `README.md` e `docs/` (`ARQUITETURA.md`, `REQUISITOS.md`, `ANDAMENTO.md`) com o que mudou
+
+---
+
+## 5. Registro de execução
+
+| Subtarefa | Status | Verificação |
+|---|---|---|
+| 1.1 | A fazer | — |
+| 1.2 | A fazer | — |
+| 2.1 | A fazer | — |
+| F.1 | A fazer | — |
+
+### Pergunta de aprovação do plano
+
+> Plano da tarefa [PED-ID] pronto. Posso executar?
+
+### Bloco de comandos Git (entregue ao desenvolvedor, nunca executado pela IA)
+
+Só se a branch do épico ainda não existir:
+
+```bash
+git checkout -b PED-<ID_DO_EPICO>-<titulo-do-epico-em-slug>
+```
+
+Commit único da tarefa, no fim:
+
+```bash
+git add <arquivos-da-tarefa>
+git commit -m "<tipo>(<escopo>): [PED-<ID>] <descrição no imperativo>"
+git push -u origin PED-<ID_DO_EPICO>-<titulo-do-epico-em-slug>
+```
+
+> Mensagem em português, no imperativo, com no máximo 100 caracteres no total e sem `Co-Authored-By`.
+
+---
+
+## 6. Encerramento da tarefa
+
+- [ ] Todos os critérios de aceite atendidos
+- [ ] `npm run check` e `npm test` sem erros
+- [ ] Documentação atualizada
+- [ ] Pull Request aberto e tarefa movida no Jira

@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes } from "node:crypto";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { UpdateTenantConfigDto } from "../dtos/update-tenant-config.dto";
@@ -16,7 +16,10 @@ export class TenantService {
     return tenant;
   }
 
-  static async updateConfiguracoes(tenantId: string, dto: UpdateTenantConfigDto): Promise<Tenant> {
+  static async updateConfiguracoes(
+    tenantId: string,
+    dto: UpdateTenantConfigDto,
+  ): Promise<Tenant> {
     const tenant = await this.getMe(tenantId);
 
     if (dto.nomeFantasia !== undefined) {

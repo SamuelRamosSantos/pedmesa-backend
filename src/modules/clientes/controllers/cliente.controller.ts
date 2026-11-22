@@ -7,7 +7,10 @@ import { assertValidCreateClienteDto } from "../dtos/create-cliente.dto";
 import { assertValidCreateEnderecoClienteDto } from "../dtos/create-endereco-cliente.dto";
 import { assertValidUpdateClienteDto } from "../dtos/update-cliente.dto";
 import { assertValidUpdateEnderecoClienteDto } from "../dtos/update-endereco-cliente.dto";
-import { toClienteResponse, toEnderecoClienteResponse } from "../mappers/cliente.mapper";
+import {
+  toClienteResponse,
+  toEnderecoClienteResponse,
+} from "../mappers/cliente.mapper";
 import { ClienteService } from "../services/cliente.service";
 import { EnderecoClienteService } from "../services/endereco-cliente.service";
 
@@ -19,19 +22,36 @@ function exigirUuid(valor: string, descricao: string): string {
   return valor;
 }
 
-export async function buscarPorTelefone(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function buscarPorTelefone(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { telefone } = assertValidBuscarClienteQuery(req.query);
-    const encontrado = await ClienteService.buscarPorTelefone(tenantId, telefone);
+    const encontrado = await ClienteService.buscarPorTelefone(
+      tenantId,
+      telefone,
+    );
 
-    res.status(200).json(encontrado ? toClienteResponse(encontrado.cliente, encontrado.enderecos) : null);
+    res
+      .status(200)
+      .json(
+        encontrado
+          ? toClienteResponse(encontrado.cliente, encontrado.enderecos)
+          : null,
+      );
   } catch (error) {
     next(error);
   }
 }
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateClienteDto(req.body);
@@ -43,12 +63,20 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function update(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const clienteId = exigirUuid(req.params.id, "cliente");
     const dto = assertValidUpdateClienteDto(req.body);
-    const { cliente, enderecos } = await ClienteService.atualizar(tenantId, clienteId, dto);
+    const { cliente, enderecos } = await ClienteService.atualizar(
+      tenantId,
+      clienteId,
+      dto,
+    );
 
     res.status(200).json(toClienteResponse(cliente, enderecos));
   } catch (error) {
@@ -56,12 +84,20 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function createEndereco(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function createEndereco(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const clienteId = exigirUuid(req.params.id, "cliente");
     const dto = assertValidCreateEnderecoClienteDto(req.body);
-    const endereco = await EnderecoClienteService.criar(tenantId, clienteId, dto);
+    const endereco = await EnderecoClienteService.criar(
+      tenantId,
+      clienteId,
+      dto,
+    );
 
     res.status(201).json(toEnderecoClienteResponse(endereco));
   } catch (error) {
@@ -69,13 +105,22 @@ export async function createEndereco(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function updateEndereco(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateEndereco(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const clienteId = exigirUuid(req.params.id, "cliente");
     const enderecoId = exigirUuid(req.params.enderecoId, "endereço");
     const dto = assertValidUpdateEnderecoClienteDto(req.body);
-    const endereco = await EnderecoClienteService.atualizar(tenantId, clienteId, enderecoId, dto);
+    const endereco = await EnderecoClienteService.atualizar(
+      tenantId,
+      clienteId,
+      enderecoId,
+      dto,
+    );
 
     res.status(200).json(toEnderecoClienteResponse(endereco));
   } catch (error) {
@@ -83,7 +128,11 @@ export async function updateEndereco(req: Request, res: Response, next: NextFunc
   }
 }
 
-export async function removeEndereco(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function removeEndereco(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const clienteId = exigirUuid(req.params.id, "cliente");

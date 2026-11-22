@@ -15,19 +15,36 @@ describe("assertValidCotacaoDeliveryDto", () => {
   it("aceita uma cotação válida e converte troco_para para centavos", () => {
     expect(assertValidCotacaoDeliveryDto(VALID_BODY)).toEqual({
       endereco: { cidade: "São Paulo", bairro: "Bela Vista" },
-      itens: [{ produtoId: PRODUTO, integranteId: null, quantidade: 2, observacao: null }],
+      itens: [
+        {
+          produtoId: PRODUTO,
+          integranteId: null,
+          quantidade: 2,
+          observacao: null,
+        },
+      ],
       formaPagamento: FormaPagamento.DINHEIRO,
       trocoParaCents: 5_000,
     });
   });
 
   it("troco_para ausente ou null vira null", () => {
-    expect(assertValidCotacaoDeliveryDto({ ...VALID_BODY, troco_para: undefined }).trocoParaCents).toBeNull();
-    expect(assertValidCotacaoDeliveryDto({ ...VALID_BODY, troco_para: null }).trocoParaCents).toBeNull();
+    expect(
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, troco_para: undefined })
+        .trocoParaCents,
+    ).toBeNull();
+    expect(
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, troco_para: null })
+        .trocoParaCents,
+    ).toBeNull();
   });
 
   it("ignora taxa_entrega e total enviados pelo cliente", () => {
-    const dto = assertValidCotacaoDeliveryDto({ ...VALID_BODY, taxa_entrega: 0, total: 1 });
+    const dto = assertValidCotacaoDeliveryDto({
+      ...VALID_BODY,
+      taxa_entrega: 0,
+      total: 1,
+    });
     expect(dto).not.toHaveProperty("taxa_entrega");
     expect(dto).not.toHaveProperty("total");
   });
@@ -36,19 +53,26 @@ describe("assertValidCotacaoDeliveryDto", () => {
     ["ausentes", { itens: undefined }],
     ["vazios", { itens: [] }],
   ])("itens %s: cota só o frete (lista vazia)", (_caso, alteracao) => {
-    expect(assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }).itens).toEqual([]);
+    expect(
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }).itens,
+    ).toEqual([]);
   });
 
   it.each([
     ["sem endereço", { endereco: undefined }],
     ["endereço sem bairro", { endereco: { cidade: "São Paulo" } }],
     ["itens que não são lista", { itens: "x" }],
-    ["item com produto_id inválido", { itens: [{ produto_id: "x", quantidade: 1 }] }],
+    [
+      "item com produto_id inválido",
+      { itens: [{ produto_id: "x", quantidade: 1 }] },
+    ],
     ["quantidade zero", { itens: [{ produto_id: PRODUTO, quantidade: 0 }] }],
     ["forma de pagamento inválida", { forma_pagamento: "boleto" }],
     ["troco_para negativo", { troco_para: -1 }],
     ["troco_para com 3 casas", { troco_para: 50.005 }],
   ])("rejeita %s", (_caso, alteracao) => {
-    expect(() => assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao })).toThrow(AppError);
+    expect(() =>
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }),
+    ).toThrow(AppError);
   });
 });

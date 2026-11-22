@@ -15,7 +15,11 @@ function exigirIdTaxa(id: string): string {
   return id;
 }
 
-export async function listTaxas(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function listTaxas(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const taxas = await TaxaEntregaService.listar(getTenantId(req));
 
@@ -25,7 +29,11 @@ export async function listTaxas(req: Request, res: Response, next: NextFunction)
   }
 }
 
-export async function createTaxa(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function createTaxa(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateTaxaEntregaDto(req.body);
@@ -37,7 +45,11 @@ export async function createTaxa(req: Request, res: Response, next: NextFunction
   }
 }
 
-export async function updateTaxa(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateTaxa(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const taxaId = exigirIdTaxa(req.params.id);
@@ -50,9 +62,16 @@ export async function updateTaxa(req: Request, res: Response, next: NextFunction
   }
 }
 
-export async function removeTaxa(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function removeTaxa(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
-    await TaxaEntregaService.remover(getTenantId(req), exigirIdTaxa(req.params.id));
+    await TaxaEntregaService.remover(
+      getTenantId(req),
+      exigirIdTaxa(req.params.id),
+    );
 
     res.status(204).send();
   } catch (error) {

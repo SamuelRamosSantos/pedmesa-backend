@@ -9,18 +9,29 @@ describe("parseListTenantsFilters", () => {
   });
 
   it("aceita um status válido", () => {
-    expect(parseListTenantsFilters({ status: "suspenso" })).toEqual({ status: TenantStatus.SUSPENSO, nome: null });
+    expect(parseListTenantsFilters({ status: "suspenso" })).toEqual({
+      status: TenantStatus.SUSPENSO,
+      nome: null,
+    });
   });
 
   it("rejeita um status inválido", () => {
-    expect(() => parseListTenantsFilters({ status: "pausado" })).toThrow(AppError);
+    expect(() => parseListTenantsFilters({ status: "pausado" })).toThrow(
+      AppError,
+    );
   });
 
   it("aceita e normaliza (trim) o filtro de nome", () => {
-    expect(parseListTenantsFilters({ nome: "  Lanchonete  " })).toEqual({ status: null, nome: "Lanchonete" });
+    expect(parseListTenantsFilters({ nome: "  Lanchonete  " })).toEqual({
+      status: null,
+      nome: "Lanchonete",
+    });
   });
 
   it("ignora nome em branco", () => {
-    expect(parseListTenantsFilters({ nome: "   " })).toEqual({ status: null, nome: null });
+    expect(parseListTenantsFilters({ nome: "   " })).toEqual({
+      status: null,
+      nome: null,
+    });
   });
 });

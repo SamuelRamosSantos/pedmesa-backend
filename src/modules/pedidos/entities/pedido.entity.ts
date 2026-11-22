@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Comanda } from "../../comandas/entities/comanda.entity";
 import { User } from "../../usuarios/entities/user.entity";
 import { ItemPedido } from "./item-pedido.entity";
@@ -41,6 +49,9 @@ export class Pedido {
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;
 
-  @OneToMany(() => ItemPedido, (item) => item.pedido)
+  @OneToMany(
+    () => ItemPedido,
+    (item) => item.pedido,
+  )
   itens!: ItemPedido[];
 }

@@ -8,7 +8,14 @@ const JOB_ENTREGA_EXEMPLO: EntregaJobPayload = {
   numero_entrega: 7,
   gerado_em: new Date("2026-10-10T15:30:00Z"),
   itens: [
-    { produto_nome: "X-Burger", quantidade: 2, preco_unitario: 19.45, subtotal: 38.9, integrante_nome: "Maria", observacao: "sem cebola" },
+    {
+      produto_nome: "X-Burger",
+      quantidade: 2,
+      preco_unitario: 19.45,
+      subtotal: 38.9,
+      integrante_nome: "Maria",
+      observacao: "sem cebola",
+    },
   ],
   dados: {
     cliente_nome: "Maria Souza",
@@ -64,12 +71,20 @@ describe("formatarEntrega", () => {
         "LEVAR TROCO: R$ 3,60",
         "================================",
         "[ESC/POS] CUT",
-      ].join("\n")
+      ].join("\n"),
     );
   });
 
   it("sem troco (PIX): não imprime as linhas de troco", () => {
-    const texto = formatarEntrega({ ...JOB_ENTREGA_EXEMPLO, dados: { ...JOB_ENTREGA_EXEMPLO.dados, forma_pagamento: "pix", troco_para: null, troco: 0 } });
+    const texto = formatarEntrega({
+      ...JOB_ENTREGA_EXEMPLO,
+      dados: {
+        ...JOB_ENTREGA_EXEMPLO.dados,
+        forma_pagamento: "pix",
+        troco_para: null,
+        troco: 0,
+      },
+    });
 
     expect(texto).toContain("Pagamento: PIX");
     expect(texto).not.toContain("TROCO");
@@ -78,7 +93,14 @@ describe("formatarEntrega", () => {
   it("sem complemento nem referência: omite as partes vazias", () => {
     const texto = formatarEntrega({
       ...JOB_ENTREGA_EXEMPLO,
-      dados: { ...JOB_ENTREGA_EXEMPLO.dados, endereco: { ...JOB_ENTREGA_EXEMPLO.dados.endereco, complemento: null, referencia: null } },
+      dados: {
+        ...JOB_ENTREGA_EXEMPLO.dados,
+        endereco: {
+          ...JOB_ENTREGA_EXEMPLO.dados.endereco,
+          complemento: null,
+          referencia: null,
+        },
+      },
     });
 
     expect(texto).toContain("Avenida Paulista, 1000\n");

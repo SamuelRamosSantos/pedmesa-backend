@@ -11,11 +11,15 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 // de transação quando o modo global é "all" (ForbiddenTransactionModeOverrideError).
 // Atenção: não crie outra migration que grave 'expedicao' e possa rodar na mesma execução
 // desta; ela falharia com "unsafe use of new value".
-export class AddExpedicaoToUsuariosRoleEnum1700000000030 implements MigrationInterface {
+export class AddExpedicaoToUsuariosRoleEnum1700000000030
+  implements MigrationInterface
+{
   name = "AddExpedicaoToUsuariosRoleEnum1700000000030";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TYPE "usuarios_role_enum" ADD VALUE IF NOT EXISTS 'expedicao'`);
+    await queryRunner.query(
+      `ALTER TYPE "usuarios_role_enum" ADD VALUE IF NOT EXISTS 'expedicao'`,
+    );
   }
 
   // O Postgres não remove um valor de enum (não existe ALTER TYPE … DROP VALUE). Reverter
@@ -23,13 +27,13 @@ export class AddExpedicaoToUsuariosRoleEnum1700000000030 implements MigrationInt
   // efeito para o código anterior, que nunca o grava.
   public async down(queryRunner: QueryRunner): Promise<void> {
     const [{ total }] = await queryRunner.query(
-      `SELECT COUNT(*)::int AS total FROM "usuarios" WHERE 'expedicao' = ANY("roles")`
+      `SELECT COUNT(*)::int AS total FROM "usuarios" WHERE 'expedicao' = ANY("roles")`,
     );
 
     if (total > 0) {
       throw new Error(
         `Não é possível reverter AddExpedicaoToUsuariosRoleEnum: ${total} usuário(s) têm o papel "expedicao". ` +
-          "Remova esse papel desses usuários antes. O valor continua no enum usuarios_role_enum, porque o Postgres não remove valores de enum."
+          "Remova esse papel desses usuários antes. O valor continua no enum usuarios_role_enum, porque o Postgres não remove valores de enum.",
       );
     }
   }

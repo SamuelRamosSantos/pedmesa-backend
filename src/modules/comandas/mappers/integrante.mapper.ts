@@ -5,7 +5,9 @@ export interface IntegranteResponse {
   nome: string;
 }
 
-export function toIntegranteResponse(integrante: IntegranteComanda): IntegranteResponse {
+export function toIntegranteResponse(
+  integrante: IntegranteComanda,
+): IntegranteResponse {
   return {
     id: integrante.id,
     nome: integrante.nome,

@@ -1,8 +1,8 @@
-import * as dotenv from "dotenv";
 import jwt, { SignOptions } from "jsonwebtoken";
+import { carregarEnv } from "../../../config/env";
 import { UserRole } from "../../usuarios/entities/user.entity";
 
-dotenv.config();
+carregarEnv();
 
 export interface JwtPayload {
   sub: string;
@@ -17,6 +17,11 @@ export interface JwtPayload {
   impersonated_by?: string;
 }
 
+// Usado tanto pro expiresIn padrão do JWT quanto pro maxAge do cookie que o
+// carrega (ver shared/utils/auth-cookies.ts) — uma única fonte de verdade pros
+// dois, pra nunca ficarem dessincronizados.
+export const DEFAULT_JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN ?? "1d";
+
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
 
@@ -27,9 +32,14 @@ function getJwtSecret(): string {
   return secret;
 }
 
-export function signToken(payload: JwtPayload, options?: { expiresIn?: SignOptions["expiresIn"] }): string {
+export function signToken(
+  payload: JwtPayload,
+  options?: { expiresIn?: SignOptions["expiresIn"] },
+): string {
   const signOptions: SignOptions = {
-    expiresIn: options?.expiresIn ?? ((process.env.JWT_EXPIRES_IN ?? "1d") as SignOptions["expiresIn"]),
+    expiresIn:
+      options?.expiresIn ??
+      (DEFAULT_JWT_EXPIRES_IN as SignOptions["expiresIn"]),
   };
 
   return jwt.sign(payload, getJwtSecret(), signOptions);
@@ -48,7 +58,9 @@ function getSuperAdminJwtSecret(): string {
   const secret = process.env.SUPER_ADMIN_JWT_SECRET;
 
   if (!secret) {
-    throw new Error("SUPER_ADMIN_JWT_SECRET não configurado nas variáveis de ambiente.");
+    throw new Error(
+      "SUPER_ADMIN_JWT_SECRET não configurado nas variáveis de ambiente.",
+    );
   }
 
   return secret;
@@ -60,7 +72,7 @@ function getSuperAdminJwtSecret(): string {
 // campo específico do payload.
 export function signSuperAdminToken(payload: SuperAdminJwtPayload): string {
   const options: SignOptions = {
-    expiresIn: (process.env.JWT_EXPIRES_IN ?? "1d") as SignOptions["expiresIn"],
+    expiresIn: DEFAULT_JWT_EXPIRES_IN as SignOptions["expiresIn"],
   };
 
   return jwt.sign(payload, getSuperAdminJwtSecret(), options);

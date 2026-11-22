@@ -1,12 +1,20 @@
 import { AppDataSource } from "../../../config/data-source";
-import { FilaImpressao, StatusFilaImpressao, TipoFilaImpressao } from "../entities/fila-impressao.entity";
+import {
+  FilaImpressao,
+  StatusFilaImpressao,
+  TipoFilaImpressao,
+} from "../entities/fila-impressao.entity";
 import { Impressora } from "../entities/impressora.entity";
 import { formatarEntrega } from "../formatters/entrega.formatter";
 import { identificacaoDoPedido } from "../formatters/formatacao";
 import { formatarPreConta } from "../formatters/preconta.formatter";
 import { formatarTicket } from "../formatters/ticket.formatter";
 import { ImpressaoService } from "../services/impressao.service";
-import { EntregaJobPayload, PreContaJobPayload, PrintJobPayload } from "../types/print-job.types";
+import {
+  EntregaJobPayload,
+  PreContaJobPayload,
+  PrintJobPayload,
+} from "../types/print-job.types";
 
 const MAX_TENTATIVAS = 3;
 const RETRY_DELAY_MS = 500;
@@ -35,7 +43,9 @@ function formatarTextoDoJob(job: FilaImpressao): string {
 
     case TipoFilaImpressao.ENTREGA:
       if (job.numeroEntrega === null || job.dadosEntrega === null) {
-        throw new Error(`Job de entrega ${job.id} sem número ou sem dados da entrega.`);
+        throw new Error(
+          `Job de entrega ${job.id} sem número ou sem dados da entrega.`,
+        );
       }
 
       return formatarEntrega({
@@ -82,7 +92,9 @@ async function processar(filaImpressaoId: string): Promise<void> {
   }
 
   const impressoraRepository = AppDataSource.getRepository(Impressora);
-  const impressoras = await impressoraRepository.find({ where: { tenantId: job.tenantId, ativo: true } });
+  const impressoras = await impressoraRepository.find({
+    where: { tenantId: job.tenantId, ativo: true },
+  });
 
   if (impressoras.length === 0) {
     return;
@@ -104,7 +116,9 @@ async function processar(filaImpressaoId: string): Promise<void> {
       const mensagem = error instanceof Error ? error.message : String(error);
 
       if (tentativa === MAX_TENTATIVAS) {
-        console.error(`[PRINT WORKER] ${identificador} falhou após ${MAX_TENTATIVAS} tentativas: ${mensagem}`);
+        console.error(
+          `[PRINT WORKER] ${identificador} falhou após ${MAX_TENTATIVAS} tentativas: ${mensagem}`,
+        );
 
         job.status = StatusFilaImpressao.FALHOU;
         job.tentativas = tentativa;
@@ -114,7 +128,7 @@ async function processar(filaImpressaoId: string): Promise<void> {
       }
 
       console.warn(
-        `[PRINT WORKER] Tentativa ${tentativa}/${MAX_TENTATIVAS} falhou para ${identificador} (${mensagem}). Nova tentativa em ${RETRY_DELAY_MS}ms.`
+        `[PRINT WORKER] Tentativa ${tentativa}/${MAX_TENTATIVAS} falhou para ${identificador} (${mensagem}). Nova tentativa em ${RETRY_DELAY_MS}ms.`,
       );
 
       await sleep(RETRY_DELAY_MS);
@@ -125,7 +139,10 @@ async function processar(filaImpressaoId: string): Promise<void> {
 function enfileirar(filaImpressao: FilaImpressao, identificador: string): void {
   setImmediate(() => {
     processar(filaImpressao.id).catch((error) => {
-      console.error(`[PRINT WORKER] Erro inesperado ao processar ${identificador}:`, error);
+      console.error(
+        `[PRINT WORKER] Erro inesperado ao processar ${identificador}:`,
+        error,
+      );
     });
   });
 }
@@ -143,7 +160,7 @@ export class PrintQueue {
         numeroComanda: job.numero_comanda,
         numeroEntrega: job.numero_entrega,
         payload: job.itens,
-      })
+      }),
     );
 
     enfileirar(filaImpressao, identificarJob(filaImpressao));
@@ -164,7 +181,7 @@ export class PrintQueue {
         payload: job.itens,
         valorTotal: job.dados.total,
         dadosEntrega: job.dados,
-      })
+      }),
     );
 
     enfileirar(filaImpressao, identificarJob(filaImpressao));
@@ -182,7 +199,7 @@ export class PrintQueue {
         numeroComanda: job.numero_comanda,
         payload: job.itens,
         valorTotal: job.valor_total,
-      })
+      }),
     );
 
     enfileirar(filaImpressao, identificarJob(filaImpressao));

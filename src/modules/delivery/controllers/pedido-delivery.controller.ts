@@ -6,17 +6,28 @@ import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCriarPedidoDeliveryDto } from "../dtos/criar-pedido-delivery.dto";
 import { assertValidListarEntregasQuery } from "../dtos/listar-entregas.dto";
 import { assertValidTransicaoEntregaDto } from "../dtos/transicao-entrega.dto";
-import { toEntregaEstadoResponse, toEntregaPainelResponse } from "../mappers/entrega.mapper";
+import {
+  toEntregaEstadoResponse,
+  toEntregaPainelResponse,
+} from "../mappers/entrega.mapper";
 import { toPedidoDeliveryCriadoResponse } from "../mappers/pedido-delivery.mapper";
 import { listarEntregasPainel } from "../services/painel-entrega.service";
 import { criarPedidoDelivery } from "../services/pedido-delivery.service";
 import { enfileirarTicketEntrega } from "../services/ticket-entrega.service";
 import { transicionarEntrega } from "../services/transicao-entrega.service";
 
-export async function criar(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function criar(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const dto = assertValidCriarPedidoDeliveryDto(req.body);
-    const criado = await criarPedidoDelivery(getTenantId(req), getUserId(req), dto);
+    const criado = await criarPedidoDelivery(
+      getTenantId(req),
+      getUserId(req),
+      dto,
+    );
 
     res.status(201).json(toPedidoDeliveryCriadoResponse(criado));
   } catch (error) {
@@ -24,7 +35,11 @@ export async function criar(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-export async function listarPainel(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function listarPainel(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const filtros = assertValidListarEntregasQuery(req.query);
     const cards = await listarEntregasPainel(getTenantId(req), filtros);
@@ -35,14 +50,23 @@ export async function listarPainel(req: Request, res: Response, next: NextFuncti
   }
 }
 
-export async function transicionarStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function transicionarStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     if (!isUuid(req.params.id)) {
       throw new AppError("ID de entrega inválido.", 400);
     }
 
     const dto = assertValidTransicaoEntregaDto(req.body);
-    const entrega = await transicionarEntrega(getTenantId(req), req.params.id, getUserId(req), dto);
+    const entrega = await transicionarEntrega(
+      getTenantId(req),
+      req.params.id,
+      getUserId(req),
+      dto,
+    );
 
     res.status(200).json(toEntregaEstadoResponse(entrega));
   } catch (error) {
@@ -50,7 +74,11 @@ export async function transicionarStatus(req: Request, res: Response, next: Next
   }
 }
 
-export async function reimprimirTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function reimprimirTicket(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     if (!isUuid(req.params.id)) {
       throw new AppError("ID de entrega inválido.", 400);
@@ -58,7 +86,9 @@ export async function reimprimirTicket(req: Request, res: Response, next: NextFu
 
     await enfileirarTicketEntrega(getTenantId(req), req.params.id);
 
-    res.status(202).json({ mensagem: "Cupom de entrega enviado para impressão." });
+    res
+      .status(202)
+      .json({ mensagem: "Cupom de entrega enviado para impressão." });
   } catch (error) {
     next(error);
   }

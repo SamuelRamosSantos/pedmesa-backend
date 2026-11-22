@@ -7,7 +7,11 @@ import { assertValidUpdateImpressoraDto } from "../dtos/update-impressora.dto";
 import { toImpressoraResponse } from "../mappers/impressora.mapper";
 import { ImpressoraService } from "../services/impressora.service";
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const impressoras = await ImpressoraService.list(tenantId);
@@ -18,7 +22,11 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateImpressoraDto(req.body);
@@ -30,7 +38,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function update(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;
@@ -48,7 +60,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function remove(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const { id } = req.params;

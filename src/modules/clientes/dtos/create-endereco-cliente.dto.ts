@@ -22,11 +22,20 @@ export interface CreateEnderecoClienteDto {
   principal: boolean;
 }
 
-export function assertValidCreateEnderecoClienteDto(body: unknown): CreateEnderecoClienteDto {
-  const { cep, logradouro, numero, complemento, bairro, cidade, uf, referencia, principal } = (body ?? {}) as Record<
-    string,
-    unknown
-  >;
+export function assertValidCreateEnderecoClienteDto(
+  body: unknown,
+): CreateEnderecoClienteDto {
+  const {
+    cep,
+    logradouro,
+    numero,
+    complemento,
+    bairro,
+    cidade,
+    uf,
+    referencia,
+    principal,
+  } = (body ?? {}) as Record<string, unknown>;
 
   return {
     cep: validarCep(cep),
@@ -37,6 +46,7 @@ export function assertValidCreateEnderecoClienteDto(body: unknown): CreateEndere
     cidade: validarCidade(cidade),
     uf: validarUf(uf),
     referencia: validarReferencia(referencia),
-    principal: principal === undefined ? false : validarBooleano(principal, "principal"),
+    principal:
+      principal === undefined ? false : validarBooleano(principal, "principal"),
   };
 }

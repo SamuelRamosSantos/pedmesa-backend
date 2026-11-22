@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddPreContaSupportToFilaImpressao1700000000017 implements MigrationInterface {
+export class AddPreContaSupportToFilaImpressao1700000000017
+  implements MigrationInterface
+{
   name = "AddPreContaSupportToFilaImpressao1700000000017";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -13,7 +15,7 @@ export class AddPreContaSupportToFilaImpressao1700000000017 implements Migration
         enum: ["pedido_cozinha", "pre_conta"],
         default: "'pedido_cozinha'",
         isNullable: false,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -22,7 +24,7 @@ export class AddPreContaSupportToFilaImpressao1700000000017 implements Migration
         name: "comanda_id",
         type: "uuid",
         isNullable: true,
-      })
+      }),
     );
 
     await queryRunner.addColumn(
@@ -33,7 +35,7 @@ export class AddPreContaSupportToFilaImpressao1700000000017 implements Migration
         precision: 10,
         scale: 2,
         isNullable: true,
-      })
+      }),
     );
 
     // registros existentes são todos de pedido de cozinha (única modalidade
@@ -54,7 +56,7 @@ export class AddPreContaSupportToFilaImpressao1700000000017 implements Migration
         name: "pedido_id",
         type: "uuid",
         isNullable: true,
-      })
+      }),
     );
   }
 
@@ -66,7 +68,7 @@ export class AddPreContaSupportToFilaImpressao1700000000017 implements Migration
         name: "pedido_id",
         type: "uuid",
         isNullable: false,
-      })
+      }),
     );
     await queryRunner.dropColumn("fila_impressao", "valor_total");
     await queryRunner.dropColumn("fila_impressao", "comanda_id");

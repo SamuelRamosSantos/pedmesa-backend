@@ -4,8 +4,8 @@ import { SuperAdmin } from "../../admin/entities/super-admin.entity";
 import { TenantStatus } from "../../tenants/entities/tenant.entity";
 import { User, UserRole } from "../../usuarios/entities/user.entity";
 import { LoginDto } from "../dtos/login.dto";
-import { HashService } from "./hash.service";
 import { signSuperAdminToken, signToken } from "../utils/jwt.util";
+import { HashService } from "./hash.service";
 
 export interface TenantLoginResult {
   tipo: "tenant";
@@ -32,7 +32,8 @@ export interface SuperAdminLoginResult {
 
 export type LoginResult = TenantLoginResult | SuperAdminLoginResult;
 
-const TENANT_STATUS_INDISPONIVEL_MESSAGE = "Este estabelecimento está indisponível no momento. Entre em contato com o suporte.";
+const TENANT_STATUS_INDISPONIVEL_MESSAGE =
+  "Este estabelecimento está indisponível no momento. Entre em contato com o suporte.";
 
 export class AuthService {
   static async login({ email, senha }: LoginDto): Promise<LoginResult> {
@@ -45,7 +46,10 @@ export class AuthService {
     return this.loginTenant(email, senha);
   }
 
-  private static async tentarLoginSuperAdmin(email: string, senha: string): Promise<SuperAdminLoginResult | null> {
+  private static async tentarLoginSuperAdmin(
+    email: string,
+    senha: string,
+  ): Promise<SuperAdminLoginResult | null> {
     const superAdminRepository = AppDataSource.getRepository(SuperAdmin);
     const superAdmin = await superAdminRepository.findOne({ where: { email } });
 
@@ -63,7 +67,10 @@ export class AuthService {
       throw new AppError("Credenciais inválidas.", 401);
     }
 
-    const token = signSuperAdminToken({ sub: superAdmin.id, type: "super_admin" });
+    const token = signSuperAdminToken({
+      sub: superAdmin.id,
+      type: "super_admin",
+    });
 
     return {
       tipo: "super_admin",
@@ -76,11 +83,17 @@ export class AuthService {
     };
   }
 
-  private static async loginTenant(email: string, senha: string): Promise<TenantLoginResult> {
+  private static async loginTenant(
+    email: string,
+    senha: string,
+  ): Promise<TenantLoginResult> {
     const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOne({ where: { email }, relations: { tenant: true } });
+    const user = await userRepository.findOne({
+      where: { email },
+      relations: { tenant: true },
+    });
 
-    if (!user || !user.ativo) {
+    if (!user?.ativo) {
       throw new AppError("Credenciais inválidas.", 401);
     }
 

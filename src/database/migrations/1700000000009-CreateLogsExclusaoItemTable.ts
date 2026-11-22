@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreateLogsExclusaoItemTable1700000000009 implements MigrationInterface {
+export class CreateLogsExclusaoItemTable1700000000009
+  implements MigrationInterface
+{
   name = "CreateLogsExclusaoItemTable1700000000009";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -64,7 +71,7 @@ export class CreateLogsExclusaoItemTable1700000000009 implements MigrationInterf
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -75,12 +82,15 @@ export class CreateLogsExclusaoItemTable1700000000009 implements MigrationInterf
         referencedTableName: "usuarios",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("logs_exclusao_item", "fk_logs_exclusao_item_excluido_por_usuario_id");
+    await queryRunner.dropForeignKey(
+      "logs_exclusao_item",
+      "fk_logs_exclusao_item_excluido_por_usuario_id",
+    );
     await queryRunner.dropTable("logs_exclusao_item");
   }
 }

@@ -11,7 +11,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
         rolesAtuais: [UserRole.ADMIN],
         novasRoles: [UserRole.CAIXA],
         novoAtivo: false,
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -21,7 +21,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
         isSelf: true,
         rolesAtuais: [UserRole.ADMIN],
         novasRoles: [UserRole.CAIXA],
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -31,7 +31,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
         isSelf: true,
         rolesAtuais: [UserRole.ADMIN],
         novasRoles: [UserRole.ADMIN, UserRole.CAIXA],
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -41,7 +41,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
         isSelf: true,
         rolesAtuais: [UserRole.CAIXA],
         novoAtivo: false,
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -51,7 +51,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
         isSelf: true,
         rolesAtuais: [UserRole.CAIXA],
         novoAtivo: true,
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -60,7 +60,7 @@ describe("assertNaoAlteraProprioAcesso", () => {
       assertNaoAlteraProprioAcesso({
         isSelf: true,
         rolesAtuais: [UserRole.ADMIN],
-      })
+      }),
     ).not.toThrow();
   });
 });

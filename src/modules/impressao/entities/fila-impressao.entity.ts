@@ -1,6 +1,17 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { Tenant } from "../../tenants/entities/tenant.entity";
-import { DadosEntregaTicket, PrintJobItemPayload } from "../types/print-job.types";
+import {
+  DadosEntregaTicket,
+  PrintJobItemPayload,
+} from "../types/print-job.types";
 
 export enum StatusFilaImpressao {
   PENDENTE = "pendente",
@@ -64,7 +75,8 @@ export class FilaImpressao {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+      from: (value: string | null) =>
+        value === null ? null : Number.parseFloat(value),
     },
   })
   valorTotal!: number | null;

@@ -8,6 +8,7 @@ export interface ProductResponse {
   descricao: string | null;
   disponivel: boolean;
   precisa_preparo: boolean;
+  imagem_url: string | null;
 }
 
 export function toProductResponse(product: Product): ProductResponse {
@@ -19,5 +20,6 @@ export function toProductResponse(product: Product): ProductResponse {
     descricao: product.descricao,
     disponivel: product.disponivel,
     precisa_preparo: product.precisaPreparo,
+    imagem_url: product.imagemUrl,
   };
 }

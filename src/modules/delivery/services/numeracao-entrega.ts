@@ -8,14 +8,18 @@ import { EntityManager } from "typeorm";
 //
 // Deve ser chamado com o EntityManager da mesma transação que grava a entrega:
 // se a gravação falhar, o incremento também é desfeito e o número não "pula".
-export async function proximoNumeroEntrega(manager: EntityManager, tenantId: string, data: string): Promise<number> {
+export async function proximoNumeroEntrega(
+  manager: EntityManager,
+  tenantId: string,
+  data: string,
+): Promise<number> {
   const linhas: Array<{ ultimo_numero: number }> = await manager.query(
     `INSERT INTO "sequencias_entrega" ("tenant_id", "data", "ultimo_numero")
      VALUES ($1, $2, 1)
      ON CONFLICT ("tenant_id", "data")
      DO UPDATE SET "ultimo_numero" = "sequencias_entrega"."ultimo_numero" + 1
      RETURNING "ultimo_numero"`,
-    [tenantId, data]
+    [tenantId, data],
   );
 
   return linhas[0].ultimo_numero;

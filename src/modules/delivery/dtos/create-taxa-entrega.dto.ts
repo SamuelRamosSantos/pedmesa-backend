@@ -14,14 +14,25 @@ export interface CreateTaxaEntregaDto {
   ativo: boolean;
 }
 
-export function assertValidCreateTaxaEntregaDto(body: unknown): CreateTaxaEntregaDto {
-  const { cidade, bairro, valor, tempo_estimado_min: tempoEstimadoMin, ativo } = (body ?? {}) as Record<string, unknown>;
+export function assertValidCreateTaxaEntregaDto(
+  body: unknown,
+): CreateTaxaEntregaDto {
+  const {
+    cidade,
+    bairro,
+    valor,
+    tempo_estimado_min: tempoEstimadoMin,
+    ativo,
+  } = (body ?? {}) as Record<string, unknown>;
 
   return {
     cidade: validarCidadeTaxa(cidade),
     bairro: validarBairroTaxa(bairro),
     valor: validarValorTaxa(valor),
-    tempoEstimadoMin: tempoEstimadoMin === undefined ? null : validarTempoEstimadoMin(tempoEstimadoMin),
+    tempoEstimadoMin:
+      tempoEstimadoMin === undefined
+        ? null
+        : validarTempoEstimadoMin(tempoEstimadoMin),
     ativo: ativo === undefined ? true : validarAtivoTaxa(ativo),
   };
 }

@@ -1,6 +1,10 @@
 import { FindOptionsWhere } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
+import {
+  prepararNovaImagem,
+  removerImagemSemFalhar,
+} from "../../../shared/storage/get-storage-service";
 import { Category } from "../../categorias/entities/category.entity";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 import { CreateProductDto } from "../dtos/create-product.dto";
@@ -20,7 +24,10 @@ async function isUsaModuloCozinha(tenantId: string): Promise<boolean> {
 }
 
 export class ProductService {
-  static async create(tenantId: string, dto: CreateProductDto): Promise<Product> {
+  static async create(
+    tenantId: string,
+    dto: CreateProductDto,
+  ): Promise<Product> {
     const categoryRepository = AppDataSource.getRepository(Category);
     const category = await categoryRepository.findOne({
       where: { id: dto.categoriaId, tenantId },
@@ -31,6 +38,8 @@ export class ProductService {
     }
 
     const usaModuloCozinha = await isUsaModuloCozinha(tenantId);
+    // Promove o upload pendente só depois das validações, logo antes do save.
+    const imagemUrl = await prepararNovaImagem(dto.imagemUrl, tenantId);
 
     const productRepository = AppDataSource.getRepository(Product);
     const product = productRepository.create({
@@ -41,12 +50,21 @@ export class ProductService {
       descricao: dto.descricao,
       disponivel: dto.disponivel,
       precisaPreparo: usaModuloCozinha ? dto.precisaPreparo : false,
+      imagemUrl,
     });
 
-    return productRepository.save(product);
+    try {
+      return await productRepository.save(product);
+    } catch (error) {
+      await removerImagemSemFalhar(imagemUrl);
+      throw error;
+    }
   }
 
-  static async list(tenantId: string, filters: ListProductsFilters): Promise<Product[]> {
+  static async list(
+    tenantId: string,
+    filters: ListProductsFilters,
+  ): Promise<Product[]> {
     const repository = AppDataSource.getRepository(Product);
     const where: FindOptionsWhere<Product> = { tenantId, ativo: true };
 
@@ -61,9 +79,15 @@ export class ProductService {
     return repository.find({ where, order: { nome: "ASC" } });
   }
 
-  static async updateDisponibilidade(tenantId: string, productId: string, disponivel: boolean): Promise<Product> {
+  static async updateDisponibilidade(
+    tenantId: string,
+    productId: string,
+    disponivel: boolean,
+  ): Promise<Product> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);
@@ -74,9 +98,15 @@ export class ProductService {
     return repository.save(product);
   }
 
-  static async update(tenantId: string, productId: string, dto: UpdateProductDto): Promise<Product> {
+  static async update(
+    tenantId: string,
+    productId: string,
+    dto: UpdateProductDto,
+  ): Promise<Product> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);
@@ -84,7 +114,9 @@ export class ProductService {
 
     if (dto.categoriaId !== undefined) {
       const categoryRepository = AppDataSource.getRepository(Category);
-      const category = await categoryRepository.findOne({ where: { id: dto.categoriaId, tenantId } });
+      const category = await categoryRepository.findOne({
+        where: { id: dto.categoriaId, tenantId },
+      });
 
       if (!category) {
         throw new AppError("Categoria não encontrada.", 404);
@@ -114,12 +146,38 @@ export class ProductService {
       product.precisaPreparo = usaModuloCozinha ? dto.precisaPreparo : false;
     }
 
-    return repository.save(product);
+    const imagemAnterior = product.imagemUrl;
+    let imagemPromovida: string | null = null;
+
+    // Reenviar a mesma URL (ex.: imagem gravada antes do R2) não é troca de imagem.
+    if (dto.imagemUrl !== undefined && dto.imagemUrl !== imagemAnterior) {
+      imagemPromovida = await prepararNovaImagem(dto.imagemUrl, tenantId);
+      product.imagemUrl = imagemPromovida;
+    }
+
+    let salvo: Product;
+
+    try {
+      salvo = await repository.save(product);
+    } catch (error) {
+      // A cópia definitiva não chegou ao banco: apaga para não virar lixo.
+      await removerImagemSemFalhar(imagemPromovida);
+      throw error;
+    }
+
+    // Só depois de salvar: se o save falhar, a imagem antiga continua em uso.
+    if (imagemAnterior !== salvo.imagemUrl) {
+      await removerImagemSemFalhar(imagemAnterior);
+    }
+
+    return salvo;
   }
 
   static async delete(tenantId: string, productId: string): Promise<void> {
     const repository = AppDataSource.getRepository(Product);
-    const product = await repository.findOne({ where: { id: productId, tenantId } });
+    const product = await repository.findOne({
+      where: { id: productId, tenantId },
+    });
 
     if (!product) {
       throw new AppError("Produto não encontrado.", 404);

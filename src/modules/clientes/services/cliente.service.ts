@@ -18,17 +18,29 @@ function erroTelefoneDuplicado(telefone: string): AppError {
 
 export class ClienteService {
   // Não encontrar é um resultado esperado no formulário (cliente novo): devolve null.
-  static async buscarPorTelefone(tenantId: string, telefone: string): Promise<ClienteComEnderecos | null> {
-    const cliente = await AppDataSource.getRepository(Cliente).findOneBy({ tenantId, telefone });
+  static async buscarPorTelefone(
+    tenantId: string,
+    telefone: string,
+  ): Promise<ClienteComEnderecos | null> {
+    const cliente = await AppDataSource.getRepository(Cliente).findOneBy({
+      tenantId,
+      telefone,
+    });
 
     if (!cliente) {
       return null;
     }
 
-    return { cliente, enderecos: await EnderecoClienteService.listar(tenantId, cliente.id) };
+    return {
+      cliente,
+      enderecos: await EnderecoClienteService.listar(tenantId, cliente.id),
+    };
   }
 
-  static async criar(tenantId: string, dto: CreateClienteDto): Promise<Cliente> {
+  static async criar(
+    tenantId: string,
+    dto: CreateClienteDto,
+  ): Promise<Cliente> {
     const repository = AppDataSource.getRepository(Cliente);
 
     try {
@@ -42,7 +54,11 @@ export class ClienteService {
     }
   }
 
-  static async atualizar(tenantId: string, clienteId: string, dto: UpdateClienteDto): Promise<ClienteComEnderecos> {
+  static async atualizar(
+    tenantId: string,
+    clienteId: string,
+    dto: UpdateClienteDto,
+  ): Promise<ClienteComEnderecos> {
     const repository = AppDataSource.getRepository(Cliente);
     const cliente = await repository.findOneBy({ id: clienteId, tenantId });
 
@@ -62,6 +78,9 @@ export class ClienteService {
       throw error;
     }
 
-    return { cliente, enderecos: await EnderecoClienteService.listar(tenantId, cliente.id) };
+    return {
+      cliente,
+      enderecos: await EnderecoClienteService.listar(tenantId, cliente.id),
+    };
   }
 }

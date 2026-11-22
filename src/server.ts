@@ -1,61 +1,20 @@
-import "reflect-metadata";
-import cors from "cors";
-import express from "express";
+import { app } from "./app";
 import { AppDataSource } from "./config/data-source";
-import adminRoutes from "./modules/admin/routes/admin.routes";
-import authRoutes from "./modules/auth/routes/auth.routes";
-import categoryRoutes from "./modules/categorias/routes/category.routes";
-import clienteRoutes from "./modules/clientes/routes/cliente.routes";
-import comandaRoutes from "./modules/comandas/routes/comanda.routes";
-import dashboardRoutes from "./modules/dashboard/routes/dashboard.routes";
-import deliveryRoutes from "./modules/delivery/routes/delivery.routes";
-import { registrarSincronizacaoPreparoDelivery } from "./modules/delivery/services/sincronizacao-preparo.handler";
-import impressaoRoutes from "./modules/impressao/routes/impressao.routes";
-import leadRoutes from "./modules/leads/routes/lead.routes";
-import pedidosRoutes from "./modules/pedidos/routes/pedidos.routes";
-import productRoutes from "./modules/produtos/routes/product.routes";
-import tenantRoutes from "./modules/tenants/routes/tenant.routes";
-import userRoutes from "./modules/usuarios/routes/user.routes";
-import { errorHandlerMiddleware } from "./shared/middlewares/error-handler.middleware";
-
-const app = express();
-
-// Não expor a stack tecnológica (Express) nas respostas — evita facilitar
-// ataques direcionados a CVEs conhecidas do framework/versão.
-app.disable("x-powered-by");
-
-const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173").split(",");
-app.use(cors({ origin: corsOrigins }));
-
-app.use(express.json());
-
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    status: "ok",
-    database: AppDataSource.isInitialized ? "connected" : "disconnected",
-  });
-});
-
-app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/categorias", categoryRoutes);
-app.use("/api/v1/clientes", clienteRoutes);
-app.use("/api/v1/comandas", comandaRoutes);
-app.use("/api/v1/dashboard", dashboardRoutes);
-app.use("/api/v1/delivery", deliveryRoutes);
-app.use("/api/v1/impressao", impressaoRoutes);
-app.use("/api/v1/leads", leadRoutes);
-app.use("/api/v1/pedidos", pedidosRoutes);
-app.use("/api/v1/produtos", productRoutes);
-app.use("/api/v1/tenants", tenantRoutes);
-app.use("/api/v1/usuarios", userRoutes);
-
-app.use(errorHandlerMiddleware);
-
-// Composição: o delivery escuta mudanças de preparo publicadas pelo módulo de pedidos (PED-98).
-registrarSincronizacaoPreparoDelivery();
+import { getStorageService } from "./shared/storage/get-storage-service";
 
 const PORT = Number(process.env.PORT ?? 3000);
+
+// Sem storage de imagens configurado, a API não sobe: melhor falhar no deploy do
+// que no primeiro upload de um cliente.
+try {
+  getStorageService();
+} catch (error) {
+  console.error(
+    "❌ Configuração do armazenamento de imagens inválida:",
+    error instanceof Error ? error.message : error,
+  );
+  process.exit(1);
+}
 
 AppDataSource.initialize()
   .then(() => {

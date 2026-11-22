@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableUnique } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+  TableUnique,
+} from "typeorm";
 
 // PED-85: clientes do delivery (ADR-001). O telefone é único dentro do tenant e
 // sempre gravado normalizado (só dígitos, com DDD) pelos DTO validators.
@@ -64,7 +70,7 @@ export class CreateClientesTable1700000000025 implements MigrationInterface {
           }),
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -75,7 +81,7 @@ export class CreateClientesTable1700000000025 implements MigrationInterface {
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
   }
 

@@ -2,18 +2,21 @@ import { NextFunction, Request, Response } from "express";
 import { AuditLogService } from "../../modules/admin/services/audit-log.service";
 import { verifyToken } from "../../modules/auth/utils/jwt.util";
 import { AppError } from "../errors/app-error";
+import { TENANT_COOKIE_NAME } from "../utils/auth-cookies";
 
 const METODOS_DE_ESCRITA = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
-export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
+export function authMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  const token = req.cookies?.[TENANT_COOKIE_NAME];
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     next(new AppError("Token de autenticação não informado.", 401));
     return;
   }
-
-  const token = authHeader.slice("Bearer ".length).trim();
 
   try {
     const payload = verifyToken(token);
@@ -39,7 +42,10 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
         metodo: req.method,
         rota: req.originalUrl,
       }).catch((error) => {
-        console.error("[AUDIT LOG] Falha ao registrar ação durante impersonation:", error);
+        console.error(
+          "[AUDIT LOG] Falha ao registrar ação durante impersonation:",
+          error,
+        );
       });
     }
 

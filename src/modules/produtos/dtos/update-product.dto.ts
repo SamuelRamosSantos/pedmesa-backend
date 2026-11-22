@@ -8,6 +8,7 @@ export interface UpdateProductDto {
   descricao?: string | null;
   disponivel?: boolean;
   precisaPreparo?: boolean;
+  imagemUrl?: string | null;
 }
 
 export function assertValidUpdateProductDto(body: unknown): UpdateProductDto {
@@ -18,6 +19,7 @@ export function assertValidUpdateProductDto(body: unknown): UpdateProductDto {
     descricao,
     disponivel,
     precisa_preparo: precisaPreparo,
+    imagem_url: imagemUrl,
   } = (body ?? {}) as Record<string, unknown>;
 
   const dto: UpdateProductDto = {};
@@ -62,6 +64,13 @@ export function assertValidUpdateProductDto(body: unknown): UpdateProductDto {
       throw new AppError("Campo precisa_preparo deve ser booleano.", 400);
     }
     dto.precisaPreparo = precisaPreparo;
+  }
+
+  if (imagemUrl !== undefined) {
+    if (imagemUrl !== null && typeof imagemUrl !== "string") {
+      throw new AppError("Campo imagem_url inválido.", 400);
+    }
+    dto.imagemUrl = imagemUrl;
   }
 
   if (Object.keys(dto).length === 0) {

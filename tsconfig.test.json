@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // Os testes rodam dentro do Vite (ESM, com import.meta.glob); o código da API
+    // continua checado com as opções reais de CommonJS pelo tsconfig.json.
+    "module": "preserve",
+    "moduleResolution": "bundler"
+  },
+  "include": ["src/**/*", "tests/**/*", "vitest.config.mts"],
+  "exclude": ["node_modules", "dist"]
+}

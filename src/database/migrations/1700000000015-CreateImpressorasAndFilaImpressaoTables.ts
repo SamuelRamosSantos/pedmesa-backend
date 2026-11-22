@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements MigrationInterface {
+export class CreateImpressorasAndFilaImpressaoTables1700000000015
+  implements MigrationInterface
+{
   name = "CreateImpressorasAndFilaImpressaoTables1700000000015";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -8,7 +15,12 @@ export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements Mig
       new Table({
         name: "impressoras",
         columns: [
-          { name: "id", type: "uuid", isPrimary: true, default: "uuid_generate_v4()" },
+          {
+            name: "id",
+            type: "uuid",
+            isPrimary: true,
+            default: "uuid_generate_v4()",
+          },
           { name: "tenant_id", type: "uuid", isNullable: false },
           { name: "nome", type: "varchar", length: "100", isNullable: false },
           { name: "ip", type: "varchar", length: "45", isNullable: false },
@@ -17,7 +29,7 @@ export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements Mig
           { name: "criado_em", type: "timestamp", default: "now()" },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -28,14 +40,19 @@ export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements Mig
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createTable(
       new Table({
         name: "fila_impressao",
         columns: [
-          { name: "id", type: "uuid", isPrimary: true, default: "uuid_generate_v4()" },
+          {
+            name: "id",
+            type: "uuid",
+            isPrimary: true,
+            default: "uuid_generate_v4()",
+          },
           { name: "tenant_id", type: "uuid", isNullable: false },
           { name: "pedido_id", type: "uuid", isNullable: false },
           { name: "numero_comanda", type: "int", isNullable: false },
@@ -54,7 +71,7 @@ export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements Mig
           { name: "atualizado_em", type: "timestamp", default: "now()" },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -65,12 +82,15 @@ export class CreateImpressorasAndFilaImpressaoTables1700000000015 implements Mig
         referencedTableName: "tenants",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("fila_impressao", "fk_fila_impressao_tenant_id");
+    await queryRunner.dropForeignKey(
+      "fila_impressao",
+      "fk_fila_impressao_tenant_id",
+    );
     await queryRunner.dropTable("fila_impressao");
     await queryRunner.query(`DROP TYPE IF EXISTS "fila_impressao_status_enum"`);
 

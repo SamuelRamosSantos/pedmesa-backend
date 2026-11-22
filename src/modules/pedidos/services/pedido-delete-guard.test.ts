@@ -15,7 +15,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-1",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -29,7 +29,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-1",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -43,7 +43,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-1",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -57,7 +57,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-1",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -71,7 +71,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-1",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -82,7 +82,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "garcom-2",
         actingUserRoles: [UserRole.GARCOM],
-      })
+      }),
     ).toThrow(AppError);
   });
 
@@ -93,7 +93,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "admin-1",
         actingUserRoles: [UserRole.ADMIN],
-      })
+      }),
     ).not.toThrow();
   });
 
@@ -104,7 +104,7 @@ describe("assertPodeExcluirPedido", () => {
         pedidoUsuarioId: "garcom-1",
         actingUserId: "admin-1",
         actingUserRoles: [UserRole.ADMIN],
-      })
+      }),
     ).toThrow(AppError);
   });
 });

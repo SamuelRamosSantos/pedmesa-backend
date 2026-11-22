@@ -4,7 +4,11 @@ import { assertValidUpdateTenantConfigDto } from "../dtos/update-tenant-config.d
 import { toTenantResponse } from "../mappers/tenant.mapper";
 import { TenantService } from "../services/tenant.service";
 
-export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getMe(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const tenant = await TenantService.getMe(tenantId);
@@ -15,7 +19,11 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-export async function updateConfiguracoes(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateConfiguracoes(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidUpdateTenantConfigDto(req.body);
@@ -27,7 +35,11 @@ export async function updateConfiguracoes(req: Request, res: Response, next: Nex
   }
 }
 
-export async function regenerarTokenAgente(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function regenerarTokenAgente(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const tenant = await TenantService.regenerarTokenAgente(tenantId);

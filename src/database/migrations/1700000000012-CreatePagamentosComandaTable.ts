@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from "typeorm";
 
-export class CreatePagamentosComandaTable1700000000012 implements MigrationInterface {
+export class CreatePagamentosComandaTable1700000000012
+  implements MigrationInterface
+{
   name = "CreatePagamentosComandaTable1700000000012";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -45,7 +52,7 @@ export class CreatePagamentosComandaTable1700000000012 implements MigrationInter
           },
         ],
       }),
-      true
+      true,
     );
 
     await queryRunner.createForeignKey(
@@ -56,7 +63,7 @@ export class CreatePagamentosComandaTable1700000000012 implements MigrationInter
         referencedTableName: "comandas",
         referencedColumnNames: ["id"],
         onDelete: "CASCADE",
-      })
+      }),
     );
 
     await queryRunner.createForeignKey(
@@ -67,14 +74,22 @@ export class CreatePagamentosComandaTable1700000000012 implements MigrationInter
         referencedTableName: "usuarios",
         referencedColumnNames: ["id"],
         onDelete: "RESTRICT",
-      })
+      }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey("pagamentos_comanda", "fk_pagamentos_comanda_usuario_id");
-    await queryRunner.dropForeignKey("pagamentos_comanda", "fk_pagamentos_comanda_comanda_id");
+    await queryRunner.dropForeignKey(
+      "pagamentos_comanda",
+      "fk_pagamentos_comanda_usuario_id",
+    );
+    await queryRunner.dropForeignKey(
+      "pagamentos_comanda",
+      "fk_pagamentos_comanda_comanda_id",
+    );
     await queryRunner.dropTable("pagamentos_comanda");
-    await queryRunner.query(`DROP TYPE IF EXISTS "pagamentos_comanda_forma_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "pagamentos_comanda_forma_enum"`,
+    );
   }
 }

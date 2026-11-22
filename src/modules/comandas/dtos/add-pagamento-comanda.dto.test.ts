@@ -11,19 +11,29 @@ describe("assertValidAddPagamentoComandaDto", () => {
   });
 
   it("rejeita forma inválida", () => {
-    expect(() => assertValidAddPagamentoComandaDto({ forma: "boleto", valor: 10 })).toThrow(AppError);
+    expect(() =>
+      assertValidAddPagamentoComandaDto({ forma: "boleto", valor: 10 }),
+    ).toThrow(AppError);
   });
 
   it("rejeita forma ausente", () => {
-    expect(() => assertValidAddPagamentoComandaDto({ valor: 10 })).toThrow(AppError);
+    expect(() => assertValidAddPagamentoComandaDto({ valor: 10 })).toThrow(
+      AppError,
+    );
   });
 
   it("rejeita valor não positivo", () => {
-    expect(() => assertValidAddPagamentoComandaDto({ forma: "dinheiro", valor: 0 })).toThrow(AppError);
-    expect(() => assertValidAddPagamentoComandaDto({ forma: "dinheiro", valor: -10 })).toThrow(AppError);
+    expect(() =>
+      assertValidAddPagamentoComandaDto({ forma: "dinheiro", valor: 0 }),
+    ).toThrow(AppError);
+    expect(() =>
+      assertValidAddPagamentoComandaDto({ forma: "dinheiro", valor: -10 }),
+    ).toThrow(AppError);
   });
 
   it("rejeita valor não numérico", () => {
-    expect(() => assertValidAddPagamentoComandaDto({ forma: "pix", valor: "50" })).toThrow(AppError);
+    expect(() =>
+      assertValidAddPagamentoComandaDto({ forma: "pix", valor: "50" }),
+    ).toThrow(AppError);
   });
 });

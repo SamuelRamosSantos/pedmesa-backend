@@ -12,17 +12,23 @@ export interface ProdutoDoItem {
 // do delivery, para as mesmas regras e mensagens valerem nos dois lugares.
 export function resolverProdutosDosItens<P extends ProdutoDoItem>(
   itens: ReadonlyArray<{ produtoId: string }>,
-  produtosPorId: ReadonlyMap<string, P>
+  produtosPorId: ReadonlyMap<string, P>,
 ): P[] {
   return itens.map((item, index) => {
     const produto = produtosPorId.get(item.produtoId);
 
     if (!produto) {
-      throw new AppError(`O produto informado no item ${index} não foi encontrado.`, 400);
+      throw new AppError(
+        `O produto informado no item ${index} não foi encontrado.`,
+        400,
+      );
     }
 
     if (!produto.disponivel) {
-      throw new AppError(`O produto "${produto.nome}" está indisponível no momento.`, 400);
+      throw new AppError(
+        `O produto "${produto.nome}" está indisponível no momento.`,
+        400,
+      );
     }
 
     return produto;

@@ -28,7 +28,8 @@ const decimalTransformer = {
 
 const decimalNullableTransformer = {
   to: (value: number | null) => value,
-  from: (value: string | null) => (value === null ? null : Number.parseFloat(value)),
+  from: (value: string | null) =>
+    value === null ? null : Number.parseFloat(value),
 };
 
 // Dados que só existem no delivery, 1:1 com a comanda (ADR-001).
@@ -51,7 +52,11 @@ export class Entrega {
   @Column({ name: "comanda_id", type: "uuid" })
   comandaId!: string;
 
-  @OneToOne(() => Comanda, (comanda) => comanda.entrega, { onDelete: "CASCADE" })
+  @OneToOne(
+    () => Comanda,
+    (comanda) => comanda.entrega,
+    { onDelete: "CASCADE" },
+  )
   @JoinColumn({ name: "comanda_id" })
   comanda!: Relation<Comanda>;
 
@@ -79,7 +84,12 @@ export class Entrega {
   @Column({ name: "endereco_numero", type: "varchar", length: 20 })
   enderecoNumero!: string;
 
-  @Column({ name: "endereco_complemento", type: "varchar", length: 100, nullable: true })
+  @Column({
+    name: "endereco_complemento",
+    type: "varchar",
+    length: 100,
+    nullable: true,
+  })
   enderecoComplemento!: string | null;
 
   @Column({ name: "endereco_bairro", type: "varchar", length: 120 })
@@ -91,10 +101,21 @@ export class Entrega {
   @Column({ name: "endereco_uf", type: "char", length: 2 })
   enderecoUf!: string;
 
-  @Column({ name: "endereco_referencia", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "endereco_referencia",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   enderecoReferencia!: string | null;
 
-  @Column({ name: "taxa_entrega", type: "decimal", precision: 10, scale: 2, transformer: decimalTransformer })
+  @Column({
+    name: "taxa_entrega",
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    transformer: decimalTransformer,
+  })
   taxaEntrega!: number;
 
   @Column({
@@ -137,7 +158,12 @@ export class Entrega {
   @Column({ name: "entregue_em", type: "timestamp", nullable: true })
   entregueEm!: Date | null;
 
-  @Column({ name: "motivo_cancelamento", type: "varchar", length: 255, nullable: true })
+  @Column({
+    name: "motivo_cancelamento",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
   motivoCancelamento!: string | null;
 
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })

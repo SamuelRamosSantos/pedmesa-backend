@@ -11,7 +11,7 @@ export class AddAtivoToProdutos1700000000007 implements MigrationInterface {
         type: "boolean",
         default: true,
         isNullable: false,
-      })
+      }),
     );
   }
 

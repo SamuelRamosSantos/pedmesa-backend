@@ -8,6 +8,7 @@ export interface UserResponse {
   pode_excluir_item_fechamento: boolean;
   pode_conceder_desconto: boolean;
   ativo: boolean;
+  foto_url: string | null;
   criado_em: Date;
 }
 
@@ -20,6 +21,7 @@ export function toUserResponse(user: User): UserResponse {
     pode_excluir_item_fechamento: user.podeExcluirItemFechamento,
     pode_conceder_desconto: user.podeConcederDesconto,
     ativo: user.ativo,
+    foto_url: user.fotoUrl,
     criado_em: user.criadoEm,
   };
 }

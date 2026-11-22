@@ -11,9 +11,10 @@ import { preparoConcluido } from "./entrega-status-transition";
 export function decidirStatusPorPreparo(
   statusAtual: StatusEntrega,
   statusPreparoDosPedidos: readonly StatusPreparo[],
-  possuiItensAtivos: boolean
+  possuiItensAtivos: boolean,
 ): StatusEntrega | null {
-  const concluido = possuiItensAtivos && preparoConcluido(statusPreparoDosPedidos);
+  const concluido =
+    possuiItensAtivos && preparoConcluido(statusPreparoDosPedidos);
 
   if (statusAtual === StatusEntrega.EM_PRODUCAO && concluido) {
     return StatusEntrega.PRONTO_PARA_ENVIO;

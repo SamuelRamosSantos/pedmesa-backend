@@ -1,4 +1,8 @@
-import { assertValidIp, assertValidNome, assertValidPorta } from "./impressora-input.validator";
+import {
+  assertValidIp,
+  assertValidNome,
+  assertValidPorta,
+} from "./impressora-input.validator";
 
 const PORTA_PADRAO = 9100;
 
@@ -8,7 +12,9 @@ export interface CreateImpressoraDto {
   porta: number;
 }
 
-export function assertValidCreateImpressoraDto(body: unknown): CreateImpressoraDto {
+export function assertValidCreateImpressoraDto(
+  body: unknown,
+): CreateImpressoraDto {
   const { nome, ip, porta } = (body ?? {}) as Record<string, unknown>;
 
   return {

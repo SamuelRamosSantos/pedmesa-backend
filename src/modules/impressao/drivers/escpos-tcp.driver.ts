@@ -1,4 +1,4 @@
-import { Socket } from "net";
+import { Socket } from "node:net";
 
 export interface DestinoImpressora {
   ip: string;
@@ -10,7 +10,7 @@ const TIMEOUT_PADRAO_MS = 5000;
 export function enviarParaImpressora(
   destino: DestinoImpressora,
   comandos: Buffer,
-  timeoutMs: number = TIMEOUT_PADRAO_MS
+  timeoutMs: number = TIMEOUT_PADRAO_MS,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const socket = new Socket();
@@ -34,11 +34,19 @@ export function enviarParaImpressora(
     socket.setTimeout(timeoutMs);
 
     socket.once("timeout", () => {
-      finalizar(new Error(`Timeout ao conectar à impressora ${destino.ip}:${destino.porta}.`));
+      finalizar(
+        new Error(
+          `Timeout ao conectar à impressora ${destino.ip}:${destino.porta}.`,
+        ),
+      );
     });
 
     socket.once("error", (erro) => {
-      finalizar(new Error(`Falha de comunicação com a impressora ${destino.ip}:${destino.porta}: ${erro.message}`));
+      finalizar(
+        new Error(
+          `Falha de comunicação com a impressora ${destino.ip}:${destino.porta}: ${erro.message}`,
+        ),
+      );
     });
 
     socket.connect(destino.porta, destino.ip, () => {

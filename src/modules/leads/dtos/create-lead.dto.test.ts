@@ -24,27 +24,40 @@ describe("assertValidCreateLeadDto", () => {
   });
 
   it("aceita CNPJ (14 dígitos)", () => {
-    const dto = assertValidCreateLeadDto({ ...VALID_BODY, cpf_cnpj: "12.345.678/0001-99" });
+    const dto = assertValidCreateLeadDto({
+      ...VALID_BODY,
+      cpf_cnpj: "12.345.678/0001-99",
+    });
     expect(dto.cpfCnpj).toBe("12345678000199");
   });
 
   it("rejeita nome ausente", () => {
-    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, nome: "" })).toThrow(AppError);
+    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, nome: "" })).toThrow(
+      AppError,
+    );
   });
 
   it("rejeita e-mail inválido", () => {
-    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, email: "não-é-email" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateLeadDto({ ...VALID_BODY, email: "não-é-email" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita whatsapp com poucos dígitos", () => {
-    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, whatsapp: "123" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateLeadDto({ ...VALID_BODY, whatsapp: "123" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita cpf_cnpj com quantidade de dígitos inválida", () => {
-    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, cpf_cnpj: "123" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateLeadDto({ ...VALID_BODY, cpf_cnpj: "123" }),
+    ).toThrow(AppError);
   });
 
   it("rejeita nome_estabelecimento ausente", () => {
-    expect(() => assertValidCreateLeadDto({ ...VALID_BODY, nome_estabelecimento: "" })).toThrow(AppError);
+    expect(() =>
+      assertValidCreateLeadDto({ ...VALID_BODY, nome_estabelecimento: "" }),
+    ).toThrow(AppError);
   });
 });

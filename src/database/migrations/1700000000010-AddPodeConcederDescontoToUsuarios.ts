@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddPodeConcederDescontoToUsuarios1700000000010 implements MigrationInterface {
+export class AddPodeConcederDescontoToUsuarios1700000000010
+  implements MigrationInterface
+{
   name = "AddPodeConcederDescontoToUsuarios1700000000010";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -11,7 +13,7 @@ export class AddPodeConcederDescontoToUsuarios1700000000010 implements Migration
         type: "boolean",
         default: false,
         isNullable: false,
-      })
+      }),
     );
   }
 

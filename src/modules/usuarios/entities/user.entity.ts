@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Tenant } from "../../tenants/entities/tenant.entity";
 
 export enum UserRole {
@@ -31,10 +38,19 @@ export class User {
   @Column({ name: "senha_hash", type: "varchar", length: 255 })
   senhaHash!: string;
 
-  @Column({ type: "enum", enum: UserRole, enumName: "usuarios_role_enum", array: true })
+  @Column({
+    type: "enum",
+    enum: UserRole,
+    enumName: "usuarios_role_enum",
+    array: true,
+  })
   roles!: UserRole[];
 
-  @Column({ name: "pode_excluir_item_fechamento", type: "boolean", default: false })
+  @Column({
+    name: "pode_excluir_item_fechamento",
+    type: "boolean",
+    default: false,
+  })
   podeExcluirItemFechamento!: boolean;
 
   @Column({ name: "pode_conceder_desconto", type: "boolean", default: false })
@@ -42,6 +58,9 @@ export class User {
 
   @Column({ type: "boolean", default: true })
   ativo!: boolean;
+
+  @Column({ name: "foto_url", type: "varchar", length: 1024, nullable: true })
+  fotoUrl!: string | null;
 
   @CreateDateColumn({ name: "criado_em", type: "timestamp" })
   criadoEm!: Date;

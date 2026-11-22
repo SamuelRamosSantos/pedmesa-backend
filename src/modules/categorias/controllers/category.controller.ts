@@ -4,7 +4,11 @@ import { assertValidCreateCategoryDto } from "../dtos/create-category.dto";
 import { toCategoryResponse } from "../mappers/category.mapper";
 import { CategoryService } from "../services/category.service";
 
-export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const dto = assertValidCreateCategoryDto(req.body);
@@ -16,7 +20,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function list(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const tenantId = getTenantId(req);
     const categories = await CategoryService.listActive(tenantId);

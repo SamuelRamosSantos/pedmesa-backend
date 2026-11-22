@@ -85,13 +85,13 @@ Adotar a **alternativa C**.
 
 ## Decisões de produto (PO)
 
-| # | Tema | Decisão | Onde se aplica |
-|---|---|---|---|
-| 1 | Quem cria delivery e opera a Expedição | **Novo papel `EXPEDICAO`**, além do `ADMIN` | PED-113 (criação do papel); PED-96, PED-99, PED-101, PED-110, PED-112 |
-| 2 | Base do desconto | **Só sobre os itens.** `total_final = itens − desconto + taxa`; a taxa nunca é descontada | PED-94 |
-| 3 | Cancelamento com o pedido em rota | **Não é direto.** Em `em_rota`, registra-se o retorno (`em_rota → pronto_para_envio`, com motivo) e depois cancela. Cancelamento direto só até `pronto_para_envio` | PED-97, PED-100 |
-| 4 | Numeração do delivery | **Reinicia todo dia**, por tenant (`#1`, `#2`…) | PED-88 |
-| 5 | Taxa de entrega no faturamento | **Conta no faturamento**, com a soma das taxas exposta em campo separado (`taxas_entrega`). Já definido no PED-103 | PED-103 |
+| #   | Tema                                   | Decisão                                                                                                                                                            | Onde se aplica                                                        |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| 1   | Quem cria delivery e opera a Expedição | **Novo papel `EXPEDICAO`**, além do `ADMIN`                                                                                                                        | PED-113 (criação do papel); PED-96, PED-99, PED-101, PED-110, PED-112 |
+| 2   | Base do desconto                       | **Só sobre os itens.** `total_final = itens − desconto + taxa`; a taxa nunca é descontada                                                                          | PED-94                                                                |
+| 3   | Cancelamento com o pedido em rota      | **Não é direto.** Em `em_rota`, registra-se o retorno (`em_rota → pronto_para_envio`, com motivo) e depois cancela. Cancelamento direto só até `pronto_para_envio` | PED-97, PED-100                                                       |
+| 4   | Numeração do delivery                  | **Reinicia todo dia**, por tenant (`#1`, `#2`…)                                                                                                                    | PED-88                                                                |
+| 5   | Taxa de entrega no faturamento         | **Conta no faturamento**, com a soma das taxas exposta em campo separado (`taxas_entrega`). Já definido no PED-103                                                 | PED-103                                                               |
 
 ## Consequências
 
@@ -145,84 +145,84 @@ entrega o comportamento completo (texto "DELIVERY #7", `identificador`, filtro e
 
 ### Backend: entidades, DTOs e migrations
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `comandas/entities/comanda.entity.ts:28-29` | `numeroComanda: number` | tratar null | PED-84 |
-| `pedidos/entities/log-exclusao-item.entity.ts:15-16` | `numeroComanda: number` (NOT NULL) | tratar null | PED-103 |
-| `impressao/entities/fila-impressao.entity.ts:42-43` | `numeroComanda: number` (NOT NULL) | tratar null | PED-102 |
-| `comandas/dtos/create-comanda.dto.ts:23-34` | exige `numero_comanda` | ok (criação de mesa; delivery tem endpoint próprio) | — |
-| `comandas/dtos/list-comandas.dto.ts:12-15` | filtro só por `ComandaStatus` | filtrar por tipo (default `mesa`) | PED-103 |
-| `migrations/…003-CreateComandasAndIntegrantesTables.ts:79` | índice único parcial `(tenant_id, numero_comanda) WHERE status = 'aberta'` | ok (Postgres aceita vários `NULL` num índice único; confirmar no PED-84) | PED-84 |
+| Local                                                      | Uso                                                                        | Classificação                                                            | Card    |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------- |
+| `comandas/entities/comanda.entity.ts:28-29`                | `numeroComanda: number`                                                    | tratar null                                                              | PED-84  |
+| `pedidos/entities/log-exclusao-item.entity.ts:15-16`       | `numeroComanda: number` (NOT NULL)                                         | tratar null                                                              | PED-103 |
+| `impressao/entities/fila-impressao.entity.ts:42-43`        | `numeroComanda: number` (NOT NULL)                                         | tratar null                                                              | PED-102 |
+| `comandas/dtos/create-comanda.dto.ts:23-34`                | exige `numero_comanda`                                                     | ok (criação de mesa; delivery tem endpoint próprio)                      | —       |
+| `comandas/dtos/list-comandas.dto.ts:12-15`                 | filtro só por `ComandaStatus`                                              | filtrar por tipo (default `mesa`)                                        | PED-103 |
+| `migrations/…003-CreateComandasAndIntegrantesTables.ts:79` | índice único parcial `(tenant_id, numero_comanda) WHERE status = 'aberta'` | ok (Postgres aceita vários `NULL` num índice único; confirmar no PED-84) | PED-84  |
 
 ### Backend: `ComandaService`
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `create` (`:42-77`) | valida número, limite e unicidade entre abertas | ok (só mesa) | — |
-| `list` (`:84-92`) | filtra por `status`, ordena por `numeroComanda` | filtrar por tipo | PED-103 |
-| `addIntegrante` (`:94-110`) | checa `ABERTA` | ok | — |
-| `getExtrato` (`:112-153`) | busca por id + tenant | ok (taxa entra no PED-94) | PED-94 |
-| `addPagamento` / `removePagamento` (`:155-201`) | checa `ABERTA` | ok (reusado no PED-100) | — |
-| `atualizarDesconto` (`:203-229`) | checa `ABERTA` | ok (desconto só sobre itens, decisão 2) | PED-94 |
-| `juntar` (`:231-275`) | checa `ABERTA` nas comandas | **filtrar por tipo** (rejeitar delivery) | PED-103 |
-| `imprimirPreConta` (`:277-316`) | `numero_comanda` no job | tratar null | PED-102 |
-| `fechar` (`:319-393`) | checa e grava `FECHADA` | ok (vira componível no PED-95) | PED-95 |
-| `cancelarZerada` (`:395-…`) | checa e grava `FECHADA` | ok (reusado no cancelamento, PED-100) | PED-100 |
+| Local                                           | Uso                                             | Classificação                            | Card    |
+| ----------------------------------------------- | ----------------------------------------------- | ---------------------------------------- | ------- |
+| `create` (`:42-77`)                             | valida número, limite e unicidade entre abertas | ok (só mesa)                             | —       |
+| `list` (`:84-92`)                               | filtra por `status`, ordena por `numeroComanda` | filtrar por tipo                         | PED-103 |
+| `addIntegrante` (`:94-110`)                     | checa `ABERTA`                                  | ok                                       | —       |
+| `getExtrato` (`:112-153`)                       | busca por id + tenant                           | ok (taxa entra no PED-94)                | PED-94  |
+| `addPagamento` / `removePagamento` (`:155-201`) | checa `ABERTA`                                  | ok (reusado no PED-100)                  | —       |
+| `atualizarDesconto` (`:203-229`)                | checa `ABERTA`                                  | ok (desconto só sobre itens, decisão 2)  | PED-94  |
+| `juntar` (`:231-275`)                           | checa `ABERTA` nas comandas                     | **filtrar por tipo** (rejeitar delivery) | PED-103 |
+| `imprimirPreConta` (`:277-316`)                 | `numero_comanda` no job                         | tratar null                              | PED-102 |
+| `fechar` (`:319-393`)                           | checa e grava `FECHADA`                         | ok (vira componível no PED-95)           | PED-95  |
+| `cancelarZerada` (`:395-…`)                     | checa e grava `FECHADA`                         | ok (reusado no cancelamento, PED-100)    | PED-100 |
 
 ### Backend: `PedidoService`
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `create` (`:21-121`) | checa `ABERTA`; `numero_comanda` no job da cozinha (`:107`) | tratar null | PED-95, PED-102 |
-| `list` (`:128-146`) | `innerJoin("pedido.comanda")`, filtra `ABERTA`, seleciona `numeroComanda` | tratar null (o join de tenant está ok) | PED-103 |
-| `updateItemStatus` (`:152-180`) | `innerJoin("pedido.comanda")` para tenant | ok (recebe o hook de sincronização no PED-98) | PED-98 |
-| `deleteItem` (`:182-224`) | `innerJoinAndSelect("pedido.comanda")`, checa `ABERTA`, grava `numeroComanda` no log (`:206`) | tratar null | PED-103 |
-| `deleteOwnPedido` (`:226-260`) | `innerJoinAndSelect("pedido.comanda")`, checa `ABERTA` | ok | — |
+| Local                           | Uso                                                                                           | Classificação                                 | Card            |
+| ------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------- |
+| `create` (`:21-121`)            | checa `ABERTA`; `numero_comanda` no job da cozinha (`:107`)                                   | tratar null                                   | PED-95, PED-102 |
+| `list` (`:128-146`)             | `innerJoin("pedido.comanda")`, filtra `ABERTA`, seleciona `numeroComanda`                     | tratar null (o join de tenant está ok)        | PED-103         |
+| `updateItemStatus` (`:152-180`) | `innerJoin("pedido.comanda")` para tenant                                                     | ok (recebe o hook de sincronização no PED-98) | PED-98          |
+| `deleteItem` (`:182-224`)       | `innerJoinAndSelect("pedido.comanda")`, checa `ABERTA`, grava `numeroComanda` no log (`:206`) | tratar null                                   | PED-103         |
+| `deleteOwnPedido` (`:226-260`)  | `innerJoinAndSelect("pedido.comanda")`, checa `ABERTA`                                        | ok                                            | —               |
 
 ### Backend: mappers
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `comandas/mappers/comanda.mapper.ts:8,16,25,35` | `numero_comanda: number` | tratar null | PED-84 |
-| `comandas/mappers/extrato.mapper.ts:8,24` | `numero_comanda: number` | tratar null | PED-84 |
-| `pedidos/mappers/pedido.mapper.ts:31,43` | `numero_comanda: number` | tratar null | PED-103 |
-| `impressao/mappers/fila-impressao.mapper.ts:8,21` | `numero_comanda: number` | tratar null | PED-102 |
+| Local                                             | Uso                      | Classificação | Card    |
+| ------------------------------------------------- | ------------------------ | ------------- | ------- |
+| `comandas/mappers/comanda.mapper.ts:8,16,25,35`   | `numero_comanda: number` | tratar null   | PED-84  |
+| `comandas/mappers/extrato.mapper.ts:8,24`         | `numero_comanda: number` | tratar null   | PED-84  |
+| `pedidos/mappers/pedido.mapper.ts:31,43`          | `numero_comanda: number` | tratar null   | PED-103 |
+| `impressao/mappers/fila-impressao.mapper.ts:8,21` | `numero_comanda: number` | tratar null   | PED-102 |
 
 ### Backend: impressão
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `impressao/types/print-job.types.ts:14,22` | `numero_comanda: number` | tratar null | PED-102 |
-| `impressao/queue/print-queue.ts:21,32,54,105,122,128` | repassa o número; textos "Pré-conta da mesa #…" | tratar null | PED-102 |
-| `impressao/formatters/ticket.formatter.ts:14` | `Comanda/Mesa: #…` | tratar null ("DELIVERY #7") | PED-102 |
-| `impressao/formatters/preconta.formatter.ts:19` | `Comanda/Mesa: #…` | tratar null | PED-102 |
+| Local                                                 | Uso                                             | Classificação               | Card    |
+| ----------------------------------------------------- | ----------------------------------------------- | --------------------------- | ------- |
+| `impressao/types/print-job.types.ts:14,22`            | `numero_comanda: number`                        | tratar null                 | PED-102 |
+| `impressao/queue/print-queue.ts:21,32,54,105,122,128` | repassa o número; textos "Pré-conta da mesa #…" | tratar null                 | PED-102 |
+| `impressao/formatters/ticket.formatter.ts:14`         | `Comanda/Mesa: #…`                              | tratar null ("DELIVERY #7") | PED-102 |
+| `impressao/formatters/preconta.formatter.ts:19`       | `Comanda/Mesa: #…`                              | tratar null                 | PED-102 |
 
 ### Backend: dashboard
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `dashboard/services/dashboard.service.ts:32-50` | faturamento de comandas `FECHADA` | ok (inclui delivery, decisão 5) | PED-103 |
-| `dashboard/services/dashboard.service.ts:55-79` | `innerJoin("pedido.comanda")`, `FECHADA` | ok | — |
-| `dashboard/services/dashboard.service.ts:81-115` | `mesa: comanda.numeroComanda` (`:112`) | tratar null (`identificador`) | PED-103 |
+| Local                                            | Uso                                      | Classificação                   | Card    |
+| ------------------------------------------------ | ---------------------------------------- | ------------------------------- | ------- |
+| `dashboard/services/dashboard.service.ts:32-50`  | faturamento de comandas `FECHADA`        | ok (inclui delivery, decisão 5) | PED-103 |
+| `dashboard/services/dashboard.service.ts:55-79`  | `innerJoin("pedido.comanda")`, `FECHADA` | ok                              | —       |
+| `dashboard/services/dashboard.service.ts:81-115` | `mesa: comanda.numeroComanda` (`:112`)   | tratar null (`identificador`)   | PED-103 |
 
 ### `pedmesa-print-agent`
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `src/print/ticket-formatter.js:18` | `Comanda/Mesa: #…` | tratar null | PED-102 |
-| `src/print/preconta-formatter.js:23` | `Comanda/Mesa: #…` | tratar null | PED-102 |
-| `src/queue/poller.js:63,71` | repassa `numero_comanda` | tratar null | PED-102 |
-| `src/main.js:139` | página de teste com `numero_comanda: 0` | ok | — |
+| Local                                | Uso                                     | Classificação | Card    |
+| ------------------------------------ | --------------------------------------- | ------------- | ------- |
+| `src/print/ticket-formatter.js:18`   | `Comanda/Mesa: #…`                      | tratar null   | PED-102 |
+| `src/print/preconta-formatter.js:23` | `Comanda/Mesa: #…`                      | tratar null   | PED-102 |
+| `src/queue/poller.js:63,71`          | repassa `numero_comanda`                | tratar null   | PED-102 |
+| `src/main.js:139`                    | página de teste com `numero_comanda: 0` | ok            | —       |
 
 ### Frontend
 
-| Local | Uso | Classificação | Card |
-|---|---|---|---|
-| `types/comanda.ts:23,31,79`, `services/comanda.service.ts:15` | `numero_comanda: number` | tratar null (tipo `number \| null`) | PED-105 |
-| `types/pedido.ts:24`, `pages/cozinha/types.ts:13` | `numero_comanda: number` | tratar null | PED-105, PED-112 |
-| `types/dashboard.ts:13` | `mesa: number` | tratar null (`identificador`) | PED-103, PED-112 |
-| `pages/cozinha/Kds.tsx:68`, `cozinha/components/GrupoPreparoCard.tsx:45` | exibe o número da mesa | tratar null (badge "DELIVERY #7") | PED-112 |
-| `pages/admin/DashboardProprietario.tsx:267` | `Mesa {linha.mesa}` | tratar null | PED-112 |
-| `pages/caixa/MapaMesas.tsx:66`, `pages/garcom/Mesas.tsx:46`, `garcom/components/ComandaCard.tsx:24`, `caixa/components/JuntarComandasModal.tsx:99,124` | listas de mesas | ok, **desde que** o backend filtre por tipo | PED-103 |
-| `pages/garcom/ComandaDetalhe.tsx:250,281,338,565`, `pages/caixa/ComandaFechamento.tsx:305,491`, `pages/caixa/PreContaImpressao.tsx:89` | "Mesa {número}" em telas abertas por id | ok (delivery não navega para essas telas; por URL direta mostraria "Mesa null", risco baixo) | — |
-| `pages/garcom/components/NovaComandaModal.tsx` | cria comanda de mesa | ok | — |
+| Local                                                                                                                                                  | Uso                                     | Classificação                                                                                | Card             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------- |
+| `types/comanda.ts:23,31,79`, `services/comanda.service.ts:15`                                                                                          | `numero_comanda: number`                | tratar null (tipo `number \| null`)                                                          | PED-105          |
+| `types/pedido.ts:24`, `pages/cozinha/types.ts:13`                                                                                                      | `numero_comanda: number`                | tratar null                                                                                  | PED-105, PED-112 |
+| `types/dashboard.ts:13`                                                                                                                                | `mesa: number`                          | tratar null (`identificador`)                                                                | PED-103, PED-112 |
+| `pages/cozinha/Kds.tsx:68`, `cozinha/components/GrupoPreparoCard.tsx:45`                                                                               | exibe o número da mesa                  | tratar null (badge "DELIVERY #7")                                                            | PED-112          |
+| `pages/admin/DashboardProprietario.tsx:267`                                                                                                            | `Mesa {linha.mesa}`                     | tratar null                                                                                  | PED-112          |
+| `pages/caixa/MapaMesas.tsx:66`, `pages/garcom/Mesas.tsx:46`, `garcom/components/ComandaCard.tsx:24`, `caixa/components/JuntarComandasModal.tsx:99,124` | listas de mesas                         | ok, **desde que** o backend filtre por tipo                                                  | PED-103          |
+| `pages/garcom/ComandaDetalhe.tsx:250,281,338,565`, `pages/caixa/ComandaFechamento.tsx:305,491`, `pages/caixa/PreContaImpressao.tsx:89`                 | "Mesa {número}" em telas abertas por id | ok (delivery não navega para essas telas; por URL direta mostraria "Mesa null", risco baixo) | —                |
+| `pages/garcom/components/NovaComandaModal.tsx`                                                                                                         | cria comanda de mesa                    | ok                                                                                           | —                |
