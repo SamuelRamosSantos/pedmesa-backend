@@ -1,4 +1,4 @@
-import { EntityManager } from "typeorm";
+import { EntityManager, In } from "typeorm";
 import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { CreateEnderecoClienteDto } from "../dtos/create-endereco-cliente.dto";
@@ -116,6 +116,32 @@ export class EnderecoClienteService {
       where: { tenantId, clienteId },
       order: { principal: "DESC", criadoEm: "DESC" },
     });
+  }
+
+  // Endereços de vários clientes numa consulta só (listagem paginada, PED-122), na mesma
+  // ordem de `listar`, agrupados por cliente.
+  static async listarDeVarios(
+    tenantId: string,
+    clienteIds: string[],
+  ): Promise<Map<string, EnderecoCliente[]>> {
+    const porCliente = new Map<string, EnderecoCliente[]>(
+      clienteIds.map((id) => [id, []]),
+    );
+
+    if (clienteIds.length === 0) {
+      return porCliente;
+    }
+
+    const enderecos = await AppDataSource.getRepository(EnderecoCliente).find({
+      where: { tenantId, clienteId: In(clienteIds) },
+      order: { principal: "DESC", criadoEm: "DESC" },
+    });
+
+    for (const endereco of enderecos) {
+      porCliente.get(endereco.clienteId)?.push(endereco);
+    }
+
+    return porCliente;
   }
 
   static async criar(

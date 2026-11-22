@@ -2,14 +2,26 @@ import { AppDataSource } from "../../../config/data-source";
 import { AppError } from "../../../shared/errors/app-error";
 import { isUniqueViolation } from "../../../shared/utils/is-unique-violation";
 import { CreateClienteDto } from "../dtos/create-cliente.dto";
+import { ListarClientesQuery } from "../dtos/listar-clientes.dto";
 import { UpdateClienteDto } from "../dtos/update-cliente.dto";
 import { Cliente } from "../entities/cliente.entity";
 import { EnderecoCliente } from "../entities/endereco-cliente.entity";
 import { EnderecoClienteService } from "./endereco-cliente.service";
+import {
+  interpretarTermoBusca,
+  LETRAS_ACENTUADAS,
+  LETRAS_SEM_ACENTO,
+  padraoContem,
+} from "./termo-busca-cliente";
 
 export interface ClienteComEnderecos {
   cliente: Cliente;
   enderecos: EnderecoCliente[];
+}
+
+export interface PaginaClientes {
+  clientes: ClienteComEnderecos[];
+  total: number;
 }
 
 function erroTelefoneDuplicado(telefone: string): AppError {
@@ -34,6 +46,58 @@ export class ClienteService {
     return {
       cliente,
       enderecos: await EnderecoClienteService.listar(tenantId, cliente.id),
+    };
+  }
+
+  // Busca única por nome ou telefone (PED-122): só dígitos procuram um trecho do
+  // telefone; com letras, um trecho do nome, sem diferenciar maiúsculas e acentos.
+  static async listar(
+    tenantId: string,
+    filtro: ListarClientesQuery,
+  ): Promise<PaginaClientes> {
+    const query = AppDataSource.getRepository(Cliente)
+      .createQueryBuilder("cliente")
+      .where("cliente.tenantId = :tenantId", { tenantId });
+    const termo = interpretarTermoBusca(filtro.busca);
+
+    if (termo.tipo === "telefone") {
+      query.andWhere("cliente.telefone LIKE :padrao", {
+        padrao: padraoContem(termo.digitos),
+      });
+    }
+
+    if (termo.tipo === "nome") {
+      query.setParameters({
+        acentuadas: LETRAS_ACENTUADAS,
+        semAcento: LETRAS_SEM_ACENTO,
+      });
+
+      // Um filtro por palavra; o nome do parâmetro usa só o índice (nunca o texto).
+      termo.palavras.forEach((palavra, indice) => {
+        query.andWhere(
+          `lower(translate(cliente.nome, :acentuadas, :semAcento)) LIKE :palavra${indice}`,
+          { [`palavra${indice}`]: padraoContem(palavra) },
+        );
+      });
+    }
+
+    const [clientes, total] = await query
+      .orderBy("cliente.nome", "ASC")
+      .addOrderBy("cliente.id", "ASC")
+      .offset((filtro.pagina - 1) * filtro.porPagina)
+      .limit(filtro.porPagina)
+      .getManyAndCount();
+    const enderecos = await EnderecoClienteService.listarDeVarios(
+      tenantId,
+      clientes.map((cliente) => cliente.id),
+    );
+
+    return {
+      clientes: clientes.map((cliente) => ({
+        cliente,
+        enderecos: enderecos.get(cliente.id) ?? [],
+      })),
+      total,
     };
   }
 

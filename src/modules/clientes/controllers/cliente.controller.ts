@@ -5,11 +5,13 @@ import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidBuscarClienteQuery } from "../dtos/buscar-cliente.dto";
 import { assertValidCreateClienteDto } from "../dtos/create-cliente.dto";
 import { assertValidCreateEnderecoClienteDto } from "../dtos/create-endereco-cliente.dto";
+import { assertValidListarClientesQuery } from "../dtos/listar-clientes.dto";
 import { assertValidUpdateClienteDto } from "../dtos/update-cliente.dto";
 import { assertValidUpdateEnderecoClienteDto } from "../dtos/update-endereco-cliente.dto";
 import {
   toClienteResponse,
   toEnderecoClienteResponse,
+  toListaClientesResponse,
 } from "../mappers/cliente.mapper";
 import { ClienteService } from "../services/cliente.service";
 import { EnderecoClienteService } from "../services/endereco-cliente.service";
@@ -22,7 +24,31 @@ function exigirUuid(valor: string, descricao: string): string {
   return valor;
 }
 
-export async function buscarPorTelefone(
+// GET /clientes: com `telefone`, a busca exata de sempre (devolve um cliente ou null);
+// sem ele, a listagem paginada com a busca única por nome ou telefone (PED-122).
+export async function listarOuBuscarPorTelefone(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  if (req.query.telefone !== undefined) {
+    return buscarPorTelefone(req, res, next);
+  }
+
+  try {
+    const tenantId = getTenantId(req);
+    const filtro = assertValidListarClientesQuery(req.query);
+    const pagina = await ClienteService.listar(tenantId, filtro);
+
+    res
+      .status(200)
+      .json(toListaClientesResponse(pagina, filtro.pagina, filtro.porPagina));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function buscarPorTelefone(
   req: Request,
   res: Response,
   next: NextFunction,

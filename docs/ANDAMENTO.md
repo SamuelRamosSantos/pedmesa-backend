@@ -1,7 +1,7 @@
 # Andamento — PedMesa
 
 > **Fonte:** Jira (projeto PED, `samuelramos.atlassian.net`) e branches do Git.
-> **Posição em:** 21/11/2026.
+> **Posição em:** 22/11/2026.
 > **Regra de atualização:** toda tarefa que muda o que está pronto, em andamento ou planejado atualiza este arquivo na mesma entrega.
 
 ## 1. Resumo por épico
@@ -31,7 +31,7 @@
 
 ## 3. Em andamento (fora da `main`)
 
-- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115 e o seed de cardápio (PED-116).
+- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115, o seed de cardápio (PED-116) e a listagem de clientes com busca única por nome ou telefone, `GET /clientes?busca=&pagina=&por_pagina=` (PED-122).
 
 ## 4. Planejado
 
@@ -42,7 +42,6 @@
 ## 5. Pendências conhecidas
 
 - **PED-115 (bug):** o status de preparo do pedido fica desatualizado quando o KDS avança itens em paralelo. A correção está na branch PED-82.
-- A branch `PED-82-delivery-frontend` precisa passar pelo `npm run format` antes de ser mesclada, porque a `main` foi reformatada pelo Biome.
 - `docs/api-endpoints.md` e `docs/banco-de-dados.md` estão desatualizados em relação ao código.
 
 ## 6. Impacto previsto na arquitetura

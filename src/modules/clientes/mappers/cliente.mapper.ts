@@ -44,6 +44,31 @@ export function toEnderecoClienteResponse(
   };
 }
 
+export interface ListaClientesResponse {
+  clientes: ClienteResponse[];
+  total: number;
+  pagina: number;
+  por_pagina: number;
+}
+
+export function toListaClientesResponse(
+  pagina: {
+    clientes: { cliente: Cliente; enderecos: EnderecoCliente[] }[];
+    total: number;
+  },
+  numeroPagina: number,
+  porPagina: number,
+): ListaClientesResponse {
+  return {
+    clientes: pagina.clientes.map(({ cliente, enderecos }) =>
+      toClienteResponse(cliente, enderecos),
+    ),
+    total: pagina.total,
+    pagina: numeroPagina,
+    por_pagina: porPagina,
+  };
+}
+
 export function toClienteResponse(
   cliente: Cliente,
   enderecos: EnderecoCliente[],
