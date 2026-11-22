@@ -40,6 +40,7 @@ export interface EntregaPainelResponse {
   bairro: string;
   endereco_resumido: string;
   total: number;
+  taxa_isenta: boolean;
   forma_pagamento_prevista: FormaPagamento;
   troco: number;
   troco_suficiente: boolean;
@@ -61,6 +62,7 @@ export function toEntregaPainelResponse(
     bairro: card.bairro,
     endereco_resumido: card.enderecoResumido,
     total: card.total,
+    taxa_isenta: card.taxaIsenta,
     forma_pagamento_prevista: card.formaPagamentoPrevista,
     troco: card.troco,
     troco_suficiente: card.trocoSuficiente,

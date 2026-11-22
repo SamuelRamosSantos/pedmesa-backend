@@ -8,11 +8,16 @@ import {
 import { TransicaoEntregaDto } from "../dtos/transicao-entrega.dto";
 import { Entrega, StatusEntrega } from "../entities/entrega.entity";
 import { toEntregaEstadoResponse } from "../mappers/entrega.mapper";
+import { dataDaNumeracao } from "./data-numeracao";
 import {
   cancelarEntregaNaTransacao,
   concluirEntregaNaTransacao,
+  reabrirEntregaNaTransacao,
 } from "./encerramento-entrega";
-import { assertTransicaoEntregaValida } from "./entrega-status-transition";
+import {
+  assertTransicaoEntregaValida,
+  ehDesfazerEntrega,
+} from "./entrega-status-transition";
 import { registrarHistoricoStatusEntrega } from "./historico-status-entrega";
 import { enfileirarTicketEntrega } from "./ticket-entrega.service";
 
@@ -56,20 +61,28 @@ export async function transicionarEntrega(
       select: { id: true, statusPreparo: true },
       where: { comandaId: entrega.comandaId },
     });
+    const agora = new Date();
+    const desfazendo = ehDesfazerEntrega(entrega.statusEntrega, dto.status);
     assertTransicaoEntregaValida(entrega.statusEntrega, dto.status, {
       statusPreparoDosPedidos: pedidos.map((pedido) => pedido.statusPreparo),
       motivo: dto.motivo,
+      entregaDoDia: entrega.dataNumeracao === dataDaNumeracao(agora),
     });
 
-    const agora = new Date();
     const resultado = await manager
       .createQueryBuilder()
       .update(Entrega)
       .set({
         statusEntrega: dto.status,
         versao: () => "versao + 1",
-        ...(dto.status === StatusEntrega.EM_ROTA ? { saiuEm: agora } : {}),
+        // Desfazer mantém o horário de saída original (a entrega continua em rota).
+        ...(dto.status === StatusEntrega.EM_ROTA && !desfazendo
+          ? { saiuEm: agora }
+          : {}),
         ...(dto.status === StatusEntrega.ENTREGUE ? { entregueEm: agora } : {}),
+        ...(desfazendo
+          ? { entregueEm: null, pagamentoAutomaticoId: null }
+          : {}),
         ...(dto.status === StatusEntrega.CANCELADO
           ? { motivoCancelamento: dto.motivo }
           : {}),
@@ -96,7 +109,28 @@ export async function transicionarEntrega(
     });
 
     if (dto.status === StatusEntrega.ENTREGUE) {
-      await concluirEntregaNaTransacao(manager, tenantId, entrega, usuarioId);
+      const pagamentoAutomaticoId = await concluirEntregaNaTransacao(
+        manager,
+        tenantId,
+        entrega,
+        usuarioId,
+      );
+
+      // Mesma versão: é parte da transição acima, não uma nova alteração.
+      if (pagamentoAutomaticoId !== null) {
+        await manager
+          .createQueryBuilder()
+          .update(Entrega)
+          .set({ pagamentoAutomaticoId, versao: () => "versao" })
+          .where("id = :id", { id: entrega.id })
+          .andWhere("tenant_id = :tenantId", { tenantId })
+          .execute();
+      }
+    }
+
+    // `entrega` ainda é a leitura de antes do UPDATE: tem o pagamento automático a remover.
+    if (desfazendo) {
+      await reabrirEntregaNaTransacao(manager, tenantId, entrega);
     }
 
     if (dto.status === StatusEntrega.CANCELADO) {

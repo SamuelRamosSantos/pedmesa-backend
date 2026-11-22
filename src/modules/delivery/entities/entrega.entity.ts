@@ -118,6 +118,10 @@ export class Entrega {
   })
   taxaEntrega!: number;
 
+  // Taxa isenta pelo atendente (PED-126): taxa_entrega fica 0.
+  @Column({ name: "taxa_isenta", type: "boolean", default: false })
+  taxaIsenta!: boolean;
+
   @Column({
     name: "forma_pagamento_prevista",
     type: "enum",
@@ -157,6 +161,11 @@ export class Entrega {
 
   @Column({ name: "entregue_em", type: "timestamp", nullable: true })
   entregueEm!: Date | null;
+
+  // Pagamento que a conclusão registrou sozinha (PED-100); é o que "desfazer entrega"
+  // remove (PED-127). null se o caixa já tinha lançado o pagamento.
+  @Column({ name: "pagamento_automatico_id", type: "uuid", nullable: true })
+  pagamentoAutomaticoId!: string | null;
 
   @Column({
     name: "motivo_cancelamento",

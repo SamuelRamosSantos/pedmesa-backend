@@ -26,6 +26,7 @@ interface LinhaPainelBruta {
   enderecoComplemento: string | null;
   enderecoBairro: string;
   taxaEntrega: string;
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   trocoPara: string | null;
   descontoTipo: DescontoTipo;
@@ -68,6 +69,7 @@ async function buscarLinhasPainel(
     .addSelect("entrega.enderecoComplemento", "enderecoComplemento")
     .addSelect("entrega.enderecoBairro", "enderecoBairro")
     .addSelect("entrega.taxaEntrega", "taxaEntrega")
+    .addSelect("entrega.taxaIsenta", "taxaIsenta")
     .addSelect("entrega.formaPagamentoPrevista", "formaPagamentoPrevista")
     .addSelect("entrega.trocoPara", "trocoPara")
     .addSelect("comanda.descontoTipo", "descontoTipo")

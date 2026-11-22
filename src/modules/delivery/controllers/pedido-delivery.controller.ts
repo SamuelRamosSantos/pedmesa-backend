@@ -27,6 +27,8 @@ export async function criar(
       getTenantId(req),
       getUserId(req),
       dto,
+      // Permissão do token, nunca do corpo (PED-126).
+      req.user?.podeConcederDesconto ?? false,
     );
 
     res.status(201).json(toPedidoDeliveryCriadoResponse(criado));

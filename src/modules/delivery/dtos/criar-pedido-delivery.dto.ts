@@ -17,6 +17,10 @@ import {
   assertValidCreatePedidoDto,
   CreatePedidoItemInput,
 } from "../../pedidos/dtos/create-pedido.dto";
+import {
+  AjustesPedidoDelivery,
+  validarAjustesPedidoDelivery,
+} from "./ajustes-pedido-delivery.validator";
 
 export type EnderecoNovo = Omit<CreateEnderecoClienteDto, "principal">;
 
@@ -31,6 +35,8 @@ export interface CriarPedidoDeliveryDto {
   itens: CreatePedidoItemInput[];
   formaPagamento: FormaPagamento;
   trocoParaCents: number | null;
+  // Desconto e isenção da taxa (PED-126); exigem permissão de desconto.
+  ajustes: AjustesPedidoDelivery;
 }
 
 function validarEndereco(
@@ -75,6 +81,7 @@ function validarEndereco(
 export function assertValidCriarPedidoDeliveryDto(
   body: unknown,
 ): CriarPedidoDeliveryDto {
+  const campos = (body ?? {}) as Record<string, unknown>;
   const {
     cliente,
     endereco_id: enderecoId,
@@ -83,7 +90,7 @@ export function assertValidCriarPedidoDeliveryDto(
     itens,
     forma_pagamento: formaPagamento,
     troco_para: trocoPara,
-  } = (body ?? {}) as Record<string, unknown>;
+  } = campos;
 
   if (typeof cliente !== "object" || cliente === null) {
     throw new AppError("cliente é obrigatório (com telefone e nome).", 400);
@@ -101,5 +108,6 @@ export function assertValidCriarPedidoDeliveryDto(
       trocoPara === undefined || trocoPara === null
         ? null
         : toCents(validarValorReais(trocoPara, "troco_para")),
+    ajustes: validarAjustesPedidoDelivery(campos),
   };
 }

@@ -20,9 +20,17 @@ export const TRANSICOES_VALIDAS: Readonly<
     StatusEntrega.ENTREGUE,
     StatusEntrega.PRONTO_PARA_ENVIO,
   ],
-  [StatusEntrega.ENTREGUE]: [],
+  // Desfazer entrega marcada por engano (PED-127): volta para em rota, no mesmo dia.
+  [StatusEntrega.ENTREGUE]: [StatusEntrega.EM_ROTA],
   [StatusEntrega.CANCELADO]: [],
 };
+
+// Encerram a entrega (comanda fechada). Lista explícita: "entregue" ainda pode ser
+// desfeito, mas continua sendo um estado final para o painel e para atrasos.
+export const STATUS_TERMINAIS: readonly StatusEntrega[] = [
+  StatusEntrega.ENTREGUE,
+  StatusEntrega.CANCELADO,
+];
 
 export const MOTIVO_MINIMO_CARACTERES = 5;
 
@@ -35,9 +43,22 @@ const PREPARO_CONCLUIDO: readonly StatusPreparo[] = [
 export interface ContextoTransicaoEntrega {
   statusPreparoDosPedidos: StatusPreparo[];
   motivo: string | null;
+  // A entrega é do dia (a que aparece em "Entregues hoje" no painel).
+  entregaDoDia: boolean;
 }
 
-// Cancelar e devolver uma entrega que estava em rota exigem uma justificativa.
+export function ehDesfazerEntrega(
+  statusAtual: StatusEntrega,
+  statusNovo: StatusEntrega,
+): boolean {
+  return (
+    statusAtual === StatusEntrega.ENTREGUE &&
+    statusNovo === StatusEntrega.EM_ROTA
+  );
+}
+
+// Cancelar, devolver uma entrega que estava em rota e desfazer uma entrega concluída
+// exigem uma justificativa.
 export function transicaoExigeMotivo(
   statusAtual: StatusEntrega,
   statusNovo: StatusEntrega,
@@ -45,7 +66,8 @@ export function transicaoExigeMotivo(
   return (
     statusNovo === StatusEntrega.CANCELADO ||
     (statusAtual === StatusEntrega.EM_ROTA &&
-      statusNovo === StatusEntrega.PRONTO_PARA_ENVIO)
+      statusNovo === StatusEntrega.PRONTO_PARA_ENVIO) ||
+    ehDesfazerEntrega(statusAtual, statusNovo)
   );
 }
 
@@ -97,6 +119,14 @@ export function assertTransicaoEntregaValida(
   if (!TRANSICOES_VALIDAS[statusAtual].includes(statusNovo)) {
     throw new AppError(
       `Transição de status inválida: não é possível ir de "${statusAtual}" para "${statusNovo}".`,
+      400,
+    );
+  }
+
+  // Depois do dia, a comanda já pode estar em relatório e no fechamento do caixa.
+  if (ehDesfazerEntrega(statusAtual, statusNovo) && !contexto.entregaDoDia) {
+    throw new AppError(
+      "Só é possível desfazer uma entrega concluída no mesmo dia.",
       400,
     );
   }

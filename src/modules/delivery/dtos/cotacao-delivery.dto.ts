@@ -11,12 +11,19 @@ import {
   assertValidCreatePedidoDto,
   CreatePedidoItemInput,
 } from "../../pedidos/dtos/create-pedido.dto";
+import {
+  AjustesPedidoDelivery,
+  validarAjustesPedidoDelivery,
+} from "./ajustes-pedido-delivery.validator";
 
 export interface CotacaoDeliveryDto {
   endereco: { cidade: string; bairro: string };
   itens: CreatePedidoItemInput[];
   formaPagamento: FormaPagamento;
   trocoParaCents: number | null;
+  // Desconto e isenção da taxa (PED-126); a cotação só calcula, quem confere a
+  // permissão é a criação do pedido.
+  ajustes: AjustesPedidoDelivery;
 }
 
 // Itens são opcionais na cotação (PED-108): o atendente vê a taxa e se o bairro é atendido
@@ -36,12 +43,13 @@ function validarItensDaCotacao(itens: unknown): CreatePedidoItemInput[] {
 export function assertValidCotacaoDeliveryDto(
   body: unknown,
 ): CotacaoDeliveryDto {
+  const campos = (body ?? {}) as Record<string, unknown>;
   const {
     endereco,
     itens,
     forma_pagamento: formaPagamento,
     troco_para: trocoPara,
-  } = (body ?? {}) as Record<string, unknown>;
+  } = campos;
 
   if (typeof endereco !== "object" || endereco === null) {
     throw new AppError("endereco é obrigatório (com cidade e bairro).", 400);
@@ -57,5 +65,6 @@ export function assertValidCotacaoDeliveryDto(
       trocoPara === undefined || trocoPara === null
         ? null
         : toCents(validarValorReais(trocoPara, "troco_para")),
+    ajustes: validarAjustesPedidoDelivery(campos),
   };
 }

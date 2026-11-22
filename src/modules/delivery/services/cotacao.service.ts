@@ -62,5 +62,7 @@ export async function cotarPedidoDelivery(
     pedidoMinimoCents: toCents(tenant.pedidoMinimoDelivery),
     formaPagamento: dto.formaPagamento,
     trocoParaCents: dto.trocoParaCents,
+    desconto: dto.ajustes.desconto,
+    isentarTaxa: dto.ajustes.isentarTaxa,
   });
 }

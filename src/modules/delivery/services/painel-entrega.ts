@@ -6,7 +6,7 @@ import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 import { StatusPreparo } from "../../pedidos/entities/pedido.entity";
 import { calcularStatusPreparoPedido } from "../../pedidos/services/status-preparo-calculator";
 import { StatusEntrega } from "../entities/entrega.entity";
-import { TRANSICOES_VALIDAS } from "./entrega-status-transition";
+import { STATUS_TERMINAIS } from "./entrega-status-transition";
 import { calcularTroco } from "./troco-calculator";
 
 // Uma linha da consulta do painel (já agregada no banco: soma e status dos itens).
@@ -22,6 +22,7 @@ export interface LinhaPainelEntrega {
   enderecoComplemento: string | null;
   enderecoBairro: string;
   taxaEntrega: number;
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   trocoPara: number | null;
   descontoTipo: DescontoTipo;
@@ -41,6 +42,8 @@ export interface CardPainelEntrega {
   bairro: string;
   enderecoResumido: string;
   total: number;
+  // PED-126: para o card mostrar que a taxa foi isenta.
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   troco: number;
   trocoSuficiente: boolean;
@@ -50,14 +53,13 @@ export interface CardPainelEntrega {
   statusPreparo: StatusPreparo;
 }
 
-// Terminal = não tem transição de saída (entregue, cancelado).
-export const STATUS_TERMINAIS: readonly StatusEntrega[] = Object.values(
-  StatusEntrega,
-).filter((status) => TRANSICOES_VALIDAS[status].length === 0);
+// Terminal = entregue ou cancelado (lista na regra de transição; PED-127).
+export { STATUS_TERMINAIS };
 
 // Desconto fixo maior que os itens só acontece se itens foram cancelados depois do
-// desconto; no painel ele é limitado ao valor dos itens (o fechamento recusaria esse caso).
-function descontoParaExibicao(
+// desconto; no painel e no cupom ele é limitado ao valor dos itens (o fechamento
+// recusaria esse caso).
+export function descontoParaExibicao(
   tipo: DescontoTipo,
   valor: number,
   subtotal: number,
@@ -98,6 +100,7 @@ export function montarCardPainel(
     bairro: linha.enderecoBairro,
     enderecoResumido,
     total,
+    taxaIsenta: linha.taxaIsenta,
     formaPagamentoPrevista: linha.formaPagamentoPrevista,
     troco: fromCents(troco.trocoCents),
     trocoSuficiente: troco.suficiente,

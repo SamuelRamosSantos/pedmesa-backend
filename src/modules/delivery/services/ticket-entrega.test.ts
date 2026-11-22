@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DescontoTipo } from "../../comandas/entities/comanda.entity";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
 import { calcularExtrato } from "../../comandas/services/extrato-calculator";
 import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
@@ -18,7 +19,10 @@ const ENTREGA: EntregaParaTicket = {
   enderecoReferencia: "Portão azul",
   formaPagamentoPrevista: FormaPagamento.DINHEIRO,
   trocoPara: 50,
+  taxaIsenta: false,
 };
+
+const SEM_DESCONTO = { tipo: DescontoTipo.NENHUM, valor: 0 };
 
 const extrato = (quantidade: number) =>
   calcularExtrato({
@@ -42,6 +46,7 @@ describe("montarJobEntrega", () => {
       ENTREGA,
       { nome: "Maria", telefone: "11987654321" },
       extrato(2),
+      SEM_DESCONTO,
       new Date("2026-10-10T15:00:00Z"),
     );
 
@@ -77,10 +82,44 @@ describe("montarJobEntrega", () => {
       ENTREGA,
       { nome: "Maria", telefone: "11987654321" },
       extrato(3),
+      SEM_DESCONTO,
       new Date(),
     );
 
     expect(job.dados.total).toBe(65.85);
     expect(job.dados.troco).toBe(0);
+  });
+
+  it("desconto e taxa isenta entram no total e no troco, como no painel (PED-126)", () => {
+    // Itens 38,90 − 10% (3,89) = 35,01; taxa isenta (extrato com taxa 0) → total 35,01.
+    const job = montarJobEntrega(
+      { ...ENTREGA, taxaIsenta: true },
+      { nome: "Maria", telefone: "11987654321" },
+      calcularExtrato({
+        integrantes: [{ id: "c1", nome: "Maria" }],
+        itens: [
+          {
+            id: "i",
+            produtoNome: "X-Burger",
+            quantidade: 2,
+            precoUnitario: 19.45,
+            integranteId: "c1",
+            statusItem: StatusItem.PRONTO,
+          },
+        ],
+        taxaEntrega: 0,
+      }),
+      { tipo: DescontoTipo.PERCENTUAL, valor: 10 },
+      new Date(),
+    );
+
+    expect(job.dados).toMatchObject({
+      subtotal: 38.9,
+      desconto: 3.89,
+      taxa_entrega: 0,
+      taxa_isenta: true,
+      total: 35.01,
+      troco: 14.99,
+    });
   });
 });

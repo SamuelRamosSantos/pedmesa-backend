@@ -11,6 +11,7 @@ import {
   registrarPreparoAtualizadoHandler,
 } from "../../pedidos/services/preparo-atualizado.port";
 import { Entrega, StatusEntrega } from "../entities/entrega.entity";
+import { dataDaNumeracao } from "./data-numeracao";
 import { assertTransicaoEntregaValida } from "./entrega-status-transition";
 import { registrarHistoricoStatusEntrega } from "./historico-status-entrega";
 import { decidirStatusPorPreparo } from "./sincronizacao-preparo";
@@ -67,6 +68,7 @@ export async function sincronizarEntregaComPreparo(
   assertTransicaoEntregaValida(entrega.statusEntrega, novoStatus, {
     statusPreparoDosPedidos,
     motivo: MOTIVO_AUTOMATICO,
+    entregaDoDia: entrega.dataNumeracao === dataDaNumeracao(new Date()),
   });
 
   const statusAnterior = entrega.statusEntrega;

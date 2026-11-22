@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../../../shared/errors/app-error";
+import { DescontoTipo } from "../../comandas/entities/comanda.entity";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
 import { StatusPreparo } from "../../pedidos/entities/pedido.entity";
+import { SEM_AJUSTES } from "../dtos/ajustes-pedido-delivery.validator";
 import { StatusEntrega } from "../entities/entrega.entity";
 import { CotacaoPedido } from "./cotacao-pedido";
 import {
   assertCotacaoPermiteCriacao,
+  assertPodeAjustarValores,
   calcularPrevisaoEntrega,
   statusInicialDaEntrega,
 } from "./criacao-pedido-regras";
@@ -15,8 +18,12 @@ const COTACAO_OK: CotacaoPedido = {
   motivoNaoAtendido: null,
   subtotal: 38.9,
   taxaEntrega: 7.5,
+  taxaEntregaBairro: 7.5,
+  taxaIsenta: false,
   origemTaxa: "bairro",
   tempoEstimadoMin: 40,
+  descontoAplicado: 0,
+  descontoExcedeItens: false,
   total: 46.4,
   pedidoMinimo: 30,
   pedidoMinimoAtingido: true,
@@ -24,7 +31,35 @@ const COTACAO_OK: CotacaoPedido = {
   trocoSuficiente: true,
 };
 
+describe("assertPodeAjustarValores (PED-126)", () => {
+  const DESCONTO = { tipo: DescontoTipo.PERCENTUAL, valor: 10 };
+
+  it("sem desconto nem isenção, não exige permissão", () => {
+    expect(() => assertPodeAjustarValores(SEM_AJUSTES, false)).not.toThrow();
+  });
+
+  it.each([
+    ["desconto", { desconto: DESCONTO, isentarTaxa: false }],
+    ["isenção da taxa", { ...SEM_AJUSTES, isentarTaxa: true }],
+  ])("%s sem permissão: 403; com permissão: aceita", (_caso, ajustes) => {
+    expect(() => assertPodeAjustarValores(ajustes, false)).toThrow(
+      expect.objectContaining({ statusCode: 403 }),
+    );
+    expect(() => assertPodeAjustarValores(ajustes, true)).not.toThrow();
+  });
+});
+
 describe("assertCotacaoPermiteCriacao", () => {
+  it("recusa desconto maior que os itens", () => {
+    expect(() =>
+      assertCotacaoPermiteCriacao(
+        { ...COTACAO_OK, descontoExcedeItens: true },
+        FormaPagamento.PIX,
+        null,
+      ),
+    ).toThrow("O desconto é maior que o valor dos itens");
+  });
+
   it("aceita cotação atendida, com pedido mínimo e sem troco", () => {
     expect(() =>
       assertCotacaoPermiteCriacao(COTACAO_OK, FormaPagamento.PIX, null),

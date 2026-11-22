@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../../../shared/errors/app-error";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
+import { SEM_AJUSTES } from "./ajustes-pedido-delivery.validator";
 import { assertValidCriarPedidoDeliveryDto } from "./criar-pedido-delivery.dto";
 
 const PRODUTO = "3f1c2a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b";
@@ -51,6 +52,7 @@ describe("assertValidCriarPedidoDeliveryDto", () => {
       ],
       formaPagamento: FormaPagamento.DINHEIRO,
       trocoParaCents: 5_000,
+      ajustes: SEM_AJUSTES,
     });
   });
 
