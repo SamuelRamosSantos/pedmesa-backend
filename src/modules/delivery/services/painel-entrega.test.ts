@@ -25,7 +25,7 @@ const LINHA: LinhaPainelEntrega = {
   descontoTipo: DescontoTipo.NENHUM,
   descontoValor: 0,
   subtotalItensAtivos: 38.9,
-  statusDosItens: [StatusItem.PENDENTE, StatusItem.PRONTO],
+  statusDosItensDaCozinha: [StatusItem.PENDENTE, StatusItem.PRONTO],
   criadoEm: new Date("2026-10-11T18:20:00Z"),
   previsaoEntregaEm: new Date("2026-10-11T19:10:00Z"),
 };
@@ -49,6 +49,7 @@ describe("montarCardPainel", () => {
       previsaoEntregaEm: LINHA.previsaoEntregaEm,
       atrasado: false,
       statusPreparo: StatusPreparo.EM_PREPARO,
+      passaPelaCozinha: true,
     });
   });
 
@@ -114,9 +115,33 @@ describe("montarCardPainel", () => {
   it("preparo agregado: tudo pronto vira pronto", () => {
     expect(
       montarCardPainel(
-        { ...LINHA, statusDosItens: [StatusItem.PRONTO, StatusItem.PRONTO] },
+        {
+          ...LINHA,
+          statusDosItensDaCozinha: [StatusItem.PRONTO, StatusItem.PRONTO],
+        },
         AGORA,
       ).statusPreparo,
     ).toBe(StatusPreparo.PRONTO);
+  });
+
+  it("PED-129: só item de cozinha pendente (o sem preparo nem entra) → pendente, como no KDS", () => {
+    expect(
+      montarCardPainel(
+        { ...LINHA, statusDosItensDaCozinha: [StatusItem.PENDENTE] },
+        AGORA,
+      ),
+    ).toMatchObject({
+      statusPreparo: StatusPreparo.PENDENTE,
+      passaPelaCozinha: true,
+    });
+  });
+
+  it("PED-129: sem item de cozinha → não passa pela cozinha e não espera nada", () => {
+    expect(
+      montarCardPainel({ ...LINHA, statusDosItensDaCozinha: [] }, AGORA),
+    ).toMatchObject({
+      statusPreparo: StatusPreparo.PRONTO,
+      passaPelaCozinha: false,
+    });
   });
 });

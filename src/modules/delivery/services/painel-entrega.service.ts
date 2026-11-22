@@ -32,7 +32,7 @@ interface LinhaPainelBruta {
   descontoTipo: DescontoTipo;
   descontoValor: string;
   subtotalItensAtivos: string;
-  statusDosItens: StatusItem[];
+  statusDosItensDaCozinha: StatusItem[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -58,6 +58,8 @@ async function buscarLinhasPainel(
     )
     .leftJoin(Pedido, "pedido", "pedido.comandaId = comanda.id")
     .leftJoin("pedido.itens", "item")
+    // Um produto por item: não duplica linhas na soma.
+    .leftJoin("item.produto", "produto")
     .select("entrega.id", "id")
     .addSelect("entrega.numeroEntrega", "numeroEntrega")
     .addSelect("entrega.statusEntrega", "statusEntrega")
@@ -78,9 +80,10 @@ async function buscarLinhasPainel(
       "COALESCE(SUM(item.quantidade * item.precoUnitario) FILTER (WHERE item.statusItem <> :itemCancelado), 0)",
       "subtotalItensAtivos",
     )
+    // Só os itens que a cozinha prepara, como o KDS (PED-129).
     .addSelect(
-      "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL), ARRAY[]::text[])",
-      "statusDosItens",
+      "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL AND produto.precisaPreparo = true), ARRAY[]::text[])",
+      "statusDosItensDaCozinha",
     )
     .addSelect("entrega.criadoEm", "criadoEm")
     .addSelect("entrega.previsaoEntregaEm", "previsaoEntregaEm")

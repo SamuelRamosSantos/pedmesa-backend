@@ -47,7 +47,9 @@ export interface EntregaPainelResponse {
   criado_em: Date;
   previsao_entrega_em: Date | null;
   atrasado: boolean;
+  // Status só dos itens que a cozinha prepara (PED-129).
   status_preparo: StatusPreparo;
+  passa_pela_cozinha: boolean;
 }
 
 export function toEntregaPainelResponse(
@@ -70,5 +72,6 @@ export function toEntregaPainelResponse(
     previsao_entrega_em: card.previsaoEntregaEm,
     atrasado: card.atrasado,
     status_preparo: card.statusPreparo,
+    passa_pela_cozinha: card.passaPelaCozinha,
   };
 }

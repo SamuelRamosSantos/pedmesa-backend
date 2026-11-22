@@ -31,7 +31,7 @@
 
 ## 3. Em andamento (fora da `main`)
 
-- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115, o seed de cardápio (PED-116) a listagem de clientes com busca única por nome ou telefone, `GET /clientes?busca=&pagina=&por_pagina=` (PED-122), desconto e isenção da taxa no pedido delivery (PED-126, migration 033) e desfazer entrega concluída por engano (PED-127, migration 034).
+- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115, o seed de cardápio (PED-116) a listagem de clientes com busca única por nome ou telefone, `GET /clientes?busca=&pagina=&por_pagina=` (PED-122), desconto e isenção da taxa no pedido delivery (PED-126, migration 033) e desfazer entrega concluída por engano (PED-127, migration 034). Bug PED-129: o painel da expedição calcula o status da cozinha só com os itens que têm preparo, como o KDS, e indica as entregas que não passam pela cozinha.
 
 ## 4. Planejado
 

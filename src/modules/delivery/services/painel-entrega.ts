@@ -28,7 +28,8 @@ export interface LinhaPainelEntrega {
   descontoTipo: DescontoTipo;
   descontoValor: number;
   subtotalItensAtivos: number;
-  statusDosItens: StatusItem[];
+  // Só os itens que a cozinha prepara (produto.precisa_preparo), como no KDS (PED-129).
+  statusDosItensDaCozinha: StatusItem[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -51,6 +52,8 @@ export interface CardPainelEntrega {
   previsaoEntregaEm: Date | null;
   atrasado: boolean;
   statusPreparo: StatusPreparo;
+  // false = só itens sem preparo: a entrega não aparece no KDS (PED-96/PED-129).
+  passaPelaCozinha: boolean;
 }
 
 // Terminal = entregue ou cancelado (lista na regra de transição; PED-127).
@@ -110,7 +113,13 @@ export function montarCardPainel(
       linha.previsaoEntregaEm !== null &&
       !STATUS_TERMINAIS.includes(linha.statusEntrega) &&
       agora.getTime() > linha.previsaoEntregaEm.getTime(),
-    // Mesmo cálculo do KDS, sobre todos os itens da comanda.
-    statusPreparo: calcularStatusPreparoPedido(linha.statusDosItens),
+    // Mesmo cálculo do KDS, só sobre os itens que a cozinha prepara (PED-129): item sem
+    // preparo já nasce "pronto" e faria um pedido intocado parecer "em preparo". Sem
+    // nenhum item de cozinha, nada a esperar: pronto.
+    statusPreparo:
+      linha.statusDosItensDaCozinha.length === 0
+        ? StatusPreparo.PRONTO
+        : calcularStatusPreparoPedido(linha.statusDosItensDaCozinha),
+    passaPelaCozinha: linha.statusDosItensDaCozinha.length > 0,
   };
 }
