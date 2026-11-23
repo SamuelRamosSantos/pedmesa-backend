@@ -6,8 +6,16 @@ import { StatusItem } from "../../pedidos/entities/item-pedido.entity";
 import { StatusPreparo } from "../../pedidos/entities/pedido.entity";
 import { calcularStatusPreparoPedido } from "../../pedidos/services/status-preparo-calculator";
 import { StatusEntrega } from "../entities/entrega.entity";
-import { TRANSICOES_VALIDAS } from "./entrega-status-transition";
+import { STATUS_TERMINAIS } from "./entrega-status-transition";
 import { calcularTroco } from "./troco-calculator";
+
+// Produto no card do painel (PED-130).
+export interface ItemResumidoPainel {
+  id: string;
+  produto: string;
+  quantidade: number;
+  temObservacao: boolean;
+}
 
 // Uma linha da consulta do painel (já agregada no banco: soma e status dos itens).
 export interface LinhaPainelEntrega {
@@ -22,12 +30,15 @@ export interface LinhaPainelEntrega {
   enderecoComplemento: string | null;
   enderecoBairro: string;
   taxaEntrega: number;
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   trocoPara: number | null;
   descontoTipo: DescontoTipo;
   descontoValor: number;
   subtotalItensAtivos: number;
-  statusDosItens: StatusItem[];
+  // Só os itens que a cozinha prepara (produto.precisa_preparo), como no KDS (PED-129).
+  statusDosItensDaCozinha: StatusItem[];
+  itens: ItemResumidoPainel[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -41,6 +52,8 @@ export interface CardPainelEntrega {
   bairro: string;
   enderecoResumido: string;
   total: number;
+  // PED-126: para o card mostrar que a taxa foi isenta.
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   troco: number;
   trocoSuficiente: boolean;
@@ -48,16 +61,18 @@ export interface CardPainelEntrega {
   previsaoEntregaEm: Date | null;
   atrasado: boolean;
   statusPreparo: StatusPreparo;
+  // false = só itens sem preparo: a entrega não aparece no KDS (PED-96/PED-129).
+  passaPelaCozinha: boolean;
+  itens: ItemResumidoPainel[];
 }
 
-// Terminal = não tem transição de saída (entregue, cancelado).
-export const STATUS_TERMINAIS: readonly StatusEntrega[] = Object.values(
-  StatusEntrega,
-).filter((status) => TRANSICOES_VALIDAS[status].length === 0);
+// Terminal = entregue ou cancelado (lista na regra de transição; PED-127).
+export { STATUS_TERMINAIS };
 
 // Desconto fixo maior que os itens só acontece se itens foram cancelados depois do
-// desconto; no painel ele é limitado ao valor dos itens (o fechamento recusaria esse caso).
-function descontoParaExibicao(
+// desconto; no painel e no cupom ele é limitado ao valor dos itens (o fechamento
+// recusaria esse caso).
+export function descontoParaExibicao(
   tipo: DescontoTipo,
   valor: number,
   subtotal: number,
@@ -65,6 +80,21 @@ function descontoParaExibicao(
   return tipo === DescontoTipo.VALOR_FIXO
     ? { tipo, valor: Math.min(valor, subtotal) }
     : { tipo, valor };
+}
+
+// Mesmo cálculo do KDS, só sobre os itens que a cozinha prepara (PED-129): item sem
+// preparo já nasce "pronto" e faria um pedido intocado parecer "em preparo". Sem nenhum
+// item de cozinha, nada a esperar: pronto. Usado pelo card e pelo detalhe (PED-130).
+export function situacaoDaCozinha(statusDosItensDaCozinha: StatusItem[]): {
+  statusPreparo: StatusPreparo;
+  passaPelaCozinha: boolean;
+} {
+  return statusDosItensDaCozinha.length === 0
+    ? { statusPreparo: StatusPreparo.PRONTO, passaPelaCozinha: false }
+    : {
+        statusPreparo: calcularStatusPreparoPedido(statusDosItensDaCozinha),
+        passaPelaCozinha: true,
+      };
 }
 
 // Monta o card do Kanban (PED-101) com os MESMOS cálculos do fechamento e da cotação:
@@ -98,6 +128,7 @@ export function montarCardPainel(
     bairro: linha.enderecoBairro,
     enderecoResumido,
     total,
+    taxaIsenta: linha.taxaIsenta,
     formaPagamentoPrevista: linha.formaPagamentoPrevista,
     troco: fromCents(troco.trocoCents),
     trocoSuficiente: troco.suficiente,
@@ -107,7 +138,7 @@ export function montarCardPainel(
       linha.previsaoEntregaEm !== null &&
       !STATUS_TERMINAIS.includes(linha.statusEntrega) &&
       agora.getTime() > linha.previsaoEntregaEm.getTime(),
-    // Mesmo cálculo do KDS, sobre todos os itens da comanda.
-    statusPreparo: calcularStatusPreparoPedido(linha.statusDosItens),
+    ...situacaoDaCozinha(linha.statusDosItensDaCozinha),
+    itens: linha.itens,
   };
 }

@@ -87,7 +87,13 @@ export function formatarEntrega(job: EntregaJobPayload): string {
     job.itens.map(formatarItem).join("\n"),
     SEPARADOR_ITEM,
     `Subtotal: ${formatarMoeda(dados.subtotal)}`,
-    `Taxa de entrega: ${formatarMoeda(dados.taxa_entrega)}`,
+    // PED-126: desconto e taxa isenta. Jobs antigos (sem os campos) saem como antes.
+    ...(dados.desconto > 0
+      ? [`Desconto: -${formatarMoeda(dados.desconto)}`]
+      : []),
+    dados.taxa_isenta
+      ? "Taxa de entrega: ISENTA"
+      : `Taxa de entrega: ${formatarMoeda(dados.taxa_entrega)}`,
     `TOTAL: ${formatarMoeda(dados.total)}`,
     SEPARADOR_ITEM,
     ...formatarPagamento(job),

@@ -9,6 +9,7 @@ import { Entrega, StatusEntrega } from "../entities/entrega.entity";
 import { dataDaNumeracao } from "./data-numeracao";
 import {
   CardPainelEntrega,
+  ItemResumidoPainel,
   montarCardPainel,
   STATUS_TERMINAIS,
 } from "./painel-entrega";
@@ -26,12 +27,14 @@ interface LinhaPainelBruta {
   enderecoComplemento: string | null;
   enderecoBairro: string;
   taxaEntrega: string;
+  taxaIsenta: boolean;
   formaPagamentoPrevista: FormaPagamento;
   trocoPara: string | null;
   descontoTipo: DescontoTipo;
   descontoValor: string;
   subtotalItensAtivos: string;
-  statusDosItens: StatusItem[];
+  statusDosItensDaCozinha: StatusItem[];
+  itens: ItemResumidoPainel[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -57,6 +60,8 @@ async function buscarLinhasPainel(
     )
     .leftJoin(Pedido, "pedido", "pedido.comandaId = comanda.id")
     .leftJoin("pedido.itens", "item")
+    // Um produto por item: não duplica linhas na soma.
+    .leftJoin("item.produto", "produto")
     .select("entrega.id", "id")
     .addSelect("entrega.numeroEntrega", "numeroEntrega")
     .addSelect("entrega.statusEntrega", "statusEntrega")
@@ -68,6 +73,7 @@ async function buscarLinhasPainel(
     .addSelect("entrega.enderecoComplemento", "enderecoComplemento")
     .addSelect("entrega.enderecoBairro", "enderecoBairro")
     .addSelect("entrega.taxaEntrega", "taxaEntrega")
+    .addSelect("entrega.taxaIsenta", "taxaIsenta")
     .addSelect("entrega.formaPagamentoPrevista", "formaPagamentoPrevista")
     .addSelect("entrega.trocoPara", "trocoPara")
     .addSelect("comanda.descontoTipo", "descontoTipo")
@@ -76,9 +82,16 @@ async function buscarLinhasPainel(
       "COALESCE(SUM(item.quantidade * item.precoUnitario) FILTER (WHERE item.statusItem <> :itemCancelado), 0)",
       "subtotalItensAtivos",
     )
+    // Só os itens que a cozinha prepara, como o KDS (PED-129).
     .addSelect(
-      "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL), ARRAY[]::text[])",
-      "statusDosItens",
+      "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL AND produto.precisaPreparo = true), ARRAY[]::text[])",
+      "statusDosItensDaCozinha",
+    )
+    // Produtos do card (PED-130), sem os cancelados: pedidos na ordem de criação e, dentro
+    // de cada um, por nome (os itens não guardam a ordem em que foram lançados).
+    .addSelect(
+      `COALESCE(JSON_AGG(JSON_BUILD_OBJECT('id', item.id, 'produto', produto.nome, 'quantidade', item.quantidade, 'temObservacao', COALESCE(TRIM(item.observacao), '') <> '') ORDER BY pedido.criadoEm, produto.nome, item.id) FILTER (WHERE item.id IS NOT NULL AND item.statusItem <> :itemCancelado), '[]')`,
+      "itens",
     )
     .addSelect("entrega.criadoEm", "criadoEm")
     .addSelect("entrega.previsaoEntregaEm", "previsaoEntregaEm")

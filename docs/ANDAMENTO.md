@@ -1,7 +1,7 @@
 # Andamento — PedMesa
 
 > **Fonte:** Jira (projeto PED, `samuelramos.atlassian.net`) e branches do Git.
-> **Posição em:** 21/11/2026.
+> **Posição em:** 22/11/2026.
 > **Regra de atualização:** toda tarefa que muda o que está pronto, em andamento ou planejado atualiza este arquivo na mesma entrega.
 
 ## 1. Resumo por épico
@@ -31,18 +31,18 @@
 
 ## 3. Em andamento (fora da `main`)
 
-- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115 e o seed de cardápio (PED-116).
+- **Delivery · Frontend (PED-82):** telas de novo pedido, painel Kanban de expedição, taxas e configuração do delivery (PED-105 a PED-111). No backend, a branch traz a cotação de frete sem itens (PED-108), a correção da PED-115, o seed de cardápio (PED-116) a listagem de clientes com busca única por nome ou telefone, `GET /clientes?busca=&pagina=&por_pagina=` (PED-122), desconto e isenção da taxa no pedido delivery (PED-126, migration 033) e desfazer entrega concluída por engano (PED-127, migration 034). Bug PED-129: o painel da expedição calcula o status da cozinha só com os itens que têm preparo, como o KDS, e indica as entregas que não passam pela cozinha. PED-130: o painel traz os produtos de cada entrega e há o detalhe completo em `GET /delivery/entregas/:id` (cliente, endereço, itens, valores, pagamento e histórico).
 
 ## 4. Planejado
 
 - PED-59, PED-64 e PED-69: cabeçalhos de segurança, redução de exposição de informações e mitigação do BREACH.
 - PED-54 e PED-71: hardening manual do SSH e da rede do servidor.
 - PED-114: padronizar o fuso horário entre Node e Postgres.
+- PED-128: sugerir o bairro atendido mais parecido quando o digitado não é atendido ("Você quis dizer...?").
 
 ## 5. Pendências conhecidas
 
 - **PED-115 (bug):** o status de preparo do pedido fica desatualizado quando o KDS avança itens em paralelo. A correção está na branch PED-82.
-- A branch `PED-82-delivery-frontend` precisa passar pelo `npm run format` antes de ser mesclada, porque a `main` foi reformatada pelo Biome.
 - `docs/api-endpoints.md` e `docs/banco-de-dados.md` estão desatualizados em relação ao código.
 
 ## 6. Impacto previsto na arquitetura

@@ -24,6 +24,7 @@ import { cotarPedidoDelivery } from "./cotacao.service";
 import { CotacaoPedido } from "./cotacao-pedido";
 import {
   assertCotacaoPermiteCriacao,
+  assertPodeAjustarValores,
   calcularPrevisaoEntrega,
   statusInicialDaEntrega,
 } from "./criacao-pedido-regras";
@@ -80,8 +81,10 @@ export async function criarPedidoDelivery(
   tenantId: string,
   usuarioId: string,
   dto: CriarPedidoDeliveryDto,
+  podeConcederDesconto: boolean,
 ): Promise<PedidoDeliveryCriado> {
   const agora = new Date();
+  assertPodeAjustarValores(dto.ajustes, podeConcederDesconto);
 
   const criado = await AppDataSource.transaction(async (manager) => {
     const clienteExistente = await manager.findOneBy(Cliente, {
@@ -101,6 +104,7 @@ export async function criarPedidoDelivery(
       itens: dto.itens,
       formaPagamento: dto.formaPagamento,
       trocoParaCents: dto.trocoParaCents,
+      ajustes: dto.ajustes,
     });
     assertCotacaoPermiteCriacao(
       cotacao,
@@ -129,6 +133,9 @@ export async function criarPedidoDelivery(
         tipoAtendimento: TipoAtendimento.DELIVERY,
         numeroComanda: null,
         status: ComandaStatus.ABERTA,
+        // Desconto do atendente (PED-126): o fechamento na entrega aplica o mesmo.
+        descontoTipo: dto.ajustes.desconto.tipo,
+        descontoValor: dto.ajustes.desconto.valor,
       }),
     );
     // Um integrante com o nome do cliente: extrato, itens e fechamento funcionam como na mesa.
@@ -176,6 +183,7 @@ export async function criarPedidoDelivery(
         enderecoUf: endereco.uf,
         enderecoReferencia: endereco.referencia,
         taxaEntrega: cotacao.taxaEntrega ?? 0,
+        taxaIsenta: cotacao.taxaIsenta,
         formaPagamentoPrevista: dto.formaPagamento,
         trocoPara:
           dto.trocoParaCents === null ? null : fromCents(dto.trocoParaCents),

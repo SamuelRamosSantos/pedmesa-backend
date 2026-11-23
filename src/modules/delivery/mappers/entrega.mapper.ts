@@ -40,13 +40,23 @@ export interface EntregaPainelResponse {
   bairro: string;
   endereco_resumido: string;
   total: number;
+  taxa_isenta: boolean;
   forma_pagamento_prevista: FormaPagamento;
   troco: number;
   troco_suficiente: boolean;
   criado_em: Date;
   previsao_entrega_em: Date | null;
   atrasado: boolean;
+  // Status só dos itens que a cozinha prepara (PED-129).
   status_preparo: StatusPreparo;
+  passa_pela_cozinha: boolean;
+  // Produtos ativos da entrega (PED-130).
+  itens: {
+    id: string;
+    produto: string;
+    quantidade: number;
+    tem_observacao: boolean;
+  }[];
 }
 
 export function toEntregaPainelResponse(
@@ -61,6 +71,7 @@ export function toEntregaPainelResponse(
     bairro: card.bairro,
     endereco_resumido: card.enderecoResumido,
     total: card.total,
+    taxa_isenta: card.taxaIsenta,
     forma_pagamento_prevista: card.formaPagamentoPrevista,
     troco: card.troco,
     troco_suficiente: card.trocoSuficiente,
@@ -68,5 +79,12 @@ export function toEntregaPainelResponse(
     previsao_entrega_em: card.previsaoEntregaEm,
     atrasado: card.atrasado,
     status_preparo: card.statusPreparo,
+    passa_pela_cozinha: card.passaPelaCozinha,
+    itens: card.itens.map((item) => ({
+      id: item.id,
+      produto: item.produto,
+      quantidade: item.quantidade,
+      tem_observacao: item.temObservacao,
+    })),
   };
 }

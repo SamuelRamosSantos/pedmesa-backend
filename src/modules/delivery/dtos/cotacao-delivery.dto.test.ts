@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../../../shared/errors/app-error";
+import { DescontoTipo } from "../../comandas/entities/comanda.entity";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
+import { SEM_AJUSTES } from "./ajustes-pedido-delivery.validator";
 import { assertValidCotacaoDeliveryDto } from "./cotacao-delivery.dto";
 
 const PRODUTO = "3f1c2a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b";
@@ -25,7 +27,35 @@ describe("assertValidCotacaoDeliveryDto", () => {
       ],
       formaPagamento: FormaPagamento.DINHEIRO,
       trocoParaCents: 5_000,
+      ajustes: SEM_AJUSTES,
     });
+  });
+
+  it("aceita desconto e isenção da taxa (PED-126)", () => {
+    expect(
+      assertValidCotacaoDeliveryDto({
+        ...VALID_BODY,
+        desconto_tipo: "percentual",
+        desconto_valor: 10,
+        isentar_taxa_entrega: true,
+      }).ajustes,
+    ).toEqual({
+      desconto: { tipo: DescontoTipo.PERCENTUAL, valor: 10 },
+      isentarTaxa: true,
+    });
+  });
+
+  it.each([
+    ["desconto_tipo inválido", { desconto_tipo: "brinde" }],
+    [
+      "percentual acima de 100",
+      { desconto_tipo: "percentual", desconto_valor: 101 },
+    ],
+    ["isentar_taxa_entrega não booleano", { isentar_taxa_entrega: "sim" }],
+  ])("rejeita ajuste com %s", (_caso, alteracao) => {
+    expect(() =>
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }),
+    ).toThrow(AppError);
   });
 
   it("troco_para ausente ou null vira null", () => {
@@ -50,9 +80,18 @@ describe("assertValidCotacaoDeliveryDto", () => {
   });
 
   it.each([
+    ["ausentes", { itens: undefined }],
+    ["vazios", { itens: [] }],
+  ])("itens %s: cota só o frete (lista vazia)", (_caso, alteracao) => {
+    expect(
+      assertValidCotacaoDeliveryDto({ ...VALID_BODY, ...alteracao }).itens,
+    ).toEqual([]);
+  });
+
+  it.each([
     ["sem endereço", { endereco: undefined }],
     ["endereço sem bairro", { endereco: { cidade: "São Paulo" } }],
-    ["sem itens", { itens: [] }],
+    ["itens que não são lista", { itens: "x" }],
     [
       "item com produto_id inválido",
       { itens: [{ produto_id: "x", quantidade: 1 }] },

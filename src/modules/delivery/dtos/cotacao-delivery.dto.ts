@@ -11,12 +11,30 @@ import {
   assertValidCreatePedidoDto,
   CreatePedidoItemInput,
 } from "../../pedidos/dtos/create-pedido.dto";
+import {
+  AjustesPedidoDelivery,
+  validarAjustesPedidoDelivery,
+} from "./ajustes-pedido-delivery.validator";
 
 export interface CotacaoDeliveryDto {
   endereco: { cidade: string; bairro: string };
   itens: CreatePedidoItemInput[];
   formaPagamento: FormaPagamento;
   trocoParaCents: number | null;
+  // Desconto e isenção da taxa (PED-126); a cotação só calcula, quem confere a
+  // permissão é a criação do pedido.
+  ajustes: AjustesPedidoDelivery;
+}
+
+// Itens são opcionais na cotação (PED-108): o atendente vê a taxa e se o bairro é atendido
+// assim que informa o endereço, antes de montar o carrinho. Sem itens, o subtotal é 0.
+// Criar o pedido continua exigindo itens.
+function validarItensDaCotacao(itens: unknown): CreatePedidoItemInput[] {
+  if (itens === undefined || (Array.isArray(itens) && itens.length === 0)) {
+    return [];
+  }
+
+  return assertValidCreatePedidoDto({ itens }).itens;
 }
 
 // POST /delivery/cotacao. Recebe só a intenção do cliente: endereço, itens, forma de
@@ -25,12 +43,13 @@ export interface CotacaoDeliveryDto {
 export function assertValidCotacaoDeliveryDto(
   body: unknown,
 ): CotacaoDeliveryDto {
+  const campos = (body ?? {}) as Record<string, unknown>;
   const {
     endereco,
     itens,
     forma_pagamento: formaPagamento,
     troco_para: trocoPara,
-  } = (body ?? {}) as Record<string, unknown>;
+  } = campos;
 
   if (typeof endereco !== "object" || endereco === null) {
     throw new AppError("endereco é obrigatório (com cidade e bairro).", 400);
@@ -40,11 +59,12 @@ export function assertValidCotacaoDeliveryDto(
 
   return {
     endereco: { cidade: validarCidade(cidade), bairro: validarBairro(bairro) },
-    itens: assertValidCreatePedidoDto({ itens }).itens,
+    itens: validarItensDaCotacao(itens),
     formaPagamento: validarFormaPagamento(formaPagamento, "forma_pagamento"),
     trocoParaCents:
       trocoPara === undefined || trocoPara === null
         ? null
         : toCents(validarValorReais(trocoPara, "troco_para")),
+    ajustes: validarAjustesPedidoDelivery(campos),
   };
 }

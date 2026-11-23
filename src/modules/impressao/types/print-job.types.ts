@@ -42,7 +42,10 @@ export interface DadosEntregaTicket {
     referencia: string | null;
   };
   subtotal: number;
+  // PED-126: desconto nos itens e taxa isenta. Jobs gravados antes vêm sem estes campos.
+  desconto: number;
   taxa_entrega: number;
+  taxa_isenta: boolean;
   total: number;
   forma_pagamento: string;
   troco_para: number | null;

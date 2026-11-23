@@ -3,6 +3,7 @@ import { AppDataSource } from "../../config/data-source";
 import { HashService } from "../../modules/auth/services/hash.service";
 import { Tenant } from "../../modules/tenants/entities/tenant.entity";
 import { User, UserRole } from "../../modules/usuarios/entities/user.entity";
+import { seedCardapio } from "./cardapio-seed";
 import { seedDelivery } from "./delivery-seed";
 
 const TENANT_NOME_FANTASIA = "Lanchonete Teste";
@@ -95,6 +96,7 @@ async function run(): Promise<void> {
     }
   }
 
+  await seedCardapio(tenant);
   await seedDelivery(tenant);
 
   await AppDataSource.destroy();

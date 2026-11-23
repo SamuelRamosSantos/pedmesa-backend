@@ -2,6 +2,10 @@ import { AppError } from "../../../shared/errors/app-error";
 import { toCents } from "../../../shared/utils/money";
 import { FormaPagamento } from "../../comandas/entities/pagamento-comanda.entity";
 import { StatusPreparo } from "../../pedidos/entities/pedido.entity";
+import {
+  AjustesPedidoDelivery,
+  temAjusteDeValor,
+} from "../dtos/ajustes-pedido-delivery.validator";
 import { StatusEntrega } from "../entities/entrega.entity";
 import { CotacaoPedido } from "./cotacao-pedido";
 import { assertTrocoValidoNaCriacao } from "./troco-calculator";
@@ -26,11 +30,32 @@ export function assertCotacaoPermiteCriacao(
     );
   }
 
+  if (cotacao.descontoExcedeItens) {
+    throw new AppError(
+      `O desconto é maior que o valor dos itens (R$ ${cotacao.subtotal.toFixed(2)}).`,
+      400,
+    );
+  }
+
   assertTrocoValidoNaCriacao({
     totalCents: toCents(cotacao.total),
     formaPrevista: formaPagamento,
     trocoParaCents,
   });
+}
+
+// Desconto e isenção da taxa (PED-126) usam a mesma permissão do desconto no caixa, lida
+// do token (nunca do corpo da requisição).
+export function assertPodeAjustarValores(
+  ajustes: AjustesPedidoDelivery,
+  podeConcederDesconto: boolean,
+): void {
+  if (temAjusteDeValor(ajustes) && !podeConcederDesconto) {
+    throw new AppError(
+      "Você não tem permissão para dar desconto ou isentar a taxa de entrega.",
+      403,
+    );
+  }
 }
 
 // Entrega nasce "pronto para envio" quando nada precisa de cozinha (itens que não precisam

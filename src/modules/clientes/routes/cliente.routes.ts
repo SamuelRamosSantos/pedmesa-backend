@@ -3,9 +3,9 @@ import { authMiddleware } from "../../../shared/middlewares/auth.middleware";
 import { rbacMiddleware } from "../../../shared/middlewares/rbac.middleware";
 import { UserRole } from "../../usuarios/entities/user.entity";
 import {
-  buscarPorTelefone,
   create,
   createEndereco,
+  listarOuBuscarPorTelefone,
   removeEndereco,
   update,
   updateEndereco,
@@ -20,7 +20,7 @@ const CLIENTES_ROLES = [UserRole.ADMIN, UserRole.EXPEDICAO];
 
 clienteRoutes.use(rbacMiddleware(CLIENTES_ROLES));
 
-clienteRoutes.get("/", buscarPorTelefone);
+clienteRoutes.get("/", listarOuBuscarPorTelefone);
 clienteRoutes.post("/", create);
 clienteRoutes.patch("/:id", update);
 clienteRoutes.post("/:id/enderecos", createEndereco);

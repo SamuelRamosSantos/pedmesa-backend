@@ -31,7 +31,9 @@ const JOB_ENTREGA_EXEMPLO: EntregaJobPayload = {
       referencia: "Próximo ao MASP",
     },
     subtotal: 38.9,
+    desconto: 0,
     taxa_entrega: 7.5,
+    taxa_isenta: false,
     total: 46.4,
     forma_pagamento: "dinheiro",
     troco_para: 50,
@@ -88,6 +90,23 @@ describe("formatarEntrega", () => {
 
     expect(texto).toContain("Pagamento: PIX");
     expect(texto).not.toContain("TROCO");
+  });
+
+  it("com desconto e taxa isenta: linha do desconto e taxa ISENTA (PED-126)", () => {
+    const texto = formatarEntrega({
+      ...JOB_ENTREGA_EXEMPLO,
+      dados: {
+        ...JOB_ENTREGA_EXEMPLO.dados,
+        desconto: 3.89,
+        taxa_entrega: 0,
+        taxa_isenta: true,
+        total: 35.01,
+      },
+    });
+
+    expect(texto).toContain(
+      "Subtotal: R$ 38,90\nDesconto: -R$ 3,89\nTaxa de entrega: ISENTA\nTOTAL: R$ 35,01",
+    );
   });
 
   it("sem complemento nem referência: omite as partes vazias", () => {

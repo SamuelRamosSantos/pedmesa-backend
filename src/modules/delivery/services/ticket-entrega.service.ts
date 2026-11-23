@@ -29,13 +29,19 @@ export async function enfileirarTicketEntrega(
     );
   }
 
-  const { calculado } = await carregarExtrato(
+  const { comanda, calculado } = await carregarExtrato(
     manager,
     tenantId,
     entrega.comandaId,
   );
 
   await PrintQueue.enqueueEntrega(
-    montarJobEntrega(entrega, entrega.cliente, calculado, new Date()),
+    montarJobEntrega(
+      entrega,
+      entrega.cliente,
+      calculado,
+      { tipo: comanda.descontoTipo, valor: comanda.descontoValor },
+      new Date(),
+    ),
   );
 }

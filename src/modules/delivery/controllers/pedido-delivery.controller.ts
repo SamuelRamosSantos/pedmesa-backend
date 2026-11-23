@@ -6,11 +6,13 @@ import { isUuid } from "../../../shared/utils/is-uuid";
 import { assertValidCriarPedidoDeliveryDto } from "../dtos/criar-pedido-delivery.dto";
 import { assertValidListarEntregasQuery } from "../dtos/listar-entregas.dto";
 import { assertValidTransicaoEntregaDto } from "../dtos/transicao-entrega.dto";
+import { toDetalheEntregaResponse } from "../mappers/detalhe-entrega.mapper";
 import {
   toEntregaEstadoResponse,
   toEntregaPainelResponse,
 } from "../mappers/entrega.mapper";
 import { toPedidoDeliveryCriadoResponse } from "../mappers/pedido-delivery.mapper";
+import { buscarDetalheEntrega } from "../services/detalhe-entrega.service";
 import { listarEntregasPainel } from "../services/painel-entrega.service";
 import { criarPedidoDelivery } from "../services/pedido-delivery.service";
 import { enfileirarTicketEntrega } from "../services/ticket-entrega.service";
@@ -27,6 +29,8 @@ export async function criar(
       getTenantId(req),
       getUserId(req),
       dto,
+      // Permissão do token, nunca do corpo (PED-126).
+      req.user?.podeConcederDesconto ?? false,
     );
 
     res.status(201).json(toPedidoDeliveryCriadoResponse(criado));
@@ -45,6 +49,25 @@ export async function listarPainel(
     const cards = await listarEntregasPainel(getTenantId(req), filtros);
 
     res.status(200).json(cards.map(toEntregaPainelResponse));
+  } catch (error) {
+    next(error);
+  }
+}
+
+// GET /delivery/entregas/:id: detalhe completo para o modal da expedição (PED-130).
+export async function detalharEntrega(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!isUuid(req.params.id)) {
+      throw new AppError("ID de entrega inválido.", 400);
+    }
+
+    const detalhe = await buscarDetalheEntrega(getTenantId(req), req.params.id);
+
+    res.status(200).json(toDetalheEntregaResponse(detalhe));
   } catch (error) {
     next(error);
   }
