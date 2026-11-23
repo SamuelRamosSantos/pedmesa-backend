@@ -5,6 +5,7 @@ import { UserRole } from "../../usuarios/entities/user.entity";
 import { cotar } from "../controllers/cotacao.controller";
 import {
   criar,
+  detalharEntrega,
   listarPainel,
   reimprimirTicket,
   transicionarStatus,
@@ -33,6 +34,11 @@ deliveryRoutes.get(
   "/entregas",
   rbacMiddleware(ATENDER_DELIVERY_ROLES),
   listarPainel,
+);
+deliveryRoutes.get(
+  "/entregas/:id",
+  rbacMiddleware(ATENDER_DELIVERY_ROLES),
+  detalharEntrega,
 );
 deliveryRoutes.patch(
   "/entregas/:id/status",

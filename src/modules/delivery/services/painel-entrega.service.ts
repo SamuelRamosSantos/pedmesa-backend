@@ -9,6 +9,7 @@ import { Entrega, StatusEntrega } from "../entities/entrega.entity";
 import { dataDaNumeracao } from "./data-numeracao";
 import {
   CardPainelEntrega,
+  ItemResumidoPainel,
   montarCardPainel,
   STATUS_TERMINAIS,
 } from "./painel-entrega";
@@ -33,6 +34,7 @@ interface LinhaPainelBruta {
   descontoValor: string;
   subtotalItensAtivos: string;
   statusDosItensDaCozinha: StatusItem[];
+  itens: ItemResumidoPainel[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -84,6 +86,12 @@ async function buscarLinhasPainel(
     .addSelect(
       "COALESCE(ARRAY_AGG(CAST(item.statusItem AS text)) FILTER (WHERE item.id IS NOT NULL AND produto.precisaPreparo = true), ARRAY[]::text[])",
       "statusDosItensDaCozinha",
+    )
+    // Produtos do card (PED-130), sem os cancelados: pedidos na ordem de criação e, dentro
+    // de cada um, por nome (os itens não guardam a ordem em que foram lançados).
+    .addSelect(
+      `COALESCE(JSON_AGG(JSON_BUILD_OBJECT('id', item.id, 'produto', produto.nome, 'quantidade', item.quantidade, 'temObservacao', COALESCE(TRIM(item.observacao), '') <> '') ORDER BY pedido.criadoEm, produto.nome, item.id) FILTER (WHERE item.id IS NOT NULL AND item.statusItem <> :itemCancelado), '[]')`,
+      "itens",
     )
     .addSelect("entrega.criadoEm", "criadoEm")
     .addSelect("entrega.previsaoEntregaEm", "previsaoEntregaEm")

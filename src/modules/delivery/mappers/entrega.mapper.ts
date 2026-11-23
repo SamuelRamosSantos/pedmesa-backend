@@ -50,6 +50,13 @@ export interface EntregaPainelResponse {
   // Status só dos itens que a cozinha prepara (PED-129).
   status_preparo: StatusPreparo;
   passa_pela_cozinha: boolean;
+  // Produtos ativos da entrega (PED-130).
+  itens: {
+    id: string;
+    produto: string;
+    quantidade: number;
+    tem_observacao: boolean;
+  }[];
 }
 
 export function toEntregaPainelResponse(
@@ -73,5 +80,11 @@ export function toEntregaPainelResponse(
     atrasado: card.atrasado,
     status_preparo: card.statusPreparo,
     passa_pela_cozinha: card.passaPelaCozinha,
+    itens: card.itens.map((item) => ({
+      id: item.id,
+      produto: item.produto,
+      quantidade: item.quantidade,
+      tem_observacao: item.temObservacao,
+    })),
   };
 }

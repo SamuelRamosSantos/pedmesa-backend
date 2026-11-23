@@ -26,6 +26,9 @@ const LINHA: LinhaPainelEntrega = {
   descontoValor: 0,
   subtotalItensAtivos: 38.9,
   statusDosItensDaCozinha: [StatusItem.PENDENTE, StatusItem.PRONTO],
+  itens: [
+    { id: "i1", produto: "X-Burger", quantidade: 2, temObservacao: true },
+  ],
   criadoEm: new Date("2026-10-11T18:20:00Z"),
   previsaoEntregaEm: new Date("2026-10-11T19:10:00Z"),
 };
@@ -50,6 +53,9 @@ describe("montarCardPainel", () => {
       atrasado: false,
       statusPreparo: StatusPreparo.EM_PREPARO,
       passaPelaCozinha: true,
+      itens: [
+        { id: "i1", produto: "X-Burger", quantidade: 2, temObservacao: true },
+      ],
     });
   });
 

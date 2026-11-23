@@ -9,6 +9,14 @@ import { StatusEntrega } from "../entities/entrega.entity";
 import { STATUS_TERMINAIS } from "./entrega-status-transition";
 import { calcularTroco } from "./troco-calculator";
 
+// Produto no card do painel (PED-130).
+export interface ItemResumidoPainel {
+  id: string;
+  produto: string;
+  quantidade: number;
+  temObservacao: boolean;
+}
+
 // Uma linha da consulta do painel (já agregada no banco: soma e status dos itens).
 export interface LinhaPainelEntrega {
   id: string;
@@ -30,6 +38,7 @@ export interface LinhaPainelEntrega {
   subtotalItensAtivos: number;
   // Só os itens que a cozinha prepara (produto.precisa_preparo), como no KDS (PED-129).
   statusDosItensDaCozinha: StatusItem[];
+  itens: ItemResumidoPainel[];
   criadoEm: Date;
   previsaoEntregaEm: Date | null;
 }
@@ -54,6 +63,7 @@ export interface CardPainelEntrega {
   statusPreparo: StatusPreparo;
   // false = só itens sem preparo: a entrega não aparece no KDS (PED-96/PED-129).
   passaPelaCozinha: boolean;
+  itens: ItemResumidoPainel[];
 }
 
 // Terminal = entregue ou cancelado (lista na regra de transição; PED-127).
@@ -70,6 +80,21 @@ export function descontoParaExibicao(
   return tipo === DescontoTipo.VALOR_FIXO
     ? { tipo, valor: Math.min(valor, subtotal) }
     : { tipo, valor };
+}
+
+// Mesmo cálculo do KDS, só sobre os itens que a cozinha prepara (PED-129): item sem
+// preparo já nasce "pronto" e faria um pedido intocado parecer "em preparo". Sem nenhum
+// item de cozinha, nada a esperar: pronto. Usado pelo card e pelo detalhe (PED-130).
+export function situacaoDaCozinha(statusDosItensDaCozinha: StatusItem[]): {
+  statusPreparo: StatusPreparo;
+  passaPelaCozinha: boolean;
+} {
+  return statusDosItensDaCozinha.length === 0
+    ? { statusPreparo: StatusPreparo.PRONTO, passaPelaCozinha: false }
+    : {
+        statusPreparo: calcularStatusPreparoPedido(statusDosItensDaCozinha),
+        passaPelaCozinha: true,
+      };
 }
 
 // Monta o card do Kanban (PED-101) com os MESMOS cálculos do fechamento e da cotação:
@@ -113,13 +138,7 @@ export function montarCardPainel(
       linha.previsaoEntregaEm !== null &&
       !STATUS_TERMINAIS.includes(linha.statusEntrega) &&
       agora.getTime() > linha.previsaoEntregaEm.getTime(),
-    // Mesmo cálculo do KDS, só sobre os itens que a cozinha prepara (PED-129): item sem
-    // preparo já nasce "pronto" e faria um pedido intocado parecer "em preparo". Sem
-    // nenhum item de cozinha, nada a esperar: pronto.
-    statusPreparo:
-      linha.statusDosItensDaCozinha.length === 0
-        ? StatusPreparo.PRONTO
-        : calcularStatusPreparoPedido(linha.statusDosItensDaCozinha),
-    passaPelaCozinha: linha.statusDosItensDaCozinha.length > 0,
+    ...situacaoDaCozinha(linha.statusDosItensDaCozinha),
+    itens: linha.itens,
   };
 }
